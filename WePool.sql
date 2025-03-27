@@ -16,6 +16,11 @@ CREATE TABLE Users (
 );
 
 ALTER TABLE Users
+DROP PASSWORD;
+
+SELECT * FROM Users;
+
+ALTER TABLE Users
 DROP CONSTRAINT IF EXISTS Users_companyId_fkey;
 
 -- אם חברה נמחקת, המשתמשים לא יימחקו רק companyId שלהם יהפוך לNULL
