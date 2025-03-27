@@ -16,12 +16,15 @@ CREATE TABLE Users (
 );
 
 ALTER TABLE Users
-DROP CONSTRAINT IF EXISTS users_companyid_fkey;
+DROP CONSTRAINT IF EXISTS Users_companyId_fkey;
 
 -- אם חברה נמחקת, המשתמשים לא יימחקו רק companyId שלהם יהפוך לNULL
 ALTER TABLE Users
 ADD CONSTRAINT fk_users_company
 FOREIGN KEY (companyId) REFERENCES Company(companyId) ON DELETE SET NULL;
+
+ALTER TABLE Users
+ADD COLUMN firebaseUid VARCHAR(128) UNIQUE NOT NULL;
 
 -- 3. טבלאות לפי תפקיד
 CREATE TABLE Driver (
