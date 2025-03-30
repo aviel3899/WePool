@@ -16,7 +16,7 @@ CREATE TABLE Users (
 );
 
 ALTER TABLE Users
-DROP PASSWORD;
+DROP COLUMN PASSWORD;
 
 SELECT * FROM Users;
 
@@ -39,6 +39,17 @@ ALTER TABLE Users
 ADD COLUMN phoneNumber VARCHAR(10) NOT NULL,
 ADD CONSTRAINT chk_phone_format CHECK (
     phoneNumber ~ '^05[0-9]{8}$' 
+);
+
+INSERT INTO Users (name, email, password, companyId, isBanned, firebaseUid, phoneNumber)
+VALUES (
+    'David Cohen',
+    'david@example.com',
+    'securePass123',
+    1,                            -- ודא שיש Company עם companyId = 1, או שנה ל-NULL
+    FALSE,
+    'firebase_abc123',
+    '0541234567'
 );
 
 -- 3. טבלאות לפי תפקיד
