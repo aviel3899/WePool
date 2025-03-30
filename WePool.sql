@@ -5,6 +5,20 @@ CREATE TABLE Company (
     companyName TEXT NOT NULL
 );
 
+SELECT * FROM Company;
+
+INSERT INTO Company (companyName)
+VALUES (
+    'Afeka'
+);
+
+INSERT INTO Company (companyName)
+VALUES (
+    'Microsoft'
+);
+
+TRUNCATE TABLE Company RESTART IDENTITY Cascade;
+
 -- 2. טבלת User
 CREATE TABLE Users (
     userId SERIAL PRIMARY KEY,
@@ -41,16 +55,17 @@ ADD CONSTRAINT chk_phone_format CHECK (
     phoneNumber ~ '^05[0-9]{8}$' 
 );
 
-INSERT INTO Users (name, email, password, companyId, isBanned, firebaseUid, phoneNumber)
+INSERT INTO Users (name, email, companyId, isBanned, firebaseUid, phoneNumber)
 VALUES (
     'David Cohen',
     'david@example.com',
-    'securePass123',
-    1,                            -- ודא שיש Company עם companyId = 1, או שנה ל-NULL
+    '1',
     FALSE,
     'firebase_abc123',
     '0541234567'
 );
+
+TRUNCATE TABLE Users RESTART IDENTITY Cascade;
 
 -- 3. טבלאות לפי תפקיד
 CREATE TABLE Driver (
