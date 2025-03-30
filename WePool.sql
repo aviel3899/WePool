@@ -31,6 +31,16 @@ FOREIGN KEY (companyId) REFERENCES Company(companyId) ON DELETE SET NULL;
 ALTER TABLE Users
 ADD COLUMN firebaseUid VARCHAR(128) UNIQUE NOT NULL;
 
+ALTER TABLE Users
+DROP COLUMN phoneNumber;
+
+-- מחייב שמספר טלפון יהיה בעל 10 ספרות, לא יהיה NULL, שהוא מתחיל ב05, ואחריו בדיוק 8 ספרות
+ALTER TABLE Users
+ADD COLUMN phoneNumber VARCHAR(10) NOT NULL,
+ADD CONSTRAINT chk_phone_format CHECK (
+    phoneNumber ~ '^05[0-9]{8}$' 
+);
+
 -- 3. טבלאות לפי תפקיד
 CREATE TABLE Driver (
     userId INT PRIMARY KEY REFERENCES Users(userId),
