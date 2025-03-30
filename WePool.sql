@@ -67,7 +67,17 @@ VALUES (
 
 TRUNCATE TABLE Users RESTART IDENTITY Cascade;
 
--- 3. טבלאות לפי תפקיד
+-- 3. טבלה של הרשאות תפקידים
+CREATE TABLE UserRoles (
+    uid INT REFERENCES Users(userId) ON DELETE CASCADE,
+    role TEXT CHECK (role IN ('Driver', 'Passenger', 'HR', 'Admin'))
+);
+
+SELECT * FROM UserRoles;
+
+TRUNCATE TABLE UserRoles RESTART IDENTITY Cascade;
+
+-- 4. טבלאות לפי תפקיד
 CREATE TABLE Driver (
     userId INT PRIMARY KEY REFERENCES Users(userId),
     availableSeats INT NOT NULL,
@@ -121,7 +131,7 @@ FOREIGN KEY (userId) REFERENCES Users(userId) ON DELETE CASCADE;
 
 -- אם משתמש נמחק, התפקיד שלו גם יימחק אוטומטית
 
--- 4. טבלת הגדרות
+-- 5. טבלת הגדרות
 CREATE TABLE Settings (
     settingId SERIAL PRIMARY KEY,
     companyId INT REFERENCES Company(companyId),
@@ -138,7 +148,7 @@ FOREIGN KEY (companyId) REFERENCES Company(companyId) ON DELETE CASCADE;
 
 --כשחברה נמחקת, גם ההגדרות הכלליות שלה נמחקות — אין להן יותר שימוש.
 
--- 5. טבלת RouteTemplate
+-- 6. טבלת RouteTemplate
 CREATE TABLE RouteTemplate (
     templateId SERIAL PRIMARY KEY,
     origin GEOGRAPHY(Point, 4326) NOT NULL,
@@ -148,7 +158,7 @@ CREATE TABLE RouteTemplate (
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. טבלת Ride
+-- 7. טבלת Ride
 CREATE TABLE Ride (
     rideId SERIAL PRIMARY KEY,
     driverId INT REFERENCES Driver(userId),
@@ -179,7 +189,7 @@ ADD CONSTRAINT fk_ride_template
 FOREIGN KEY (routeTemplateId) REFERENCES RouteTemplate(templateId) ON DELETE SET NULL;
 --אם מסלול טיפוסי נמחק, הנסיעה תישאר תקפה, אך תוצג עם נתוני המסלול הישירים.
 
--- 7. טבלת RidePassenger
+-- 8. טבלת RidePassenger
 CREATE TABLE RidePassenger (
     rideId INT REFERENCES Ride(rideId),
     passengerId INT REFERENCES Passenger(userId),
@@ -205,7 +215,7 @@ FOREIGN KEY (passengerId) REFERENCES Passenger(userId) ON DELETE CASCADE;
 
 --אם נסיעה או נוסע נמחקים, גם החיבור ביניהם יימחק אוטומטית
 
--- 8. טבלת RideHistory
+-- 9. טבלת RideHistory
 CREATE TABLE RideHistory (
     historyId SERIAL PRIMARY KEY,
     userId INT REFERENCES Users(userId),
