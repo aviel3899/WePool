@@ -1,6 +1,6 @@
 specVersion: "v1"
-serviceId: "wepool"
-location: "us-central1"
+serviceId: "WePool"
+location: "me-west1"
 schema:
   source: "./schema"
   datasource:
