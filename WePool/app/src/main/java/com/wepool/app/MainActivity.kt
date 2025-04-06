@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             WePoolTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "WE POOL",
+                        name = "Android",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

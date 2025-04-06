@@ -1,7 +1,10 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -27,6 +30,24 @@ android {
             )
         }
     }
+
+    buildTypes.forEach { buildType ->
+        val properties = Properties()
+        try {
+            properties.load(project.rootProject.file("gradle.properties").inputStream())
+        } catch (e: Exception) {
+            logger.warn("gradle.properties not found!")
+        }
+
+        val mapsApiKey = properties.getProperty("MAPS_API_KEY", "")
+
+        // Make the key available as a BuildConfig field
+        buildType.buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
+
+        // Make the key available as a Manifest placeholder
+        buildType.manifestPlaceholders["mapsApiKey"] = mapsApiKey
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -36,6 +57,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -56,7 +78,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
 }
