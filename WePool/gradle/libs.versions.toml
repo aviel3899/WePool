@@ -13,6 +13,7 @@ firebaseDataConnect = "16.0.0"
 kotlinxSerializationJson = "1.8.1"
 kotlinSerializationPlugin = "2.1.20"
 google-services = "4.4.2"
+gms-location = "21.3.0"
 material = "1.12.0"
 
 [libraries]
@@ -39,6 +40,8 @@ firebase-dataconnect = { group = "com.google.firebase", name = "firebase-datacon
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+
+gms-location = { module = "com.google.android.gms:play-services-location", version.ref = "gms-location" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

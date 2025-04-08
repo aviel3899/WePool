@@ -85,4 +85,5 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.material)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.gms.location)
 }
