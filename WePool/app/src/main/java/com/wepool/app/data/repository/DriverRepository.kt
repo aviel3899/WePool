@@ -6,6 +6,8 @@ import com.google.firebase.firestore.GeoPoint
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.Driver
 //import com.wepool.app.data.model.users.PassengerRideInfo
+import com.wepool.app.data.model.logic.DepartureCalculationResult
+import com.wepool.app.data.model.logic.DurationAndRoute
 import com.wepool.app.data.remote.IGoogleMapsService
 import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
@@ -99,23 +101,23 @@ class DriverRepository(
         return LocalTime.now().toString()
     }
 
-    // חישוב זמן יציאה מתוך זמן הגעה
     override suspend fun calculateDepartureTimeFromArrival(
         origin: GeoPoint,
         destination: GeoPoint,
         arrivalTime: String
-    ): String {
-        val durationMinutes = getDurationFromGoogleApi(origin, destination, arrivalTime)
-        val totalMinutesBefore = durationMinutes + 10
-        return subtractMinutesFromTime(arrivalTime, totalMinutesBefore)
+    ): DepartureCalculationResult {
+        val result = getDurationAndRouteFromGoogleApi(origin, destination, arrivalTime)
+        val totalMinutesBefore = result.durationMinutes + 10
+        val departureTime = subtractMinutesFromTime(arrivalTime, totalMinutesBefore)
+        return DepartureCalculationResult(departureTime, result.encodedPolyline)
     }
 
-    private suspend fun getDurationFromGoogleApi(
+    private suspend fun getDurationAndRouteFromGoogleApi(
         origin: GeoPoint,
         destination: GeoPoint,
         arrivalTime: String
-    ): Int {
-        return mapsService.getDurationFromGoogleApi(origin, destination, arrivalTime)
+    ): DurationAndRoute {
+        return mapsService.getDurationAndRouteFromGoogleApi(origin, destination, arrivalTime)
     }
 
     private fun subtractMinutesFromTime(time: String, minutes: Int): String {

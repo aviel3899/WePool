@@ -2,6 +2,7 @@ package com.wepool.app.data.remote
 
 import com.google.firebase.firestore.GeoPoint
 import com.wepool.app.data.remote.DirectionsResponse
+import com.wepool.app.data.model.logic.DurationAndRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -21,11 +22,11 @@ class GoogleMapsService(
      * מחשב את משך זמן הנסיעה (בדקות) בין origin ל-destination
      * לפי זמן הגעה רצוי (arrivalTime בפורמט HH:mm)
      */
-    override suspend fun getDurationFromGoogleApi(
+    override suspend fun getDurationAndRouteFromGoogleApi(
         origin: GeoPoint,
         destination: GeoPoint,
         arrivalTime: String
-    ): Int = withContext(Dispatchers.IO) {
+    ): DurationAndRoute = withContext(Dispatchers.IO) {
         val originStr = "${origin.latitude},${origin.longitude}"
         val destinationStr = "${destination.latitude},${destination.longitude}"
         val arrivalEpochSeconds = convertTimeToEpoch(arrivalTime)
@@ -44,12 +45,16 @@ class GoogleMapsService(
         val body = response.body?.string() ?: throw Exception("Empty response from Google API")
 
         val directions = jsonParser.decodeFromString<DirectionsResponse>(body)
-        val durationSeconds = directions.routes.firstOrNull()
-            ?.legs?.firstOrNull()
-            ?.duration?.value
-            ?: throw Exception("Duration not found in API response")
+        val route = directions.routes.firstOrNull()
+            ?: throw Exception("No route found")
 
-        return@withContext durationSeconds / 60
+        val durationSeconds = route.legs.firstOrNull()?.duration?.value
+            ?: throw Exception("Duration not found")
+
+        return@withContext DurationAndRoute(
+            durationMinutes = durationSeconds / 60,
+            encodedPolyline = route.overview_polyline.points
+        )
     }
 
     /**

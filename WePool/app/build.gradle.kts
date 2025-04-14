@@ -85,4 +85,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.gms.location)
     implementation(libs.okhttp)
+    implementation(libs.maps.utils)
+    implementation(libs.maps.sdk)
 }

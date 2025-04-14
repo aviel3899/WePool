@@ -1,6 +1,7 @@
 package com.wepool.app.data.repository.interfaces
 
 import com.google.firebase.firestore.GeoPoint
+import com.wepool.app.data.model.logic.DepartureCalculationResult
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.Driver
 //import com.wepool.app.data.model.users.PassengerRideInfo
@@ -30,7 +31,7 @@ interface IDriverRepository {
         origin: GeoPoint,
         destination: GeoPoint,
         arrivalTime: String
-    ): String
+    ): DepartureCalculationResult
 
     // עדכון רשימת נוסעים לנסיעה תוך בדיקה של סטייה וזמינות כיסאות
     /*suspend fun updateRideWithPassenger(

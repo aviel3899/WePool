@@ -2,6 +2,8 @@ package com.wepool.app.data.remote
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 @Serializable
 data class DirectionsResponse(
@@ -10,7 +12,13 @@ data class DirectionsResponse(
 
 @Serializable
 data class Route(
+    val overview_polyline: OverviewPolyline,
     val legs: List<Leg>
+)
+
+@Serializable
+data class OverviewPolyline(
+    val points: String
 )
 
 @Serializable

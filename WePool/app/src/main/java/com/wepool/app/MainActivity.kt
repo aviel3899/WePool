@@ -25,6 +25,7 @@ import com.wepool.app.BuildConfig
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.Driver
+import com.wepool.app.data.model.logic.PolylineDecoder
 import com.wepool.app.data.repository.UserRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.DriverRepository
@@ -81,6 +82,9 @@ class MainActivity : ComponentActivity() {
 
             loginResult.onSuccess { uid ->
                 Log.d("MainActivity", "✅ התחברות הצליחה | UID: $uid")
+
+                startAppFlow(uid)
+
             }.onFailure { error ->
                 Log.e("MainActivity", "❌ שגיאה בהתחברות: ${error.message}")
             }
@@ -98,7 +102,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
     }
 
     private fun startAppFlow(uid: String) {
@@ -119,17 +122,26 @@ class MainActivity : ComponentActivity() {
                     Log.d("WePoolFlow", "✅ Driver חדש נשמר")
                 }
 
-                //driverRepository.updatePreferredArrivalTime(user.uid, "21:00")
+                driverRepository.updatePreferredArrivalTime(user.uid, "10:00")
 
                 // מחשבים זמן יציאה
                 val origin = GeoPoint(32.3197, 34.8535) // נחום 20 נתניה
-                val departureTime = driverRepository.calculateDepartureTimeFromArrival(
+
+                // 💡 שימוש בפונקציה המעודכנת שמחזירה גם polyline
+                val result = driverRepository.calculateDepartureTimeFromArrival(
                     origin = origin,
                     destination = driver.destination!!,
                     arrivalTime = driver.preferredArrivalTime!!
                 )
 
-                Log.d("WePoolFlow", "🟢 שעת יציאה משוערת: $departureTime")
+                Log.d("WePoolFlow", "🟢 שעת יציאה משוערת: ${result.departureTime}")
+                Log.d("WePoolFlow", "🟢 פוליליין מוצפן: ${result.encodedPolyline}")
+
+                // 🧭 פענוח הפוליליין לרשימת נקודות LatLng
+                val decodedPoints = PolylineDecoder.decode(result.encodedPolyline)
+                decodedPoints.forEachIndexed { index, point ->
+                    Log.d("WePoolFlow", "📍 נקודה ${index + 1}: (${point.latitude}, ${point.longitude})")
+                }
 
             } catch (e: Exception) {
                 Log.e("WePoolFlow", "❌ שגיאה בתהליך: ${e.message}", e)
