@@ -71,3 +71,6 @@ node_modules/
 # מניעת העלאת קבצי תכונות וסודות ל Git
 gradle.properties
 
+.gradle/
+.idea/
+
