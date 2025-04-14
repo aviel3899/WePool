@@ -5,7 +5,7 @@ import com.wepool.app.data.model.users.User
 import com.wepool.app.data.model.enums.RideDirection
 
 data class Driver(
-    val user: User, // מידע בסיסי של המשתמש כולל roles
+    val user: User = User(), // מידע בסיסי של המשתמש כולל roles
     val availableSeats: Int = 0, // מספר מקומות פנויים שהנהג מצהיר שיש לו
     val vehicleDetails: String = "", // תיאור הרכב לדוגמה: "Toyota Corolla 2019"
     val maxDetourMinutes: Int = 10, // סטייה מקסימלית (בדקות) מהמסלול שהנהג מוכן לבצע

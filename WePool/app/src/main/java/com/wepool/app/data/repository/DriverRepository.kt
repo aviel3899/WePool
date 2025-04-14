@@ -7,6 +7,8 @@ import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.Driver
 //import com.wepool.app.data.model.users.PassengerRideInfo
 import com.wepool.app.data.remote.IGoogleMapsService
+import com.wepool.app.data.repository.interfaces.IDriverRepository
+import com.wepool.app.data.repository.interfaces.IUserRepository
 import kotlinx.coroutines.tasks.await
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -15,10 +17,10 @@ class DriverRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
     private val mapsService: IGoogleMapsService
-) {
+) : IDriverRepository {
 
     // יוצרת או מעדכנת את נתוני הנהג במסמך info
-    suspend fun saveDriver(driver: Driver) {
+    override suspend fun saveDriver(driver: Driver) {
         val uid = auth.currentUser?.uid ?: throw Exception("User not logged in")
         firestore.collection("users")
             .document(uid)
@@ -28,9 +30,8 @@ class DriverRepository(
             .await()
     }
 
-    // מחזירה את אובייקט הנהג הנוכחי
-    suspend fun getDriver(): Driver? {
-        val uid = auth.currentUser?.uid ?: throw Exception("User not logged in")
+    // מחזירה את אובייקט הנהג לפי uid
+    override suspend fun getDriver(uid: String): Driver? {
         val snapshot = firestore.collection("users")
             .document(uid)
             .collection("driverData")
@@ -41,8 +42,7 @@ class DriverRepository(
     }
 
     // מוחקת את מסמך הנהג
-    suspend fun deleteDriver() {
-        val uid = auth.currentUser?.uid ?: throw Exception("User not logged in")
+    override suspend fun deleteDriver(uid: String) {
         firestore.collection("users")
             .document(uid)
             .collection("driverData")
@@ -52,8 +52,7 @@ class DriverRepository(
     }
 
     // עדכון כללי - תשתית לעדכון שדות נפרדים
-    private suspend fun updateDriverFields(updates: Map<String, Any?>) {
-        val uid = auth.currentUser?.uid ?: throw Exception("User not logged in")
+    private suspend fun updateDriverFields(uid: String, updates: Map<String, Any?>)  {
         firestore.collection("users")
             .document(uid)
             .collection("driverData")
@@ -62,38 +61,37 @@ class DriverRepository(
             .await()
     }
 
-
     // פונקציות לעדכון שדה אחד בודד
-    suspend fun updateAvailableSeats(seats: Int) {
-        updateDriverFields(mapOf("availableSeats" to seats))
+    override suspend fun updateAvailableSeats(uid: String, seats: Int) {
+        updateDriverFields(uid, mapOf("availableSeats" to seats))
     }
 
-    suspend fun updateVehicleDetails(vehicleDetails: String) {
-        updateDriverFields(mapOf("vehicleDetails" to vehicleDetails))
+    override suspend fun updateVehicleDetails(uid: String, vehicleDetails: String) {
+        updateDriverFields(uid, mapOf("vehicleDetails" to vehicleDetails))
     }
 
-    suspend fun updateMaxDetourMinutes(maxDetour: Int) {
-        updateDriverFields(mapOf("maxDetourMinutes" to maxDetour))
+    override suspend fun updateMaxDetourMinutes(uid: String, maxDetour: Int) {
+        updateDriverFields(uid, mapOf("maxDetourMinutes" to maxDetour))
     }
 
-    suspend fun updatePreferredArrivalTime(time: String) {
-        updateDriverFields(mapOf("preferredArrivalTime" to time))
+    override suspend fun updatePreferredArrivalTime(uid: String, time: String) {
+        updateDriverFields(uid, mapOf("preferredArrivalTime" to time))
     }
 
-    suspend fun updateCalculatedDepartureTime(time: String) {
-        updateDriverFields(mapOf("calculatedDepartureTime" to time))
+    override suspend fun updateCalculatedDepartureTime(uid: String, time: String) {
+        updateDriverFields(uid, mapOf("calculatedDepartureTime" to time))
     }
 
-    suspend fun updateDirection(direction: String) {
-        updateDriverFields(mapOf("direction" to direction))
+    override suspend fun updateDirection(uid: String, direction: String) {
+        updateDriverFields(uid, mapOf("direction" to direction))
     }
 
-    suspend fun updateDestination(destination: GeoPoint) {
-        updateDriverFields(mapOf("destination" to destination))
+    override suspend fun updateDestination(uid: String, destination: GeoPoint) {
+        updateDriverFields(uid, mapOf("destination" to destination))
     }
 
-    suspend fun updateActiveRideId(rideId: String?) {
-        updateDriverFields(mapOf("activeRideId" to rideId))
+    override suspend fun updateActiveRideId(uid: String, rideId: String?) {
+        updateDriverFields(uid, mapOf("activeRideId" to rideId))
     }
 
     // מחזיר את השעה הנוכחית בפורמט טקסטואלי
@@ -102,7 +100,7 @@ class DriverRepository(
     }
 
     // חישוב זמן יציאה מתוך זמן הגעה
-    suspend fun calculateDepartureTimeFromArrival(
+    override suspend fun calculateDepartureTimeFromArrival(
         origin: GeoPoint,
         destination: GeoPoint,
         arrivalTime: String

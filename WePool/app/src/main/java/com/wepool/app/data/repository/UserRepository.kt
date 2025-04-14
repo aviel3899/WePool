@@ -1,11 +1,14 @@
 package com.wepool.app.data.repository
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.wepool.app.data.repository.interfaces.IUserRepository
+import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.data.model.users.User
+import com.wepool.app.data.model.users.Driver
 import kotlinx.coroutines.tasks.await
 
 class UserRepository(
@@ -38,14 +41,42 @@ class UserRepository(
     }
 
     // deletes an user
-    override suspend fun deleteUser(uid: String) {
+    override suspend fun deleteUser(uid: String, driverRepository: IDriverRepository) {
         try {
+            val userSnapshot = usersCollection.document(uid).get().await()
+            val user = userSnapshot.toObject(User::class.java) ?: return
+
+            // מחיקת כל Role לפי הרשימה
+            user.roles.forEach { role ->
+                when (role) {
+                    "DRIVER" -> driverRepository.deleteDriver(uid)
+                    // "PASSENGER" -> passengerRepository.deletePassenger(uid)
+                    // תוסיף תפקידים נוספים במידת הצורך
+                }
+            }
+
+            // ולבסוף – מחיקת המשתמש עצמו
             usersCollection.document(uid).delete().await()
+
+            Log.d("Firestore", "🧹 המשתמש $uid וכל הנתונים המשויכים לו נמחקו")
+
         } catch (e: Exception) {
-            logException("deleteUser", e)
+            logException("deleteUserWithRoles", e)
         }
     }
 
+    override suspend fun deleteAllUsers(driverRepository: IDriverRepository) {
+        try {
+            val usersSnapshot = usersCollection.get().await()
+            for (document in usersSnapshot.documents) {
+                val uid = document.id
+                deleteUser(uid, driverRepository)
+            }
+            Log.d("Firestore", "🧹 כל המשתמשים נמחקו בהצלחה")
+        } catch (e: Exception) {
+            logException("deleteAllUsers", e)
+        }
+    }
 
     // makes a query where all the users with the same companyID
     // return a list of user objects with the same companyID

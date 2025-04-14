@@ -10,27 +10,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cc2cfa5c-ffda-4739-91b6-ef16cf0afed6" name="Changes" comment="Driver Object, interface and functions were wadded">
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/model/enums/RideDirection.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/remote/DirectionsResponse.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/remote/GoogleMapsService.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/remote/IGoogleMapsService.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/PassengerRepository.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/interfaces/IDriverRepository.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/interfaces/IPassengerRepository.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/8.10/checksums/checksums.lock" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/8.10/fileChanges/last-build.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/8.10/fileHashes/fileHashes.lock" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/8.10/gc.properties" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/infrastructure/RepositoryProvider.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/checksums/checksums.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/executionHistory/executionHistory.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/executionHistory/executionHistory.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/fileChanges/last-build.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/fileHashes.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/fileHashes.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/resourceHashesCache.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/gc.properties" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/file-system.probe" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/file-system.probe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/MainActivity.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/model/users/Driver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/model/users/Driver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/model/users/Passenger.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/model/users/Passenger.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/model/users/User.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/model/users/User.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/DriverRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/DriverRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/PassengerRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/PassengerRepository.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/UserRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/UserRepository.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/interfaces/IDriverRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/interfaces/IDriverRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/interfaces/IPassengerRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/interfaces/IPassengerRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/interfaces/IUserRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/wepool/app/data/repository/interfaces/IUserRepository.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,6 +80,7 @@
         <option value="Kotlin Class" />
         <option value="Kotlin Data Class" />
         <option value="Kotlin Interface" />
+        <option value="Kotlin Object" />
       </list>
     </option>
   </component>
@@ -611,7 +613,15 @@
       <option name="project" value="LOCAL‎" />
       <updated>1744324105971</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL‎-00008" summary="Driver Object, interface and functions were wadded">
+      <option name="closed" value="true" />
+      <created>1744619711407</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL‎-00008" />
+      <option name="project" value="LOCAL‎" />
+      <updated>1744619711407</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

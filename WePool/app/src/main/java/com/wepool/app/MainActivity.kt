@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import com.wepool.app.ui.theme.WePoolTheme
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
@@ -25,7 +26,10 @@ import com.wepool.app.data.model.users.User
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.Driver
 import com.wepool.app.data.repository.UserRepository
+import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.DriverRepository
+import com.wepool.app.data.repository.interfaces.IDriverRepository
+import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.data.remote.GoogleMapsService
 
 
@@ -40,6 +44,53 @@ class MainActivity : ComponentActivity() {
         //checkFirestoreConnection()
         //checkGooglePlayServicesAvailability()
 
+        val email = "test@wepool.com"
+        val password = "test1234"
+
+           /* FirebaseAuth.getInstance()
+            .createUserWithEmailAndPassword(email, password)
+            .addOnSuccessListener { result ->
+                val uid = result.user?.uid
+                if (uid != null) {
+                    Log.d("Auth", "🟢 משתמש נוצר עם UID: $uid")
+                    // שליפת טוקן כדי לוודא שהמשתמש מחובר באופן מלא
+                    FirebaseAuth.getInstance().currentUser?.getIdToken(true)
+                        ?.addOnSuccessListener { tokenResult ->
+                            Log.d("Token", "🟢 Token: ${tokenResult.token}")
+                            // startAppFlow(uid)
+                            // deleteAllUsers()
+                        }
+                        ?.addOnFailureListener { tokenError ->
+                            Log.e("Token", "❌ שגיאה בקבלת טוקן: ${tokenError.message}", tokenError)
+                        }
+                } else {
+                    Log.e("Auth", "❌ המשתמש נוצר אך לא התקבל UID")
+                }
+            }
+            .addOnFailureListener {
+                Log.e("Auth", "❌ שגיאה ביצירת המשתמש: ${it.message}", it)
+            }*/
+
+
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnSuccessListener { result ->
+                val uid = result.user?.uid
+                Log.d("Auth", "משתמש התחבר עם UID: $uid")
+                FirebaseAuth.getInstance().currentUser?.getIdToken(true)
+                    ?.addOnSuccessListener { tokenResult ->
+                        Log.d("Token", "🟢 Token: ${tokenResult.token}")
+                        startAppFlow(uid!!)
+                        //deleteAllUsers()
+                    }
+                    ?.addOnFailureListener { tokenError ->
+                        Log.e("Token", "❌ שגיאה בקבלת טוקן: ${tokenError.message}", tokenError)
+                    }
+            }
+            .addOnFailureListener {
+                Log.e("Auth", "שגיאה בהתחברות: ${it.message}")
+            }
+
+        /*
         // התחברות אנונימית אם אין משתמש
         if (auth.currentUser == null) {
             auth.signInAnonymously()
@@ -55,7 +106,7 @@ class MainActivity : ComponentActivity() {
             val uid = auth.currentUser?.uid!!
             Log.d("Auth", "משתמש כבר מחובר: $uid")
             startAppFlow(uid)
-        }
+        }*/
 
 
         // UI
@@ -74,39 +125,39 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startAppFlow(uid: String) {
-        val mapsService = GoogleMapsService(BuildConfig.MAPS_API_KEY)
+        val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository(BuildConfig.MAPS_API_KEY)
+        val userRepository: IUserRepository = RepositoryProvider.provideUserRepository()
 
-        val driverRepository = DriverRepository(
-            auth = auth,
-            firestore = firestore,
-            mapsService = mapsService
-        )
-
-        val userRepository = UserRepository(
-            db = firestore,
-            auth = auth
-        )
-
-        // יצירת המשתמש והנהג
-        val user = createTestUser(uid)
-        val driver = createTestDriver(user)
-
-        lifecycleScope.launch {
+        lifecycleScope.launch { // מאפשר לבצע קוד ברקע לצד ui ללא חסימה של ה- ui thread
             try {
-                userRepository.createOrUpdateUser(user)
-                driverRepository.saveDriver(driver)
+                // בדיקה אם המשתמש קיים
+                val existingUser = userRepository.getUser(uid)
+                val user = existingUser ?: createTestUser(uid).also {
+                    userRepository.createOrUpdateUser(it)
+                    Log.d("WePoolFlow", "✅ משתמש חדש נוצר")
+                }
 
-                val origin = GeoPoint(32.0853, 34.7818) // תל אביב
+                // בדיקה אם יש מידע על Driver
+                val existingDriver = driverRepository.getDriver(uid)
+                val driver = existingDriver ?: createTestDriver(user).also {
+                    driverRepository.saveDriver(it)
+                    Log.d("WePoolFlow", "✅ Driver חדש נשמר")
+                }
 
+                //driverRepository.updatePreferredArrivalTime(user.uid, "21:00")
+
+                // מחשבים זמן יציאה
+                val origin = GeoPoint(32.3197, 34.8535) // נחום 20 נתניה
                 val departureTime = driverRepository.calculateDepartureTimeFromArrival(
                     origin = origin,
                     destination = driver.destination!!,
                     arrivalTime = driver.preferredArrivalTime!!
                 )
 
-                Log.d("WePoolTest", "🟢 שעת יציאה משוערת: $departureTime")
+                Log.d("WePoolFlow", "🟢 שעת יציאה משוערת: $departureTime")
+
             } catch (e: Exception) {
-                Log.e("WePoolTest", "❌ שגיאה בתהליך: ${e.message}", e)
+                Log.e("WePoolFlow", "❌ שגיאה בתהליך: ${e.message}", e)
             }
         }
     }
@@ -129,8 +180,8 @@ class MainActivity : ComponentActivity() {
             availableSeats = 3,
             vehicleDetails = "Toyota Corolla 2022",
             maxDetourMinutes = 10,
-            preferredArrivalTime = "08:30",
-            destination = GeoPoint(32.1093, 34.8555) // יעד לדוגמה: רמת גן
+            preferredArrivalTime = "13:00",
+            destination = GeoPoint(32.1798, 34.9133) // יעד לדוגמה: הנביאים 34 כפר סבא
         )
     }
 
@@ -154,6 +205,24 @@ class MainActivity : ComponentActivity() {
         } else {
             Log.e("GooglePlayCheck", "🔴 Google Play Services חסרים או לא זמינים. Code: $resultCode")
             availability.getErrorDialog(this, resultCode, 9000)?.show()
+        }
+    }
+
+    private fun deleteAllUsers() {
+        val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository(BuildConfig.MAPS_API_KEY)
+        val userRepository: IUserRepository = RepositoryProvider.provideUserRepository()
+
+        lifecycleScope.launch {
+            try {
+                val usersCollection = firestore.collection("users").get().await()
+                for (document in usersCollection.documents) {
+                    val uid = document.id
+                    userRepository.deleteUser(uid, driverRepository)
+                }
+                Log.d("WePoolCleanup", "🧹 כל המשתמשים נמחקו בהצלחה.")
+            } catch (e: Exception) {
+                Log.e("WePoolCleanup", "❌ שגיאה במחיקת כל המשתמשים: ${e.message}", e)
+            }
         }
     }
 }
