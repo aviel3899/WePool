@@ -2,13 +2,15 @@ package com.wepool.app.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.model.users.User
 import kotlinx.coroutines.tasks.await
 
 class UserRepository(
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : IUserRepository {
 
     private val usersCollection = db.collection("users")
