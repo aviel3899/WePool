@@ -4,7 +4,7 @@
             "outputFile": "com.wepool.app-mergeDebugResources-69:/values-ldltr-v21/values-ldltr-v21.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Administrator\\.gradle\\caches\\8.13\\transforms\\63cfb6b3562e589c3674f40d3634c96c\\transformed\\appcompat-1.6.1\\res\\values-ldltr-v21\\values-ldltr-v21.xml",
+                    "source": "C:\\Users\\Administrator\\.gradle\\caches\\8.13\\transforms\\73b3275f78a70ed8558108ae32b91920\\transformed\\appcompat-1.6.1\\res\\values-ldltr-v21\\values-ldltr-v21.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

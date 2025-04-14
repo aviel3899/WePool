@@ -35,79 +35,56 @@ import com.wepool.app.data.remote.GoogleMapsService
 
 class MainActivity : ComponentActivity() {
 
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val authRepository = RepositoryProvider.provideAuthRepository()
+    private val userRepository: IUserRepository = RepositoryProvider.provideUserRepository()
+    private val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository(BuildConfig.MAPS_API_KEY)
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //checkFirestoreConnection()
-        //checkGooglePlayServicesAvailability()
-
         val email = "test@wepool.com"
         val password = "test1234"
 
-           /* FirebaseAuth.getInstance()
-            .createUserWithEmailAndPassword(email, password)
-            .addOnSuccessListener { result ->
-                val uid = result.user?.uid
-                if (uid != null) {
-                    Log.d("Auth", "🟢 משתמש נוצר עם UID: $uid")
-                    // שליפת טוקן כדי לוודא שהמשתמש מחובר באופן מלא
-                    FirebaseAuth.getInstance().currentUser?.getIdToken(true)
-                        ?.addOnSuccessListener { tokenResult ->
-                            Log.d("Token", "🟢 Token: ${tokenResult.token}")
-                            // startAppFlow(uid)
-                            // deleteAllUsers()
-                        }
-                        ?.addOnFailureListener { tokenError ->
-                            Log.e("Token", "❌ שגיאה בקבלת טוקן: ${tokenError.message}", tokenError)
-                        }
-                } else {
-                    Log.e("Auth", "❌ המשתמש נוצר אך לא התקבל UID")
-                }
-            }
-            .addOnFailureListener {
-                Log.e("Auth", "❌ שגיאה ביצירת המשתמש: ${it.message}", it)
-            }*/
+        // 📝 ניסיון הרשמה
+        /*lifecycleScope.launch {
+            val user = User(
+                uid = "",
+                name = "Test Driver",
+                email = email,
+                phoneNumber = "050-7137453",
+                companyId = "company123",
+                isBanned = false,
+                roles = listOf(UserRole.DRIVER.name)
+            )
 
+            val signUpResult = authRepository.signUpWithEmailAndPassword(
+                email = user.email,
+                password = password,
+                user = user,
+                userRepository = userRepository
+            )
 
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnSuccessListener { result ->
-                val uid = result.user?.uid
-                Log.d("Auth", "משתמש התחבר עם UID: $uid")
-                FirebaseAuth.getInstance().currentUser?.getIdToken(true)
-                    ?.addOnSuccessListener { tokenResult ->
-                        Log.d("Token", "🟢 Token: ${tokenResult.token}")
-                        startAppFlow(uid!!)
-                        //deleteAllUsers()
-                    }
-                    ?.addOnFailureListener { tokenError ->
-                        Log.e("Token", "❌ שגיאה בקבלת טוקן: ${tokenError.message}", tokenError)
-                    }
+            signUpResult.onSuccess { uid ->
+                Log.d("MainActivity", "🎉 הרשמה הצליחה | UID: $uid")
+            }.onFailure { error ->
+                Log.e("MainActivity", "❌ שגיאה בהרשמה: ${error.message}")
             }
-            .addOnFailureListener {
-                Log.e("Auth", "שגיאה בהתחברות: ${it.message}")
-            }
-
-        /*
-        // התחברות אנונימית אם אין משתמש
-        if (auth.currentUser == null) {
-            auth.signInAnonymously()
-                .addOnSuccessListener { result ->
-                    val uid = result.user?.uid ?: return@addOnSuccessListener
-                    Log.d("Auth", "משתמש התחבר עם UID: $uid")
-                    startAppFlow(uid)
-                }
-                .addOnFailureListener {
-                    Log.e("Auth", "שגיאה בהתחברות: ${it.message}")
-                }
-        } else {
-            val uid = auth.currentUser?.uid!!
-            Log.d("Auth", "משתמש כבר מחובר: $uid")
-            startAppFlow(uid)
         }*/
 
+        // 🔐 ניסיון התחברות
+        lifecycleScope.launch {
+            val loginResult = authRepository.loginWithEmailAndPassword(
+                email = email,
+                password = password
+            )
+
+            loginResult.onSuccess { uid ->
+                Log.d("MainActivity", "✅ התחברות הצליחה | UID: $uid")
+            }.onFailure { error ->
+                Log.e("MainActivity", "❌ שגיאה בהתחברות: ${error.message}")
+            }
+        }
 
         // UI
         enableEdgeToEdge()
@@ -125,8 +102,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startAppFlow(uid: String) {
-        val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository(BuildConfig.MAPS_API_KEY)
-        val userRepository: IUserRepository = RepositoryProvider.provideUserRepository()
 
         lifecycleScope.launch { // מאפשר לבצע קוד ברקע לצד ui ללא חסימה של ה- ui thread
             try {
@@ -185,48 +160,6 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun checkFirestoreConnection() {
-        val testRef = firestore.collection("test").document("connection_check")
-        testRef.set(mapOf("status" to "connected"))
-            .addOnSuccessListener {
-                Log.d("FirebaseCheck", "🎉 החיבור ל-Firebase Firestore תקין!")
-            }
-            .addOnFailureListener { e ->
-                Log.e("FirebaseCheck", "❌ שגיאה בחיבור ל-Firebase", e)
-            }
-    }
-
-    private fun checkGooglePlayServicesAvailability() {
-        val availability = GoogleApiAvailability.getInstance()
-        val resultCode = availability.isGooglePlayServicesAvailable(this)
-
-        if (resultCode == ConnectionResult.SUCCESS) {
-            Log.d("GooglePlayCheck", "🟢 Google Play Services זמינים.")
-        } else {
-            Log.e("GooglePlayCheck", "🔴 Google Play Services חסרים או לא זמינים. Code: $resultCode")
-            availability.getErrorDialog(this, resultCode, 9000)?.show()
-        }
-    }
-
-    private fun deleteAllUsers() {
-        val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository(BuildConfig.MAPS_API_KEY)
-        val userRepository: IUserRepository = RepositoryProvider.provideUserRepository()
-
-        lifecycleScope.launch {
-            try {
-                val usersCollection = firestore.collection("users").get().await()
-                for (document in usersCollection.documents) {
-                    val uid = document.id
-                    userRepository.deleteUser(uid, driverRepository)
-                }
-                Log.d("WePoolCleanup", "🧹 כל המשתמשים נמחקו בהצלחה.")
-            } catch (e: Exception) {
-                Log.e("WePoolCleanup", "❌ שגיאה במחיקת כל המשתמשים: ${e.message}", e)
-            }
-        }
-    }
-}
-
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
@@ -241,4 +174,5 @@ fun GreetingPreview() {
     WePoolTheme {
         Greeting("Android")
     }
+}
 }

@@ -30,6 +30,16 @@ class UserRepository(
         }
     }
 
+    // searches for all the users that are not null
+    override suspend fun getAllUsers(): List<User> {
+        return try {
+            db.collection("users").get().await().documents.mapNotNull { it.toObject(User::class.java) }
+        } catch (e: Exception) {
+            logException("getAllUsers", e)
+            emptyList()
+        }
+    }
+
     // writes an user (object) to the firestore's document with the same UID
     // if doesnt exist -> will be created, if exists -> override
     override suspend fun createOrUpdateUser(user: User) {
@@ -67,14 +77,13 @@ class UserRepository(
 
     override suspend fun deleteAllUsers(driverRepository: IDriverRepository) {
         try {
-            val usersSnapshot = usersCollection.get().await()
-            for (document in usersSnapshot.documents) {
-                val uid = document.id
-                deleteUser(uid, driverRepository)
+            val allUsers = getAllUsers() // מחזירה List<User>
+            for (user in allUsers) {
+                deleteUser(user.uid, driverRepository)
             }
-            Log.d("Firestore", "🧹 כל המשתמשים נמחקו בהצלחה")
+            Log.d("UserRepository", "🧹 כל המשתמשים נמחקו בהצלחה עם כל הנתונים המשויכים להם.")
         } catch (e: Exception) {
-            logException("deleteAllUsers", e)
+            logException("deleteAllUsersWithRoles", e)
         }
     }
 

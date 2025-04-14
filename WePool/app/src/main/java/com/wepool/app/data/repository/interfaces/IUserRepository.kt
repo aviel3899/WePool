@@ -8,6 +8,7 @@ interface IUserRepository {
     suspend fun deleteAllUsers(driverRepository: IDriverRepository)
 
     suspend fun getUser(uid: String): User?
+    suspend fun getAllUsers(): List<User>
     suspend fun getUsersByCompany(companyId: String): List<User>
     suspend fun getUsersByRole(role: String): List<User>
 
