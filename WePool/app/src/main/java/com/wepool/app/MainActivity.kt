@@ -26,19 +26,26 @@ import com.wepool.app.data.model.users.User
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.Driver
 import com.wepool.app.data.model.logic.PolylineDecoder
+import com.wepool.app.data.model.logic.RouteMatcher
 import com.wepool.app.data.repository.UserRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.DriverRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.data.remote.GoogleMapsService
+import com.google.android.gms.maps.model.LatLng
 
 
 class MainActivity : ComponentActivity() {
 
+    init {
+        RepositoryProvider.initialize(BuildConfig.MAPS_API_KEY)
+    }
+
     private val authRepository = RepositoryProvider.provideAuthRepository()
     private val userRepository: IUserRepository = RepositoryProvider.provideUserRepository()
-    private val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository(BuildConfig.MAPS_API_KEY)
+    private val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository()
+    private val mapsService = RepositoryProvider.mapsService
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -122,7 +129,7 @@ class MainActivity : ComponentActivity() {
                     Log.d("WePoolFlow", "✅ Driver חדש נשמר")
                 }
 
-                driverRepository.updatePreferredArrivalTime(user.uid, "10:00")
+                // driverRepository.updatePreferredArrivalTime(user.uid, "10:00")
 
                 // מחשבים זמן יציאה
                 val origin = GeoPoint(32.3197, 34.8535) // נחום 20 נתניה
@@ -137,6 +144,25 @@ class MainActivity : ComponentActivity() {
                 Log.d("WePoolFlow", "🟢 שעת יציאה משוערת: ${result.departureTime}")
                 Log.d("WePoolFlow", "🟢 פוליליין מוצפן: ${result.encodedPolyline}")
 
+                // 🧪 נקודת איסוף לבדיקה
+                val pickupPoint = LatLng(32.3025, 34.8602) // המחקר 3 נתניה
+                // val pickupPoint = LatLng(32.0714, 34.8125) // אידמית 12 גבעתיים
+
+                val isWithinDetour = RouteMatcher.isPickupWithinDriverDetour(
+                    encodedPolyline = result.encodedPolyline,
+                    pickupPoint = pickupPoint,
+                    maxAllowedDetourMinutes = driver.maxDetourMinutes.toDouble(),
+                    arrivalTime = driver.preferredArrivalTime!!,
+                    mapsService = mapsService
+                )
+
+                if (isWithinDetour) {
+                    Log.d("WePoolFlow", "✅ נקודת האיסוף מתאימה ונמצאת בטווח הסטייה המותר.")
+                } else {
+                    Log.d("WePoolFlow", "❌ נקודת האיסוף חורגת מהסטייה המותרת.")
+                }
+
+                /*
                 // 🧭 פענוח הפוליליין לרשימת נקודות LatLng
                 val decodedPoints = PolylineDecoder.decode(result.encodedPolyline)
                 decodedPoints.forEachIndexed { index, point ->
@@ -147,7 +173,7 @@ class MainActivity : ComponentActivity() {
                 val simplifiedPoints = PolylineDecoder.decodeAndSimplify(result.encodedPolyline)
                 simplifiedPoints.forEachIndexed { index, point ->
                     Log.d("WePoolFlow", "📍 נקודה ${index + 1}: (${point.latitude}, ${point.longitude})")
-                }
+                }*/
 
             } catch (e: Exception) {
                 Log.e("WePoolFlow", "❌ שגיאה בתהליך: ${e.message}", e)

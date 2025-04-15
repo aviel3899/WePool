@@ -14,6 +14,16 @@ object RepositoryProvider {
     private val auth by lazy { FirebaseAuth.getInstance() }
     private val firestore by lazy { FirebaseFirestore.getInstance() }
 
+    private lateinit var apiKey: String
+
+    fun initialize(apiKey: String) {
+        this.apiKey = apiKey
+    }
+
+    val mapsService: GoogleMapsService by lazy {
+        GoogleMapsService(apiKey)
+    }
+
     fun provideAuthRepository(): AuthRepository {
         return AuthRepository(auth = auth)
     }
@@ -22,10 +32,10 @@ object RepositoryProvider {
         return UserRepository(auth = auth, db = firestore)
     }
 
-    fun provideDriverRepository(apiKey: String): IDriverRepository {
-        val mapsService = GoogleMapsService(apiKey)
+    fun provideDriverRepository(): IDriverRepository {
         return DriverRepository(auth = auth, firestore = firestore, mapsService = mapsService)
     }
+
 
     //need to create PassengerRepository
 
