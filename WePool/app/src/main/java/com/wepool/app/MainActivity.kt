@@ -143,6 +143,12 @@ class MainActivity : ComponentActivity() {
                     Log.d("WePoolFlow", "📍 נקודה ${index + 1}: (${point.latitude}, ${point.longitude})")
                 }
 
+                // 🧭 פענוח + פישוט של הפוליליין לרשימת נקודות LatLng
+                val simplifiedPoints = PolylineDecoder.decodeAndSimplify(result.encodedPolyline)
+                simplifiedPoints.forEachIndexed { index, point ->
+                    Log.d("WePoolFlow", "📍 נקודה ${index + 1}: (${point.latitude}, ${point.longitude})")
+                }
+
             } catch (e: Exception) {
                 Log.e("WePoolFlow", "❌ שגיאה בתהליך: ${e.message}", e)
             }
