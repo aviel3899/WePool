@@ -27,6 +27,7 @@ import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.Driver
 import com.wepool.app.data.model.logic.PolylineDecoder
 import com.wepool.app.data.model.logic.RouteMatcher
+import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.repository.UserRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.DriverRepository
@@ -129,9 +130,19 @@ class MainActivity : ComponentActivity() {
                     Log.d("WePoolFlow", "✅ Driver חדש נשמר")
                 }
 
-                // driverRepository.updatePreferredArrivalTime(user.uid, "10:00")
+                // driverRepository.updatePreferredArrivalTime(user.uid, "22:00")
 
-                // מחשבים זמן יציאה
+                val inputAddress = "הנביאים 34 כפר סבא"
+
+                // המרה של כתובת טקסטואלית לאובייקט LocationData
+                handleAddressToLocationData(inputAddress)
+
+                val partialAddress = "בן גו"
+                // 🔍 בדיקת autocomplete על כתובת חלקית - הצעה של מקסימום 5 כתובות
+                logAddressSuggestions(partialAddress)
+
+
+                // מחשבים מקום יציאה
                 val origin = GeoPoint(32.3197, 34.8535) // נחום 20 נתניה
 
                 // 💡 שימוש בפונקציה המעודכנת שמחזירה גם polyline
@@ -146,7 +157,7 @@ class MainActivity : ComponentActivity() {
 
                 // 🧪 נקודת איסוף לבדיקה
                 val pickupPoint = LatLng(32.3025, 34.8602) // המחקר 3 נתניה
-                // val pickupPoint = LatLng(32.0714, 34.8125) // אידמית 12 גבעתיים
+                //val pickupPoint = LatLng(32.0714, 34.8125) // אידמית 12 גבעתיים
 
                 val isWithinDetour = RouteMatcher.isPickupWithinDriverDetour(
                     encodedPolyline = result.encodedPolyline,
@@ -202,6 +213,39 @@ class MainActivity : ComponentActivity() {
             preferredArrivalTime = "13:00",
             destination = GeoPoint(32.1798, 34.9133) // יעד לדוגמה: הנביאים 34 כפר סבא
         )
+    }
+
+    private fun handleAddressToLocationData(address: String) {
+        lifecycleScope.launch {
+            val locationData = mapsService.getCoordinatesFromAddress(address)
+
+            if (locationData != null) {
+                Log.d("WePoolLocation", "📍 כתובת: ${locationData.name}")
+                Log.d("WePoolLocation", "📌 קואורדינטות: ${locationData.geoPoint.latitude}, ${locationData.geoPoint.longitude}")
+                Log.d("WePoolLocation", "🆔 placeId: ${locationData.placeId}")
+
+                // ❗ לשימוש עתידי – שמירה ב־Firestore
+                // val locationRepo = RepositoryProvider.provideLocationDataRepository()
+                // locationRepo.addLocationToUser(user.uid, locationData)
+            } else {
+                Log.e("WePoolLocation", "❌ לא נמצאה כתובת מתאימה: $address")
+            }
+        }
+    }
+
+    private fun logAddressSuggestions(addressInput: String) {
+        lifecycleScope.launch {
+            val suggestions = mapsService.getAddressSuggestions(addressInput)
+
+            if (suggestions.isNotEmpty()) {
+                Log.d("WePoolAutocomplete", "📝 נמצאו ${suggestions.size} הצעות לכתובת '$addressInput'")
+                suggestions.forEachIndexed { index, suggestion ->
+                    Log.d("WePoolAutocomplete", "🔹 ${index + 1}. $suggestion")
+                }
+            } else {
+                Log.w("WePoolAutocomplete", "⚠️ לא נמצאו הצעות לכתובת '$addressInput'")
+            }
+        }
     }
 
 @Composable
