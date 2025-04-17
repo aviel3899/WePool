@@ -80,7 +80,7 @@ class GoogleMapsService(
     /**
      * ממיר כתובת טקסטואלית ל־LocationData (קואורדינטות, כתובת מילוילת ומזהה מיוחד) באמצעות Google Geocoding API.
      */
-    suspend fun getCoordinatesFromAddress(address: String): LocationData? {
+    override suspend fun getCoordinatesFromAddress(address: String): LocationData? {
         val url = buildUrl(GEOCODING_URL, mapOf(
             "address" to address,
             "key" to apiKey
@@ -113,7 +113,7 @@ class GoogleMapsService(
     /**
      * מחזירה רשימת כתובות מוצעות לפי קלט טקסטואלי.
      */
-    suspend fun getAddressSuggestions(input: String): List<String> = withContext(Dispatchers.IO) {
+    override suspend fun getAddressSuggestions(input: String): List<String> = withContext(Dispatchers.IO) {
         val url = buildUrl(AUTOCOMPLETE_URL, mapOf(
             "input" to input,
             "types" to "address",

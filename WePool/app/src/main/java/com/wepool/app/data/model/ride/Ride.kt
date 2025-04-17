@@ -12,10 +12,12 @@ data class Ride(
     val destination: GeoPoint = GeoPoint(0.0, 0.0),
     val direction: RideDirection? = null, // האם הנסיעה היא TO_WORK או TO_HOME
     val preferredArrivalTime: String? = null,
-    val departureTime: Timestamp = Timestamp.now(),
+    val departureTime: String? = null,
+    val date: String = "",
     val availableSeats: Int = 0,
     val passengers: List<String> = listOf(),
+    val maxDetourMinutes: Int = 10,
+    val encodedPolyline: String = "",
     val isRecurring: Boolean = false,
-    val notes: String? = null,
-    val maxDetourMinutes: Int = 10
+    val notes: String? = null
 )

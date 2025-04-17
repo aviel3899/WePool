@@ -24,14 +24,18 @@ import com.google.android.gms.common.GoogleApiAvailability
 import com.wepool.app.BuildConfig
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.users.Driver
 import com.wepool.app.data.model.logic.PolylineDecoder
 import com.wepool.app.data.model.logic.RouteMatcher
 import com.wepool.app.data.model.common.LocationData
+import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.repository.UserRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.DriverRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
+import com.wepool.app.data.repository.RideRepository
+import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.data.remote.GoogleMapsService
 import com.google.android.gms.maps.model.LatLng
@@ -52,6 +56,7 @@ class MainActivity : ComponentActivity() {
     private val authRepository = RepositoryProvider.provideAuthRepository()
     private val userRepository: IUserRepository = RepositoryProvider.provideUserRepository()
     private val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository()
+    private val rideRepository: IRideRepository = RepositoryProvider.provideRideRepository()
     private val mapsService = RepositoryProvider.mapsService
 
 
@@ -88,7 +93,7 @@ class MainActivity : ComponentActivity() {
         }*/
 
         // 🔐 ניסיון התחברות
-       /* lifecycleScope.launch {
+        lifecycleScope.launch {
             val loginResult = authRepository.loginWithEmailAndPassword(
                 email = email,
                 password = password
@@ -97,12 +102,13 @@ class MainActivity : ComponentActivity() {
             loginResult.onSuccess { uid ->
                 Log.d("MainActivity", "✅ התחברות הצליחה | UID: $uid")
 
-                startAppFlow(uid)
+                //deleteSingleRide()
+                createTestRide(uid)
 
             }.onFailure { error ->
                 Log.e("MainActivity", "❌ שגיאה בהתחברות: ${error.message}")
             }
-        }*/
+        }
 
         // UI
         enableEdgeToEdge()
@@ -132,86 +138,6 @@ class MainActivity : ComponentActivity() {
            }
     }
 
-   /* private fun startAppFlow(uid: String) {
-
-        lifecycleScope.launch { // מאפשר לבצע קוד ברקע לצד ui ללא חסימה של ה- ui thread
-            try {
-                // בדיקה אם המשתמש קיים
-                val existingUser = userRepository.getUser(uid)
-                val user = existingUser ?: createTestUser(uid).also {
-                    userRepository.createOrUpdateUser(it)
-                    Log.d("WePoolFlow", "✅ משתמש חדש נוצר")
-                }
-
-                // בדיקה אם יש מידע על Driver
-                val existingDriver = driverRepository.getDriver(uid)
-                val driver = existingDriver ?: createTestDriver(user).also {
-                    driverRepository.saveDriver(it)
-                    Log.d("WePoolFlow", "✅ Driver חדש נשמר")
-                }
-
-                // driverRepository.updatePreferredArrivalTime(user.uid, "22:00")
-
-                val inputAddress = "אידמית 12 גבעתיים"
-
-                // המרה של כתובת טקסטואלית לאובייקט LocationData
-                 handleAddressToLocationData(inputAddress)
-
-                val partialAddress = "נחום 20"
-
-                // 🔍 בדיקת autocomplete על כתובת חלקית - הצעה של מקסימום 5 כתובות
-                logAddressSuggestions(partialAddress)
-
-                // מחשבים מקום יציאה
-                val origin = GeoPoint(32.3197, 34.8535) // נחום 20 נתניה
-
-                // 💡 שימוש בפונקציה המעודכנת שמחזירה גם polyline
-                val result = driverRepository.calculateDepartureTimeFromArrival(
-                    origin = origin,
-                    destination = driver.destination!!,
-                    arrivalTime = driver.preferredArrivalTime!!
-                )
-
-                Log.d("WePoolFlow", "🟢 שעת יציאה משוערת: ${result.departureTime}")
-                Log.d("WePoolFlow", "🟢 פוליליין מוצפן: ${result.encodedPolyline}")
-
-                // 🧪 נקודת איסוף לבדיקה
-                val pickupPoint = LatLng(32.3025, 34.8602) // המחקר 3 נתניה
-                //val pickupPoint = LatLng(32.0714, 34.8125) // אידמית 12 גבעתיים
-
-                val isWithinDetour = RouteMatcher.isPickupWithinDriverDetour(
-                    encodedPolyline = result.encodedPolyline,
-                    pickupPoint = pickupPoint,
-                    maxAllowedDetourMinutes = driver.maxDetourMinutes.toDouble(),
-                    arrivalTime = driver.preferredArrivalTime!!,
-                    mapsService = mapsService
-                )
-
-                if (isWithinDetour) {
-                    Log.d("WePoolFlow", "✅ נקודת האיסוף מתאימה ונמצאת בטווח הסטייה המותר.")
-                } else {
-                    Log.d("WePoolFlow", "❌ נקודת האיסוף חורגת מהסטייה המותרת.")
-                }
-
-
-                // 🧭 פענוח הפוליליין לרשימת נקודות LatLng
-                val decodedPoints = PolylineDecoder.decode(result.encodedPolyline)
-                decodedPoints.forEachIndexed { index, point ->
-                    Log.d("WePoolFlow", "📍 נקודה ${index + 1}: (${point.latitude}, ${point.longitude})")
-                }
-
-                // 🧭 פענוח + פישוט של הפוליליין לרשימת נקודות LatLng
-                val simplifiedPoints = PolylineDecoder.decodeAndSimplify(result.encodedPolyline)
-                simplifiedPoints.forEachIndexed { index, point ->
-                    Log.d("WePoolFlow", "📍 נקודה ${index + 1}: (${point.latitude}, ${point.longitude})")
-                }
-
-            } catch (e: Exception) {
-                Log.e("WePoolFlow", "❌ שגיאה בתהליך: ${e.message}", e)
-            }
-        }
-    }*/
-
     private fun createTestUser(uid: String): User {
         return User(
             uid = uid,
@@ -224,16 +150,47 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    /*private fun createTestDriver(user: User): Driver {
+    private fun createTestDriver(user: User): Driver {
         return Driver(
             user = user,
-            availableSeats = 3,
             vehicleDetails = "Toyota Corolla 2022",
-            maxDetourMinutes = 10,
-            preferredArrivalTime = "13:00",
-            destination = GeoPoint(32.1798, 34.9133) // יעד לדוגמה: הנביאים 34 כפר סבא
+            activeRideId = ""
+            //destination = GeoPoint(32.1798, 34.9133) // יעד לדוגמה: הנביאים 34 כפר סבא
         )
-    }*/
+    }
+
+    private fun createTestRide(uid: String) {
+        lifecycleScope.launch {
+            val success = rideRepository.planRideFromUserInput(
+                driverId = uid,
+                companyId = "company123",
+                startAddress = "נחום 20 נתניה",
+                destinationAddress = "הנביאים 34 כפר סבא",
+                preferredArrivalTime = "09:00",
+                date = "17-04-2025",
+                direction = RideDirection.TO_WORK,
+                availableSeats = 3,
+                notes = "נסיעה לבדיקה"
+            )
+        }
+    }
+
+    private fun deleteSingleRide() {
+        lifecycleScope.launch {
+            try {
+                val rides = rideRepository.getAllRides() // או פונקציה מקבילה שמחזירה את כל הנסיעות
+                if (rides.isNotEmpty()) {
+                    val rideToDelete = rides.first()
+                    rideRepository.deleteRide(rideToDelete.rideId)
+                    Log.d("RideManagement", "✅ הנסיעה היחידה נמחקה בהצלחה (rideId: ${rideToDelete.rideId})")
+                } else {
+                    Log.d("RideManagement", "ℹ️ לא נמצאו נסיעות למחיקה")
+                }
+            } catch (e: Exception) {
+                Log.e("RideManagement", "❌ שגיאה במחיקת נסיעה: ${e.message}", e)
+            }
+        }
+    }
 
     private fun handleAddressToLocationData(address: String) {
         lifecycleScope.launch {
