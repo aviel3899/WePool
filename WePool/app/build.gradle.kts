@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.foundation.text)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -87,4 +88,6 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.maps.utils)
     implementation(libs.maps.sdk)
+    implementation(libs.navigation.compose)
+
 }

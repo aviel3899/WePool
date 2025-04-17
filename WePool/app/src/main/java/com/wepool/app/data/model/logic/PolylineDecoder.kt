@@ -49,17 +49,4 @@ object PolylineDecoder {
         val decoded = decode(encodedPolyline)
         return simplifyRoute(decoded, toleranceMeters)
     }
-
-
-     // בודק אם מיקום מסוים (currentLocation) נמצא במרחק סביר מהמסלול
-    fun isOffRoute(
-        currentLocation: LatLng,
-        route: List<LatLng>,
-        maxAllowedDeviationMeters: Double
-    ): Boolean {
-        val closestDistance = route.minOf { point ->
-            com.google.maps.android.SphericalUtil.computeDistanceBetween(currentLocation, point)
-        }
-        return closestDistance > maxAllowedDeviationMeters
-    }
 }

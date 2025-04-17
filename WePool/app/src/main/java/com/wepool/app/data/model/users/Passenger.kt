@@ -5,5 +5,5 @@ import com.google.firebase.firestore.GeoPoint
 data class Passenger(
     val user: User = User(),                             // מופע בסיסי של המשתמש
     val preferredPickupLocation: GeoPoint? = null, // מיקום איסוף מועדף (אם הוגדר)
-    val preferredArrivalTime: String = "" // זמן יציאה מועדף
+    val preferredArrivalTime: String = "" // זמן הגעה מועדף
 )

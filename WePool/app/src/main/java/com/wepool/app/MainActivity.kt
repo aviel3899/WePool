@@ -35,6 +35,12 @@ import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.data.remote.GoogleMapsService
 import com.google.android.gms.maps.model.LatLng
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.wepool.app.ui.screens.LoginScreen
+import com.wepool.app.ui.screens.SignUpScreen
+import com.wepool.app.ui.screens.RoleSelectionScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -82,7 +88,7 @@ class MainActivity : ComponentActivity() {
         }*/
 
         // 🔐 ניסיון התחברות
-        lifecycleScope.launch {
+       /* lifecycleScope.launch {
             val loginResult = authRepository.loginWithEmailAndPassword(
                 email = email,
                 password = password
@@ -96,23 +102,37 @@ class MainActivity : ComponentActivity() {
             }.onFailure { error ->
                 Log.e("MainActivity", "❌ שגיאה בהתחברות: ${error.message}")
             }
-        }
+        }*/
 
         // UI
         enableEdgeToEdge()
         setContent {
             WePoolTheme {
+                val navController = rememberNavController()
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    NavHost(
+                        navController = navController,
+                        startDestination = "login",
                         modifier = Modifier.padding(innerPadding)
-                    )
+                    ) {
+                        composable("login") {
+                            LoginScreen(navController = navController)
+                        }
+                        composable("signup") {
+                            SignUpScreen(navController = navController)
+                        }
+                        composable("roleSelection/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            RoleSelectionScreen(navController = navController, uid = uid)
+                        }
+                    }
                 }
-            }
-        }
+              }
+           }
     }
 
-    private fun startAppFlow(uid: String) {
+   /* private fun startAppFlow(uid: String) {
 
         lifecycleScope.launch { // מאפשר לבצע קוד ברקע לצד ui ללא חסימה של ה- ui thread
             try {
@@ -132,15 +152,15 @@ class MainActivity : ComponentActivity() {
 
                 // driverRepository.updatePreferredArrivalTime(user.uid, "22:00")
 
-                val inputAddress = "הנביאים 34 כפר סבא"
+                val inputAddress = "אידמית 12 גבעתיים"
 
                 // המרה של כתובת טקסטואלית לאובייקט LocationData
-                handleAddressToLocationData(inputAddress)
+                 handleAddressToLocationData(inputAddress)
 
-                val partialAddress = "בן גו"
+                val partialAddress = "נחום 20"
+
                 // 🔍 בדיקת autocomplete על כתובת חלקית - הצעה של מקסימום 5 כתובות
                 logAddressSuggestions(partialAddress)
-
 
                 // מחשבים מקום יציאה
                 val origin = GeoPoint(32.3197, 34.8535) // נחום 20 נתניה
@@ -173,7 +193,7 @@ class MainActivity : ComponentActivity() {
                     Log.d("WePoolFlow", "❌ נקודת האיסוף חורגת מהסטייה המותרת.")
                 }
 
-                /*
+
                 // 🧭 פענוח הפוליליין לרשימת נקודות LatLng
                 val decodedPoints = PolylineDecoder.decode(result.encodedPolyline)
                 decodedPoints.forEachIndexed { index, point ->
@@ -184,13 +204,13 @@ class MainActivity : ComponentActivity() {
                 val simplifiedPoints = PolylineDecoder.decodeAndSimplify(result.encodedPolyline)
                 simplifiedPoints.forEachIndexed { index, point ->
                     Log.d("WePoolFlow", "📍 נקודה ${index + 1}: (${point.latitude}, ${point.longitude})")
-                }*/
+                }
 
             } catch (e: Exception) {
                 Log.e("WePoolFlow", "❌ שגיאה בתהליך: ${e.message}", e)
             }
         }
-    }
+    }*/
 
     private fun createTestUser(uid: String): User {
         return User(
@@ -204,7 +224,7 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun createTestDriver(user: User): Driver {
+    /*private fun createTestDriver(user: User): Driver {
         return Driver(
             user = user,
             availableSeats = 3,
@@ -213,7 +233,7 @@ class MainActivity : ComponentActivity() {
             preferredArrivalTime = "13:00",
             destination = GeoPoint(32.1798, 34.9133) // יעד לדוגמה: הנביאים 34 כפר סבא
         )
-    }
+    }*/
 
     private fun handleAddressToLocationData(address: String) {
         lifecycleScope.launch {

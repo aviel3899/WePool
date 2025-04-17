@@ -1,77 +1,94 @@
 package com.wepool.app.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.wepool.app.data.model.users.User
+import com.wepool.app.infrastructure.RepositoryProvider
+import kotlinx.coroutines.launch
 
 @Composable
 fun RoleSelectionScreen(
-    user: User,
-    onRoleSelected: (String) -> Unit,
-    onCancel: () -> Unit
+    uid: String,
+    navController: NavController
 ) {
-    Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-    ) {
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Select Your Role",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
+    val userRepository = RepositoryProvider.provideUserRepository()
+    val coroutineScope = rememberCoroutineScope()
 
-            user.roles.forEach { role ->
-                Button(
-                    onClick = { onRoleSelected(role) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text(role)
-                }
+    var user by remember { mutableStateOf<User?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(uid) {
+        try {
+            Log.d("RoleSelectionScreen", "🔄 Loading user with UID: $uid")
+            val loadedUser = userRepository.getUser(uid)
+            if (loadedUser == null) {
+                error = "⚠ No user found for UID: $uid"
+            } else {
+                user = loadedUser
+                Log.d("RoleSelectionScreen", "✅ User loaded: ${loadedUser.name}")
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text("Cancel")
-            }
+        } catch (e: Exception) {
+            error = "❌ Failed to load user: ${e.message}"
+            Log.e("RoleSelectionScreen", "❌ Exception: ${e.message}", e)
+        } finally {
+            loading = false
         }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun RoleSelectionScreenPreview() {
-    val previewUser = User(
-        uid = "preview123",
-        name = "Jane Doe",
-        email = "jane@wepool.com",
-        roles = listOf("Driver", "Passenger", "HR Manager", "Admin")
-    )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Choose Your Role", style = MaterialTheme.typography.headlineSmall)
+        Spacer(modifier = Modifier.height(24.dp))
 
-    RoleSelectionScreen(
-        user = previewUser,
-        onRoleSelected = {},
-        onCancel = {}
-    )
+        when {
+            loading -> CircularProgressIndicator()
+
+            error != null -> Text(error!!, color = MaterialTheme.colorScheme.error)
+
+            user != null -> {
+                if (user!!.roles.isEmpty()) {
+                    Text("⚠ No roles assigned to this user.")
+                } else {
+                    user!!.roles.forEach { role ->
+                        Button(
+                            onClick = {
+                                Log.d("RoleSelection", "🎯 Role selected: $role")
+                                // ⬅ You can add: navController.navigate("someDestination") here
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Text(role.uppercase())
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(
+            onClick = {
+                navController.navigate("login") {
+                    popUpTo("roleSelection/$uid") { inclusive = true }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Back", color = MaterialTheme.colorScheme.error)
+            }
+      }
 }

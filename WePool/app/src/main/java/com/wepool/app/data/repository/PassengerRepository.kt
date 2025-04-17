@@ -1,9 +1,9 @@
-package com.wepool.app.data.repository.impl
+package com.wepool.app.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import com.wepool.app.data.model.users.Passenger
-import com.wepool.app.data.repository.IPassengerRepository
+import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
