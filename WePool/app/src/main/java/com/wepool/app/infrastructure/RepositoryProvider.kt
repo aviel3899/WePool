@@ -9,11 +9,13 @@ import com.wepool.app.data.repository.UserRepository
 import com.wepool.app.data.repository.AuthRepository
 import com.wepool.app.data.repository.LocationDataRepository
 import com.wepool.app.data.repository.RideRepository
+import com.wepool.app.data.repository.RideRequestRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.repository.interfaces.ILocationDataRepository
 import com.wepool.app.data.repository.interfaces.IRideRepository
+import com.wepool.app.data.repository.interfaces.IRideRequestRepository
 
 object RepositoryProvider {
 
@@ -55,6 +57,10 @@ object RepositoryProvider {
     //need to create AdminRepository
 
     fun provideRideRepository(): IRideRepository {
-        return RideRepository(firestore = firestore, mapsService = mapsService)
+        return RideRepository(firestore = firestore, mapsService = mapsService, rideRequestRepository = provideRideRequestRepository())
+    }
+
+    fun provideRideRequestRepository(): IRideRequestRepository {
+        return RideRequestRepository(firestore = firestore)
     }
 }

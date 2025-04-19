@@ -171,7 +171,6 @@ fun SignUpScreen(navController: NavController) {
         errorMessage?.let {
             Spacer(modifier = Modifier.height(16.dp))
             Text("❌ $it", color = MaterialTheme.colorScheme.error)
-           }
-       }
+            }
+        }
 }
-

@@ -65,6 +65,46 @@ class GoogleMapsService(
         )
     }
 
+    override suspend fun getDurationAndRouteWithWaypoints(
+        origin: GeoPoint,
+        waypoints: List<GeoPoint>,
+        destination: GeoPoint,
+        arrivalTime: String
+    ): DurationAndRoute = withContext(Dispatchers.IO) {
+        val originStr = "${origin.latitude},${origin.longitude}"
+        val destinationStr = "${destination.latitude},${destination.longitude}"
+        val arrivalEpochSeconds = convertTimeToEpoch(arrivalTime)
+
+        // נבנה את מחרוזת נקודות הביניים
+        val waypointStr = waypoints.joinToString("|") {
+            "${it.latitude},${it.longitude}"
+        }
+
+        val url = buildUrl(DIRECTIONS_URL, mapOf(
+            "origin" to originStr,
+            "destination" to destinationStr,
+            "waypoints" to waypointStr,
+            "arrival_time" to arrivalEpochSeconds.toString(),
+            "mode" to "driving",
+            "key" to apiKey
+        ))
+
+        val request = Request.Builder().url(url).build()
+        val response = client.newCall(request).execute()
+        val body = response.body?.string() ?: throw Exception("Empty response from Google API")
+
+        val directions = jsonParser.decodeFromString<DirectionsResponse>(body)
+        val route = directions.routes.firstOrNull()
+            ?: throw Exception("No route found")
+
+        val durationSeconds = route.legs.sumOf { it.duration.value }
+
+        return@withContext DurationAndRoute(
+            durationMinutes = durationSeconds / 60,
+            encodedPolyline = route.overview_polyline.points
+        )
+    }
+
     /**
      * ממיר מחרוזת זמן בפורמט "HH:mm" ל־Epoch Time (שניות)
      */

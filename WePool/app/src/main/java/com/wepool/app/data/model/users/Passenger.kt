@@ -1,9 +1,10 @@
 package com.wepool.app.data.model.users
 
-import com.google.firebase.firestore.GeoPoint
+import com.wepool.app.data.model.common.LocationData
 
 data class Passenger(
-    val user: User = User(),                             // מופע בסיסי של המשתמש
-    val preferredPickupLocation: GeoPoint? = null, // מיקום איסוף מועדף (אם הוגדר)
-    val preferredArrivalTime: String = "" // זמן הגעה מועדף
+    val user: User = User(),
+    val favoriteLocations: List<LocationData> = emptyList()
+    // val preferredPickupLocation: GeoPoint? = null,
+   // val preferredArrivalTime: String = ""
 )

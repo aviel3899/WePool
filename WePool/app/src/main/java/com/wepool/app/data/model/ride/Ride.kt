@@ -15,8 +15,11 @@ data class Ride(
     val departureTime: String? = null,
     val date: String = "",
     val availableSeats: Int = 0,
+    val occupiedSeats : Int = 0,
     val passengers: List<String> = listOf(),
+    val pickupStops: List<GeoPoint> = emptyList(),
     val maxDetourMinutes: Int = 10,
+    val currentDetourMinutes: Int = 0,
     val encodedPolyline: String = "",
     val isRecurring: Boolean = false,
     val notes: String? = null

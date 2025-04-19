@@ -75,7 +75,7 @@ fun LoginScreen(navController: NavController) {
                     val result = authRepository.loginWithEmailAndPassword(email, password)
                     isLoading = false
                     result.onSuccess { uid ->
-                        navController.navigate("roleSelection/$uid") {
+                        navController.navigate("intermediate/$uid") {
                             popUpTo("login") { inclusive = true }
                         }
                     }.onFailure {
@@ -117,5 +117,5 @@ fun LoginScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
             Text("❌ $it", color = MaterialTheme.colorScheme.error)
           }
-        }
+      }
 }

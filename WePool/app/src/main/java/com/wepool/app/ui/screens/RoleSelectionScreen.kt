@@ -65,7 +65,7 @@ fun RoleSelectionScreen(
                         Button(
                             onClick = {
                                 Log.d("RoleSelection", "🎯 Role selected: $role")
-                                // ⬅ You can add: navController.navigate("someDestination") here
+                                // ⬅ Add navigation based on selected role, if needed
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -78,17 +78,18 @@ fun RoleSelectionScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        TextButton(
+        // ✅ Back to Intermediate Screen
+        OutlinedButton(
             onClick = {
-                navController.navigate("login") {
+                navController.navigate("intermediate/$uid") {
                     popUpTo("roleSelection/$uid") { inclusive = true }
                 }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Back", color = MaterialTheme.colorScheme.error)
-            }
-      }
+            Text("Back")
+           }
+       }
 }

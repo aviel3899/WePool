@@ -26,6 +26,7 @@ import com.wepool.app.data.model.users.User
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.users.Driver
+import com.wepool.app.data.model.users.Passenger
 import com.wepool.app.data.model.logic.PolylineDecoder
 import com.wepool.app.data.model.logic.RouteMatcher
 import com.wepool.app.data.model.common.LocationData
@@ -34,8 +35,13 @@ import com.wepool.app.data.repository.UserRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.DriverRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
+import com.wepool.app.data.repository.PassengerRepository
+import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.repository.RideRepository
 import com.wepool.app.data.repository.interfaces.IRideRepository
+import com.wepool.app.data.repository.RideRequestRepository
+import com.wepool.app.data.repository.interfaces.IRideRequestRepository
+import com.wepool.app.data.model.logic.PassengerRideFinder
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.data.remote.GoogleMapsService
 import com.google.android.gms.maps.model.LatLng
@@ -56,7 +62,9 @@ class MainActivity : ComponentActivity() {
     private val authRepository = RepositoryProvider.provideAuthRepository()
     private val userRepository: IUserRepository = RepositoryProvider.provideUserRepository()
     private val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository()
+    private val passengerRepository: IPassengerRepository = RepositoryProvider.providePassengerRepository()
     private val rideRepository: IRideRepository = RepositoryProvider.provideRideRepository()
+    private val rideRequestRepository: IRideRequestRepository = RepositoryProvider.provideRideRequestRepository()
     private val mapsService = RepositoryProvider.mapsService
 
 
@@ -103,7 +111,19 @@ class MainActivity : ComponentActivity() {
                 Log.d("MainActivity", "✅ התחברות הצליחה | UID: $uid")
 
                 //deleteSingleRide()
-                createTestRide(uid)
+                val user = userRepository.getUser(uid)!!
+                val driver = createTestDriver(user)
+                driverRepository.saveDriver(driver)
+                val driverId = driver.user.uid
+                val passenger = createTestPassenger(user)
+                passengerRepository.savePassengerData(uid, passenger)
+                createTestRide(driverId)
+                //rideRepository.deleteRide("xQHbG3eqUrLiWLRJcLgD")
+
+                val passengerId = passenger.user.uid
+                testPassengerJoinFlow(passengerId)
+                //rideRequestRepository.deleteRequest("2Zsm2OvpUAoOWn4IptUP", "xpbsbeN5iB0IfHloMjvJ" )
+                //rideRepository.removePassengerFromRide("kDFAbfH7fQmBQ1HvxNE2", passengerId)
 
             }.onFailure { error ->
                 Log.e("MainActivity", "❌ שגיאה בהתחברות: ${error.message}")
@@ -112,7 +132,7 @@ class MainActivity : ComponentActivity() {
 
         // UI
         enableEdgeToEdge()
-        setContent {
+        /*setContent {
             WePoolTheme {
                 val navController = rememberNavController()
 
@@ -135,7 +155,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
               }
-           }
+           }*/
     }
 
     private fun createTestUser(uid: String): User {
@@ -155,7 +175,14 @@ class MainActivity : ComponentActivity() {
             user = user,
             vehicleDetails = "Toyota Corolla 2022",
             activeRideId = ""
-            //destination = GeoPoint(32.1798, 34.9133) // יעד לדוגמה: הנביאים 34 כפר סבא
+        )
+    }
+
+    private fun createTestPassenger(user: User): Passenger {
+        return Passenger(
+            user = user,
+            //preferredPickupLocation = GeoPoint(32.2913673, 34.8808613), // המחקר 3 נתניה
+           // preferredArrivalTime = "09:10"
         )
     }
 
@@ -170,24 +197,14 @@ class MainActivity : ComponentActivity() {
                 date = "17-04-2025",
                 direction = RideDirection.TO_WORK,
                 availableSeats = 3,
+                occupiedSeats  = 0,
+                maxDetourMinutes= 10,
                 notes = "נסיעה לבדיקה"
             )
-        }
-    }
-
-    private fun deleteSingleRide() {
-        lifecycleScope.launch {
-            try {
-                val rides = rideRepository.getAllRides() // או פונקציה מקבילה שמחזירה את כל הנסיעות
-                if (rides.isNotEmpty()) {
-                    val rideToDelete = rides.first()
-                    rideRepository.deleteRide(rideToDelete.rideId)
-                    Log.d("RideManagement", "✅ הנסיעה היחידה נמחקה בהצלחה (rideId: ${rideToDelete.rideId})")
-                } else {
-                    Log.d("RideManagement", "ℹ️ לא נמצאו נסיעות למחיקה")
-                }
-            } catch (e: Exception) {
-                Log.e("RideManagement", "❌ שגיאה במחיקת נסיעה: ${e.message}", e)
+            if (success) {
+                Log.d("TestRide", "✅ נסיעת בדיקה נוצרה בהצלחה")
+            } else {
+                Log.w("TestRide", "❌ הנסיעה לא נוצרה")
             }
         }
     }
@@ -225,7 +242,103 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-@Composable
+    private fun testPassengerJoinFlow(passengerId: String) {
+        lifecycleScope.launch {
+            try {
+                Log.d("TestFlow", "🚀 התחלת תהליך הצטרפות נוסע לנסיעה (passengerId=$passengerId)")
+
+                // 1. שליפת נתוני הנוסע
+                val passengerData = passengerRepository.getPassenger(passengerId)
+                if (passengerData == null) {
+                    Log.w("TestFlow", "❌ לא נמצאו נתונים עבור הנוסע")
+                    return@launch
+                }
+
+                Log.d("TestFlow", "📦 נתוני הנוסע נשלפו בהצלחה")
+
+                // 2. המרת כתובת ל־LocationData
+                val locationData = mapsService.getCoordinatesFromAddress("הנביאים 1 נתניה")
+                if (locationData == null) {
+                    Log.w("TestFlow", "❌ לא ניתן להמיר את הכתובת לקואורדינטות")
+                    return@launch
+                }
+
+                val pickupPoint = LatLng(locationData.geoPoint.latitude, locationData.geoPoint.longitude)
+                val arrivalTime = "09:00"
+                val date = "17-04-2025"
+
+                val passengerRideFinder = PassengerRideFinder(
+                    rideRepository = rideRepository,
+                    mapsService = mapsService,
+                    routeMatcher = RouteMatcher
+                )
+
+                // 4. שליפת מועמדי נסיעה מתאימים
+                val rideCandidates = passengerRideFinder.getAvailableRidesForPassenger(
+                    companyId = "company123",
+                    direction = RideDirection.TO_WORK,
+                    passengerArrivalTime = arrivalTime,
+                    passengerDate = date,
+                    pickupPoint = pickupPoint,
+                    passengerId = passengerId,
+                    rideRepository = rideRepository
+                )
+
+                if (rideCandidates.isEmpty()) {
+                    Log.d("TestFlow", "❌ לא נמצאו נסיעות זמינות לנוסע")
+                    return@launch
+                }
+
+                val selectedCandidate = rideCandidates.first()
+                val selectedRide = selectedCandidate.ride
+                Log.d("TestFlow", "🚌 נבחרה נסיעה: rideId=${selectedRide.rideId}")
+
+                // 5. שליחת בקשת הצטרפות
+                val requestSent = rideRepository.addPassengerToRide(
+                    rideId = selectedRide.rideId,
+                    passengerId = passengerId,
+                    pickupLocation = locationData.geoPoint
+                )
+
+                if (!requestSent) {
+                    Log.w("TestFlow", "⚠️ שליחת הבקשה נכשלה")
+                    return@launch
+                }
+
+                Log.d("TestFlow", "📤 בקשת הצטרפות נשלחה בהצלחה")
+
+                // 6. שליפת הבקשה ואישור
+                val requests = rideRequestRepository.getRequestsByPassenger(passengerId)
+                val matchingRequest = requests.firstOrNull { it.rideId == selectedRide.rideId }
+
+                if (matchingRequest == null) {
+                    Log.w("TestFlow", "⚠️ לא נמצאה בקשה תואמת לאישור")
+                    return@launch
+                }
+
+                Log.d("TestFlow", "📨 הבקשה נשלפה: requestId=${matchingRequest.requestId}")
+
+                val approved = rideRepository.approvePassengerRequest(
+                    candidate = selectedCandidate,
+                    requestId = matchingRequest.requestId,
+                    passengerId = passengerId
+                )
+
+                if (approved) {
+                    Log.d("TestFlow", "✅ הבקשה אושרה והנוסע נוסף לנסיעה (rideId=${selectedRide.rideId})")
+                } else {
+                    Log.w("TestFlow", "❌ הבקשה לא אושרה (אין מקום?)")
+                }
+
+            } catch (e: Exception) {
+                Log.e("TestFlow", "❌ שגיאה חריגה בתהליך ההצטרפות", e)
+            }
+        }
+    }
+
+
+
+    @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
         text = "Hello $name!",

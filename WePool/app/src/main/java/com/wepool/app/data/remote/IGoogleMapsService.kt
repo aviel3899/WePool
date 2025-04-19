@@ -15,6 +15,12 @@ interface IGoogleMapsService {
         destination: GeoPoint,
         arrivalTime: String
     ): DurationAndRoute
+    suspend fun getDurationAndRouteWithWaypoints(
+        origin: GeoPoint,
+        waypoints: List<GeoPoint>,
+        destination: GeoPoint,
+        arrivalTime: String
+    ): DurationAndRoute
     suspend fun getCoordinatesFromAddress(address: String): LocationData?
     suspend fun getAddressSuggestions(input: String): List<String>
 }
