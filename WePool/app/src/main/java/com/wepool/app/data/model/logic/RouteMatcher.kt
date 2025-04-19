@@ -205,9 +205,9 @@ object RouteMatcher {
                 Log.d("RouteMatcher", "🚗 זמן חדש: ${routeAfter.durationMinutes}, תוספת: $addedDetour, מצטבר: $totalDetour")
 
                 if (totalDetour <= maxAllowedDetourMinutes) {
-                    val totalMinutesBefore = routeAfter.durationMinutes + maxAllowedDetourMinutes
-                    //val updatedDepartureTime = rideRepository.subtractMinutesFromTime(arrivalTime, routeAfter.durationMinutes)
-                    val updatedDepartureTime = rideRepository.subtractMinutesFromTime(arrivalTime, totalMinutesBefore)
+                    //val totalMinutesBefore = routeAfter.durationMinutes + maxAllowedDetourMinutes
+                    val updatedDepartureTime = rideRepository.subtractMinutesFromTime(arrivalTime, routeAfter.durationMinutes)
+                    //val updatedDepartureTime = rideRepository.subtractMinutesFromTime(arrivalTime, totalMinutesBefore)
                     return DetourEvaluationResult(
                         isAllowed = true,
                         pickupLocation = pickupGeoPoint,

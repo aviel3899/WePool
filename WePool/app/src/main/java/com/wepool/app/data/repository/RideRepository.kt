@@ -478,6 +478,11 @@ class RideRepository(
             return@withContext false
         }
 
+        // הפחתת 10 דקות מזמן ההגעה שהמשתמש הגדיר
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
+        val adjustedArrivalTime = LocalTime.parse(preferredArrivalTime, formatter).minusMinutes(maxDetourMinutes.toLong())
+        val adjustedArrivalTimeStr = adjustedArrivalTime.format(formatter)
+
         val rideId = firestore.collection("rides").document().id
 
         val baseRide = Ride(
@@ -487,7 +492,7 @@ class RideRepository(
             startLocation = startLocation,
             destination = destination,
             direction = direction,
-            preferredArrivalTime = preferredArrivalTime,
+            preferredArrivalTime = adjustedArrivalTimeStr,
             date = date,
             availableSeats = availableSeats,
             occupiedSeats = occupiedSeats,
@@ -504,7 +509,7 @@ class RideRepository(
                 ride = baseRide,
                 origin = startLocation,
                 destination = destination,
-                arrivalTime = preferredArrivalTime
+                arrivalTime = adjustedArrivalTimeStr
             )
         } catch (e: Exception) {
             Log.e("RideLogic", "❌ שגיאה בחישוב זמן היציאה: ${e.message}", e)
@@ -530,8 +535,9 @@ class RideRepository(
         arrivalTime: String
     ): DepartureCalculationResult {
         val result = getDurationAndRouteFromGoogleApi(origin, destination, arrivalTime)
-        val totalMinutesBefore = result.durationMinutes + ride.maxDetourMinutes
-        val departureTime = subtractMinutesFromTime(arrivalTime, totalMinutesBefore)
+        //val totalMinutesBefore = result.durationMinutes + ride.maxDetourMinutes
+        //val departureTime = subtractMinutesFromTime(arrivalTime, totalMinutesBefore)
+        val departureTime = subtractMinutesFromTime(arrivalTime, result.durationMinutes)
         return DepartureCalculationResult(departureTime, result.encodedPolyline)
     }
 

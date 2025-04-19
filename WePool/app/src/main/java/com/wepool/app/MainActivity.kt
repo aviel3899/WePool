@@ -51,7 +51,9 @@ import androidx.navigation.compose.composable
 import com.wepool.app.ui.screens.LoginScreen
 import com.wepool.app.ui.screens.SignUpScreen
 import com.wepool.app.ui.screens.RoleSelectionScreen
-
+import com.wepool.app.ui.screens.IntermediateScreen
+import com.wepool.app.ui.screens.RideHistoryMenuScreen
+import com.wepool.app.ui.screens.UpdateDetailsScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -62,9 +64,11 @@ class MainActivity : ComponentActivity() {
     private val authRepository = RepositoryProvider.provideAuthRepository()
     private val userRepository: IUserRepository = RepositoryProvider.provideUserRepository()
     private val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository()
-    private val passengerRepository: IPassengerRepository = RepositoryProvider.providePassengerRepository()
+    private val passengerRepository: IPassengerRepository =
+        RepositoryProvider.providePassengerRepository()
     private val rideRepository: IRideRepository = RepositoryProvider.provideRideRepository()
-    private val rideRequestRepository: IRideRequestRepository = RepositoryProvider.provideRideRequestRepository()
+    private val rideRequestRepository: IRideRequestRepository =
+        RepositoryProvider.provideRideRequestRepository()
     private val mapsService = RepositoryProvider.mapsService
 
 
@@ -117,8 +121,8 @@ class MainActivity : ComponentActivity() {
                 val driverId = driver.user.uid
                 val passenger = createTestPassenger(user)
                 passengerRepository.savePassengerData(uid, passenger)
-                createTestRide(driverId)
-                //rideRepository.deleteRide("xQHbG3eqUrLiWLRJcLgD")
+                //createTestRide(driverId)
+                //rideRepository.deleteRide("4ISt7dyrLXr31QvybqSA")
 
                 val passengerId = passenger.user.uid
                 testPassengerJoinFlow(passengerId)
@@ -132,7 +136,7 @@ class MainActivity : ComponentActivity() {
 
         // UI
         enableEdgeToEdge()
-        /*setContent {
+        setContent {
             WePoolTheme {
                 val navController = rememberNavController()
 
@@ -149,14 +153,43 @@ class MainActivity : ComponentActivity() {
                             SignUpScreen(navController = navController)
                         }
                         composable("roleSelection/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            val uid =
+                                backStackEntry.arguments?.getString("uid") ?: return@composable
                             RoleSelectionScreen(navController = navController, uid = uid)
+                        }
+                        composable("intermediate/{uid}") { backStackEntry ->
+                            val uid =
+                                backStackEntry.arguments?.getString("uid") ?: return@composable
+                            IntermediateScreen(navController = navController, uid = uid)
+                        }
+                        composable("rideHistoryMenu/{uid}") { backStackEntry ->
+                            val uid =
+                                backStackEntry.arguments?.getString("uid") ?: return@composable
+                            RideHistoryMenuScreen(navController = navController, uid = uid)
+                        }
+
+                        composable("rideHistoryDriver/{uid}") {
+                            Text("📘 Ride History as a Driver (Placeholder)")
+                        }
+
+                        composable("rideHistoryPassenger/{uid}") {
+                            Text("📕 Ride History as a Passenger (Placeholder)")
+                        }
+
+                        composable("rideHistoryCombined/{uid}") {
+                            Text("📗 Ride History Combined (Placeholder)")
+                        }
+                        composable("updateDetails/{uid}") { backStackEntry ->
+                            val uid =
+                                backStackEntry.arguments?.getString("uid") ?: return@composable
+                            UpdateDetailsScreen(navController = navController, uid = uid)
                         }
                     }
                 }
-              }
-           }*/
+            }
+        }
     }
+
 
     private fun createTestUser(uid: String): User {
         return User(
