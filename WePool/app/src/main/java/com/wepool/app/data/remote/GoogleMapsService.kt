@@ -5,6 +5,7 @@ import com.google.firebase.firestore.GeoPoint
 import com.wepool.app.data.remote.DirectionsResponse
 import com.wepool.app.data.model.logic.DurationAndRoute
 import com.wepool.app.data.model.common.LocationData
+import com.wepool.app.data.model.enums.RideDirection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -13,6 +14,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.time.*
+import java.time.format.DateTimeFormatter
 
 class GoogleMapsService(
     private val apiKey: String // מוזן מתוך BuildConfig.MAPS_API_KEY
@@ -27,37 +29,25 @@ class GoogleMapsService(
         const val DIRECTIONS_URL = "https://maps.googleapis.com/maps/api/directions/json"
     }
 
-    /**
-     * מחשב את משך זמן הנסיעה (בדקות) בין origin ל-destination
-     * לפי זמן הגעה רצוי (arrivalTime בפורמט HH:mm)
-     */
     override suspend fun getDurationAndRouteFromGoogleApi(
         origin: GeoPoint,
         destination: GeoPoint,
-        arrivalTime: String
-    ): DurationAndRoute = withContext(Dispatchers.IO) {
-        val originStr = "${origin.latitude},${origin.longitude}"
-        val destinationStr = "${destination.latitude},${destination.longitude}"
-        val arrivalEpochSeconds = convertTimeToEpoch(arrivalTime)
+        timeReference: String,
+        date: String,
+        direction: RideDirection
+    ): DurationAndRoute = withContext(Dispatchers.IO) {;
 
-        val url = buildUrl(DIRECTIONS_URL, mapOf(
-            "origin" to originStr,
-            "destination" to destinationStr,
-            "arrival_time" to arrivalEpochSeconds.toString(),
-            "mode" to "driving",
-            "key" to apiKey
-        ))
-
-        val request = Request.Builder().url(url).build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("Empty response from Google API")
-
-        val directions = jsonParser.decodeFromString<DirectionsResponse>(body)
-        val route = directions.routes.firstOrNull()
-            ?: throw Exception("No route found")
-
-        val durationSeconds = route.legs.firstOrNull()?.duration?.value
-            ?: throw Exception("Duration not found")
+        val url = buildGoogleDirectionsUrl(
+            origin = origin,
+            destination = destination,
+            timeReference = timeReference,
+            date = date,
+            apiKey = apiKey,
+            rideDirection = direction
+        )
+        val response = fetchDirections(url)
+        val route = extractRoute(response)
+        val durationSeconds = getDurationSeconds(route, withWaypoints = false)
 
         return@withContext DurationAndRoute(
             durationMinutes = durationSeconds / 60,
@@ -69,35 +59,23 @@ class GoogleMapsService(
         origin: GeoPoint,
         waypoints: List<GeoPoint>,
         destination: GeoPoint,
-        arrivalTime: String
+        timeReference: String,
+        date: String,
+        direction: RideDirection
     ): DurationAndRoute = withContext(Dispatchers.IO) {
-        val originStr = "${origin.latitude},${origin.longitude}"
-        val destinationStr = "${destination.latitude},${destination.longitude}"
-        val arrivalEpochSeconds = convertTimeToEpoch(arrivalTime)
 
-        // נבנה את מחרוזת נקודות הביניים
-        val waypointStr = waypoints.joinToString("|") {
-            "${it.latitude},${it.longitude}"
-        }
-
-        val url = buildUrl(DIRECTIONS_URL, mapOf(
-            "origin" to originStr,
-            "destination" to destinationStr,
-            "waypoints" to waypointStr,
-            "arrival_time" to arrivalEpochSeconds.toString(),
-            "mode" to "driving",
-            "key" to apiKey
-        ))
-
-        val request = Request.Builder().url(url).build()
-        val response = client.newCall(request).execute()
-        val body = response.body?.string() ?: throw Exception("Empty response from Google API")
-
-        val directions = jsonParser.decodeFromString<DirectionsResponse>(body)
-        val route = directions.routes.firstOrNull()
-            ?: throw Exception("No route found")
-
-        val durationSeconds = route.legs.sumOf { it.duration.value }
+        val url = buildGoogleDirectionsUrl(
+            origin = origin,
+            destination = destination,
+            timeReference = timeReference,
+            date = date,
+            apiKey = apiKey,
+            waypoints = waypoints,
+            rideDirection = direction
+        )
+        val response = fetchDirections(url)
+        val route = extractRoute(response)
+        val durationSeconds = getDurationSeconds(route, withWaypoints = true)
 
         return@withContext DurationAndRoute(
             durationMinutes = durationSeconds / 60,
@@ -105,21 +83,7 @@ class GoogleMapsService(
         )
     }
 
-    /**
-     * ממיר מחרוזת זמן בפורמט "HH:mm" ל־Epoch Time (שניות)
-     */
-    private fun convertTimeToEpoch(time: String): Long {
-        val formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
-        val localTime = LocalTime.parse(time, formatter)
-        val today = LocalDate.now()
-        val dateTime = LocalDateTime.of(today, localTime)
-        val zone = ZoneId.systemDefault()
-        return dateTime.atZone(zone).toEpochSecond()
-    }
-
-    /**
-     * ממיר כתובת טקסטואלית ל־LocationData (קואורדינטות, כתובת מילוילת ומזהה מיוחד) באמצעות Google Geocoding API.
-     */
+    // ממיר כתובת טקסטואלית ל־LocationData (קואורדינטות, כתובת מילוילת ומזהה מיוחד) באמצעות Google Geocoding API.
     override suspend fun getCoordinatesFromAddress(address: String): LocationData? {
         val url = buildUrl(GEOCODING_URL, mapOf(
             "address" to address,
@@ -150,9 +114,7 @@ class GoogleMapsService(
         )
     }
 
-    /**
-     * מחזירה רשימת כתובות מוצעות לפי קלט טקסטואלי.
-     */
+   // מחזיר רשימת כתובות מוצעות לפי google autocomplete
     override suspend fun getAddressSuggestions(input: String): List<String> = withContext(Dispatchers.IO) {
         val url = buildUrl(AUTOCOMPLETE_URL, mapOf(
             "input" to input,
@@ -176,9 +138,7 @@ class GoogleMapsService(
         }
     }
 
-    /**
-     * מבצע בקשת HTTP ומחזיר את התוצאה כ־JSONObject.
-     */
+     // מבצע בקשת HTTP ומחזיר את התוצאה כ־JSONObject.
     private suspend fun getJsonFromUrl(url: String): JSONObject? = withContext(Dispatchers.IO) {
         return@withContext try {
             val request = Request.Builder().url(url).build()
@@ -191,15 +151,75 @@ class GoogleMapsService(
         }
     }
 
-    /**
-     * בונה כתובת URL מלאה עם פרמטרים מקודדים, לפי בסיס ו־Map של פרמטרים.
-     */
+    // בונה כתובת URL מלאה עם פרמטרים מקודדים, לפי בסיס ו־Map של פרמטרים.
     private fun buildUrl(base: String, params: Map<String, String>): String {
         val encodedParams = params.map { (key, value) ->
             val encodedValue = URLEncoder.encode(value, "UTF-8")
             "$key=$encodedValue"
         }.joinToString("&")
         return "$base?$encodedParams"
+    }
+
+    private fun buildGoogleDirectionsUrl(
+        origin: GeoPoint,
+        destination: GeoPoint,
+        timeReference: String,
+        date: String,
+        apiKey: String,
+        waypoints: List<GeoPoint>? = null,
+        rideDirection: RideDirection
+    ): String {
+        val originStr = "${origin.latitude},${origin.longitude}"
+        val destinationStr = "${destination.latitude},${destination.longitude}"
+        val epochSeconds = convertDateAndTimeToEpoch(timeReference, date)
+
+        val params = mutableMapOf(
+            "origin" to originStr,
+            "destination" to destinationStr,
+            "mode" to "driving",
+            "key" to apiKey
+        )
+
+        if (rideDirection == RideDirection.TO_WORK) {
+            params["arrival_time"] = epochSeconds.toString()
+        } else {
+            params["departure_time"] = epochSeconds.toString()
+        }
+
+        if (!waypoints.isNullOrEmpty()) {
+            val waypointStr = waypoints.joinToString("|") { "${it.latitude},${it.longitude}" }
+            params["waypoints"] = waypointStr
+        }
+
+        return buildUrl(DIRECTIONS_URL, params)
+    }
+
+    // ממיר מחרוזת זמן בפורמט "HH:mm" ל־Epoch Time (שניות)
+    private fun convertDateAndTimeToEpoch(time: String, date: String): Long {
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
+        val localDateTime = LocalDateTime.parse("$date $time", formatter)
+        return localDateTime.atZone(ZoneId.systemDefault()).toEpochSecond()
+    }
+
+    private suspend fun fetchDirections(url: String): DirectionsResponse = withContext(Dispatchers.IO) {
+        val request = Request.Builder().url(url).build()
+        val response = client.newCall(request).execute()
+        val body = response.body?.string() ?: throw Exception("Empty response from Google API")
+
+        return@withContext jsonParser.decodeFromString<DirectionsResponse>(body)
+    }
+
+    private fun extractRoute(response: DirectionsResponse): Route {
+        return response.routes.firstOrNull() ?: throw Exception("No route found")
+    }
+
+    private fun getDurationSeconds(route: Route, withWaypoints: Boolean): Int {
+        return if (withWaypoints) {
+            route.legs.sumOf { it.duration.value }
+        } else {
+            route.legs.firstOrNull()?.duration?.value
+                ?: throw Exception("Duration not found")
+        }
     }
 
 }

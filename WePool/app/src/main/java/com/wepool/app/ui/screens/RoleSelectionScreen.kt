@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.users.User
+import com.wepool.app.data.model.users.Passenger
 import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
 
@@ -18,6 +19,8 @@ fun RoleSelectionScreen(
     navController: NavController
 ) {
     val userRepository = RepositoryProvider.provideUserRepository()
+    val driverRepository = RepositoryProvider.provideDriverRepository()
+    val passengerRepository = RepositoryProvider.providePassengerRepository()
     val coroutineScope = rememberCoroutineScope()
 
     var user by remember { mutableStateOf<User?>(null) }
@@ -65,7 +68,32 @@ fun RoleSelectionScreen(
                         Button(
                             onClick = {
                                 Log.d("RoleSelection", "🎯 Role selected: $role")
-                                // ⬅ Add navigation based on selected role, if needed
+                                coroutineScope.launch {
+                                    when (role) {
+                                        "PASSENGER" -> {
+                                            val existing = passengerRepository.getPassenger(uid)
+                                            if (existing == null) {
+                                                passengerRepository.savePassengerData(
+                                                    uid,
+                                                    Passenger(user = user!!)
+                                                )
+                                                Log.d("RoleSelection", "✅ Passenger data created")
+                                            }
+                                            // navigate to passenger screen when available
+                                        }
+
+                                        "DRIVER" -> {
+                                            val existing = driverRepository.getDriver(uid)
+                                            if (existing == null) {
+                                                // navigate to car details input screen
+                                                navController.navigate("driverCarDetails/$uid")
+                                            } else {
+                                                // already has driver data → go to next screen
+                                                navController.navigate("createRideDirection/$uid")
+                                            }
+                                        }
+                                    }
+                                }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -80,7 +108,6 @@ fun RoleSelectionScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // ✅ Back to Intermediate Screen
         OutlinedButton(
             onClick = {
                 navController.navigate("intermediate/$uid") {
@@ -90,6 +117,6 @@ fun RoleSelectionScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Back")
-           }
-       }
+            }
+        }
 }

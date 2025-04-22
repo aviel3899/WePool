@@ -30,16 +30,10 @@ import com.wepool.app.data.model.users.Passenger
 import com.wepool.app.data.model.logic.PolylineDecoder
 import com.wepool.app.data.model.logic.RouteMatcher
 import com.wepool.app.data.model.common.LocationData
-import com.wepool.app.data.model.ride.Ride
-import com.wepool.app.data.repository.UserRepository
-import com.wepool.app.data.repository.interfaces.IUserRepository
-import com.wepool.app.data.repository.DriverRepository
-import com.wepool.app.data.repository.interfaces.IDriverRepository
-import com.wepool.app.data.repository.PassengerRepository
-import com.wepool.app.data.repository.interfaces.IPassengerRepository
-import com.wepool.app.data.repository.RideRepository
 import com.wepool.app.data.repository.interfaces.IRideRepository
-import com.wepool.app.data.repository.RideRequestRepository
+import com.wepool.app.data.repository.interfaces.IUserRepository
+import com.wepool.app.data.repository.interfaces.IDriverRepository
+import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
 import com.wepool.app.data.model.logic.PassengerRideFinder
 import com.wepool.app.infrastructure.RepositoryProvider
@@ -54,6 +48,10 @@ import com.wepool.app.ui.screens.RoleSelectionScreen
 import com.wepool.app.ui.screens.IntermediateScreen
 import com.wepool.app.ui.screens.RideHistoryMenuScreen
 import com.wepool.app.ui.screens.UpdateDetailsScreen
+import com.wepool.app.ui.screens.CreateRideDirectionScreen
+import com.wepool.app.ui.screens.DriverCarDetailsScreen
+import com.wepool.app.ui.screens.HomeboundRideCreationScreen
+import com.wepool.app.ui.screens.WorkboundRideCreationScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -105,7 +103,7 @@ class MainActivity : ComponentActivity() {
         }*/
 
         // 🔐 ניסיון התחברות
-        lifecycleScope.launch {
+        /*lifecycleScope.launch {
             val loginResult = authRepository.loginWithEmailAndPassword(
                 email = email,
                 password = password
@@ -121,18 +119,19 @@ class MainActivity : ComponentActivity() {
                 val driverId = driver.user.uid
                 val passenger = createTestPassenger(user)
                 passengerRepository.savePassengerData(uid, passenger)
-                //createTestRide(driverId)
-                //rideRepository.deleteRide("4ISt7dyrLXr31QvybqSA")
+                //createTestRideToWork(driverId)
+                //createTestRideToHome(driverId)
+                //rideRepository.deleteRide("zYqTfv7rwLtJSWPfGSuQ")
 
                 val passengerId = passenger.user.uid
-                testPassengerJoinFlow(passengerId)
+                //testPassengerJoinFlow(passengerId)
                 //rideRequestRepository.deleteRequest("2Zsm2OvpUAoOWn4IptUP", "xpbsbeN5iB0IfHloMjvJ" )
-                //rideRepository.removePassengerFromRide("kDFAbfH7fQmBQ1HvxNE2", passengerId)
+                //rideRepository.removePassengerFromRide("ISvOBxjfk173GTj27j81", passengerId)
 
             }.onFailure { error ->
                 Log.e("MainActivity", "❌ שגיאה בהתחברות: ${error.message}")
             }
-        }
+        }*/
 
         // UI
         enableEdgeToEdge()
@@ -184,6 +183,22 @@ class MainActivity : ComponentActivity() {
                                 backStackEntry.arguments?.getString("uid") ?: return@composable
                             UpdateDetailsScreen(navController = navController, uid = uid)
                         }
+                        composable("createRideDirection/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            CreateRideDirectionScreen(navController = navController, uid = uid)
+                        }
+                        composable("homeboundRide/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            HomeboundRideCreationScreen(navController = navController, uid = uid)
+                        }
+                        composable("workboundRide/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            WorkboundRideCreationScreen(navController = navController, uid = uid)
+                        }
+                        composable("driverCarDetails/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            DriverCarDetailsScreen(uid = uid, navController = navController)
+                            }
                     }
                 }
             }
@@ -219,20 +234,43 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun createTestRide(uid: String) {
+    private fun createTestRideToWork(uid: String) {
         lifecycleScope.launch {
             val success = rideRepository.planRideFromUserInput(
                 driverId = uid,
                 companyId = "company123",
                 startAddress = "נחום 20 נתניה",
                 destinationAddress = "הנביאים 34 כפר סבא",
-                preferredArrivalTime = "09:00",
-                date = "17-04-2025",
+                arrivalTime = "09:00",
+                date = "31-05-2025",
                 direction = RideDirection.TO_WORK,
                 availableSeats = 3,
                 occupiedSeats  = 0,
                 maxDetourMinutes= 10,
-                notes = "נסיעה לבדיקה"
+                notes = "נסיעה לבדיקה לכיוון העבודה"
+            )
+            if (success) {
+                Log.d("TestRide", "✅ נסיעת בדיקה נוצרה בהצלחה")
+            } else {
+                Log.w("TestRide", "❌ הנסיעה לא נוצרה")
+            }
+        }
+    }
+
+    private fun createTestRideToHome(uid: String) {
+        lifecycleScope.launch {
+            val success = rideRepository.planRideFromUserInput(
+                driverId = uid,
+                companyId = "company123",
+                startAddress = "הנביאים 34 כפר סבא",
+                destinationAddress = "נחום 20 נתניה",
+                departureTime = "09:00",
+                date = "31-05-2025",
+                direction = RideDirection.TO_HOME,
+                availableSeats = 3,
+                occupiedSeats  = 0,
+                maxDetourMinutes= 10,
+                notes = "נסיעה לבדיקה לכיוון הביתה"
             )
             if (success) {
                 Log.d("TestRide", "✅ נסיעת בדיקה נוצרה בהצלחה")
@@ -290,7 +328,8 @@ class MainActivity : ComponentActivity() {
                 Log.d("TestFlow", "📦 נתוני הנוסע נשלפו בהצלחה")
 
                 // 2. המרת כתובת ל־LocationData
-                val locationData = mapsService.getCoordinatesFromAddress("הנביאים 1 נתניה")
+                //val locationData = mapsService.getCoordinatesFromAddress("הנביאים 1 נתניה")
+                val locationData = mapsService.getCoordinatesFromAddress("המחקר 3 נתניה")
                 if (locationData == null) {
                     Log.w("TestFlow", "❌ לא ניתן להמיר את הכתובת לקואורדינטות")
                     return@launch
@@ -298,7 +337,8 @@ class MainActivity : ComponentActivity() {
 
                 val pickupPoint = LatLng(locationData.geoPoint.latitude, locationData.geoPoint.longitude)
                 val arrivalTime = "09:00"
-                val date = "17-04-2025"
+                val departureTime = "09:00"
+                val date = "31-05-2025"
 
                 val passengerRideFinder = PassengerRideFinder(
                     rideRepository = rideRepository,
@@ -309,8 +349,10 @@ class MainActivity : ComponentActivity() {
                 // 4. שליפת מועמדי נסיעה מתאימים
                 val rideCandidates = passengerRideFinder.getAvailableRidesForPassenger(
                     companyId = "company123",
-                    direction = RideDirection.TO_WORK,
+                    direction = RideDirection.TO_HOME,
+                    //direction = RideDirection.TO_WORK,
                     passengerArrivalTime = arrivalTime,
+                    passengerDepartureTime = departureTime,
                     passengerDate = date,
                     pickupPoint = pickupPoint,
                     passengerId = passengerId,

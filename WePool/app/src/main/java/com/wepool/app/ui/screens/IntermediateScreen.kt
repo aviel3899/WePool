@@ -68,5 +68,5 @@ fun IntermediateScreen(navController: NavController, uid: String) {
         ) {
             Text("Cancel", color = MaterialTheme.colorScheme.error)
             }
-       }
+      }
 }

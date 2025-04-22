@@ -19,8 +19,12 @@ import com.wepool.app.data.model.logic.RouteMatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.sql.Time
+import kotlin.math.abs
+import java.time.Duration
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+
 
 class RideRepository(
     private val firestore: FirebaseFirestore,
@@ -29,9 +33,6 @@ class RideRepository(
 ) : IRideRepository {
 
     private val rideCollection = firestore.collection("rides")
-
-    //private val maxArrivalTimeDifferenceMinutes = 30L
-   // private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     override suspend fun createRide(ride: Ride) {
         rideCollection.document(ride.rideId).set(ride).await()
@@ -57,15 +58,6 @@ class RideRepository(
         return@withContext snapshot.toObjects(Ride::class.java)
     }
 
-    // בודק אם הנוסע מגיע אחרי הנהג או באותו זמן, ולא יותר מ־X דקות אחריו
-   /* private fun isArrivalTimeValid(driverTime: String, passengerTime: String): Boolean {
-        val driver = LocalTime.parse(driverTime, timeFormatter)
-        val passenger = LocalTime.parse(passengerTime, timeFormatter)
-
-        return !passenger.isBefore(driver) &&
-                passenger.isBefore(driver.plusMinutes(maxArrivalTimeDifferenceMinutes))
-    }*/
-
     override suspend fun getRidesByCompanyAndDirection(companyId: String, direction: RideDirection): List<Ride> {
         return rideCollection
             .whereEqualTo("companyId", companyId)
@@ -74,49 +66,6 @@ class RideRepository(
             .await()
             .toObjects(Ride::class.java)
     }
-
-    // מחזיר את כל הנסיעות האפשריות לנוסע
-   /* override suspend fun getAvailableRidesForPassenger(
-        companyId: String,
-        direction: String,
-        passengerArrivalTime: String,
-        pickupPoint: LatLng,
-        passengerId: String,
-        mapsService: IGoogleMapsService,
-        routeMatcher: RouteMatcher
-    ): List<Ride> = withContext(Dispatchers.IO) {
-
-        val allRides = rideCollection
-            .whereEqualTo("companyId", companyId)
-            .whereEqualTo("direction", direction)
-            .get()
-            .await()
-            .toObjects(Ride::class.java)
-
-        val filtered = allRides.filter { ride ->
-            val timeOK = isArrivalTimeValid(ride.preferredArrivalTime!!, passengerArrivalTime)
-            val seatOK = ride.occupiedSeats < ride.availableSeats
-            val notAlreadyJoined = !ride.passengers.contains(passengerId)
-
-            val detourOK = routeMatcher.isPickupWithinDriverDetour(
-                encodedPolyline = ride.encodedPolyline,
-                pickupPoint = pickupPoint,
-                maxAllowedDetourMinutes = ride.maxDetourMinutes.toDouble(),
-                arrivalTime = ride.preferredArrivalTime,
-                mapsService = mapsService
-            )
-
-            if (!timeOK) Log.d("RideFilter", "❌ זמן לא מתאים (rideId=${ride.rideId})")
-            if (!seatOK) Log.d("RideFilter", "❌ אין מקום פנוי (rideId=${ride.rideId})")
-            if (!notAlreadyJoined) Log.d("RideFilter", "❌ הנוסע כבר חלק מהנסיעה (rideId=${ride.rideId})")
-            if (!detourOK) Log.d("RideFilter", "❌ סטייה לא חוקית (rideId=${ride.rideId})")
-
-            timeOK && seatOK && detourOK && notAlreadyJoined
-        }
-
-        Log.d("RideFilter", "✅ נמצאו ${filtered.size} נסיעות מתאימות לנוסע")
-        return@withContext filtered
-    }*/
 
     override suspend fun addPassengerToRide(
         rideId: String,
@@ -160,14 +109,28 @@ class RideRepository(
 
                 val pickupLocation = request.pickupLocation ?: return@runTransaction false
 
-                val updatedRide = currentRide.copy(
-                    passengers = currentRide.passengers + passengerId,
-                    occupiedSeats = currentRide.occupiedSeats + 1,
-                    currentDetourMinutes = currentRide.currentDetourMinutes + detour.addedDetourMinutes,
-                    encodedPolyline = detour.encodedPolyline ?: currentRide.encodedPolyline,
-                    pickupStops = currentRide.pickupStops + pickupLocation,
-                    departureTime = detour.updatedDepartureTime ?: currentRide.departureTime
-                )
+                val updatedRide: Ride
+                if(ride.direction == RideDirection.TO_WORK) {
+                    updatedRide = currentRide.copy(
+                        passengers = currentRide.passengers + passengerId,
+                        occupiedSeats = currentRide.occupiedSeats + 1,
+                        currentDetourMinutes = currentRide.currentDetourMinutes + detour.addedDetourMinutes,
+                        encodedPolyline = detour.encodedPolyline ?: currentRide.encodedPolyline,
+                        pickupStops = currentRide.pickupStops + pickupLocation,
+                        //departureTime = detour.updatedDepartureTime ?: currentRide.departureTime
+                        departureTime = detour.updatedReferenceTime ?: currentRide.departureTime
+                    )
+                } else{
+                    updatedRide = currentRide.copy(
+                        passengers = currentRide.passengers + passengerId,
+                        occupiedSeats = currentRide.occupiedSeats + 1,
+                        currentDetourMinutes = currentRide.currentDetourMinutes + detour.addedDetourMinutes,
+                        encodedPolyline = detour.encodedPolyline ?: currentRide.encodedPolyline,
+                        pickupStops = currentRide.pickupStops + pickupLocation,
+                        //departureTime = detour.updatedDepartureTime ?: currentRide.departureTime
+                        arrivalTime = detour.updatedReferenceTime ?: currentRide.arrivalTime
+                    )
+                }
 
                 tx.set(rideRef, updatedRide)
 
@@ -296,34 +259,68 @@ class RideRepository(
         val pickupToRemove = getPickupLocationFromRequest(ride.rideId, passengerId)
         val updatedPickupStops = ride.pickupStops.filterNot { it == pickupToRemove }
 
+        val timeFlag: Boolean
+        val timeReference = if(ride.direction == RideDirection.TO_WORK){
+            timeFlag = true
+            ride.arrivalTime
+        } else {
+            timeFlag = false
+            ride.departureTime
+        }
+
         val route = if (updatedPickupStops.isNotEmpty()) {
             mapsService.getDurationAndRouteWithWaypoints(
                 origin = ride.startLocation,
                 waypoints = updatedPickupStops,
                 destination = ride.destination,
-                arrivalTime = ride.preferredArrivalTime ?: ""
+                timeReference = timeReference!!,
+                date = ride.date,
+                direction = ride.direction!!,
             )
         } else {
             mapsService.getDurationAndRouteFromGoogleApi(
                 origin = ride.startLocation,
                 destination = ride.destination,
-                arrivalTime = ride.preferredArrivalTime ?: ""
+                timeReference = timeReference!!,
+                date = ride.date,
+                direction = ride.direction!!,
             )
         }
 
-        val updatedDeparture = subtractMinutesFromTime(
-            time = ride.preferredArrivalTime ?: "",
-            minutes = route.durationMinutes
+        val updatedTimeReference = adjustTimeAccordingToDirection(
+            time = timeReference,
+            minutes = route.durationMinutes,
+            direction = ride.direction
         )
 
-        return ride.copy(
+        val previousDetourMinutes = calculateTimeDifferenceInMinutes(ride.arrivalTime!!, ride.departureTime!!)
+        Log.d("RideUpdate", "📏 סטייה קודמת: $previousDetourMinutes דקות (arrival=${ride.arrivalTime}, departure=${ride.departureTime})")
+
+        val newDetourMinutes: Int
+        if(timeFlag){
+            newDetourMinutes = calculateTimeDifferenceInMinutes(ride.departureTime, updatedTimeReference)
+        } else{
+            newDetourMinutes = calculateTimeDifferenceInMinutes(ride.arrivalTime, updatedTimeReference)
+        }
+        Log.d("RideUpdate", "📏 סטייה נוכחית חדשה: $newDetourMinutes דקות (arrival=${ride.arrivalTime}, new departure=$updatedTimeReference)")
+
+        Log.d("RideDebug", "📏 סטייה נוכחית מהמסלול: ${ride.currentDetourMinutes} דקות")
+        val updatedDetourMinutes = ride.currentDetourMinutes - newDetourMinutes
+        Log.d("RideUpdate", "🔁 עדכון סטייה: קודם ${ride.currentDetourMinutes}, נוכחית $newDetourMinutes → לאחר העדכון: $updatedDetourMinutes")
+
+        val baseUpdatedRide = ride.copy(
             passengers = updatedPassengers,
             occupiedSeats = updatedOccupiedSeats,
             pickupStops = updatedPickupStops,
             encodedPolyline = route.encodedPolyline,
-            currentDetourMinutes = route.durationMinutes,
-            departureTime = updatedDeparture
+            currentDetourMinutes = updatedDetourMinutes
         )
+
+        return if (ride.direction == RideDirection.TO_WORK) {
+            baseUpdatedRide.copy(departureTime = updatedTimeReference)
+        } else {
+            baseUpdatedRide.copy(arrivalTime = updatedTimeReference)
+        }
     }
 
     private suspend fun getPickupLocationFromRequest(
@@ -378,6 +375,7 @@ class RideRepository(
                 return@withContext
             }
 
+            // מחיקת כל הנוסעים מהנסיעה
             if (ride.passengers.isNotEmpty()) {
                 Log.d("RideDelete", "🔁 התחלת הסרת ${ride.passengers.size} נוסעים מהנסיעה")
 
@@ -410,10 +408,10 @@ class RideRepository(
             .await()
     }
 
-    override suspend fun updatePreferredArrivalTime(rideId: String, time: String) {
+    override suspend fun updateArrivalTime(rideId: String, time: String) {
         firestore.collection("rides")
             .document(rideId)
-            .update("preferredArrivalTime", time)
+            .update("arrivalTime", time)
             .await()
     }
 
@@ -450,7 +448,8 @@ class RideRepository(
         companyId: String,
         startAddress: String,
         destinationAddress: String,
-        preferredArrivalTime: String,
+        arrivalTime: String,
+        departureTime: String,
         date: String,
         direction: RideDirection,
         availableSeats: Int,
@@ -461,7 +460,7 @@ class RideRepository(
         val existingRides = getRidesByDriver(driverId)
         val alreadyExists = existingRides.any {
             it.direction == direction &&
-                    it.preferredArrivalTime == preferredArrivalTime &&
+                    it.arrivalTime == arrivalTime &&
                     it.date == date
         }
 
@@ -478,10 +477,17 @@ class RideRepository(
             return@withContext false
         }
 
-        // הפחתת 10 דקות מזמן ההגעה שהמשתמש הגדיר
         val formatter = DateTimeFormatter.ofPattern("HH:mm")
-        val adjustedArrivalTime = LocalTime.parse(preferredArrivalTime, formatter).minusMinutes(maxDetourMinutes.toLong())
-        val adjustedArrivalTimeStr = adjustedArrivalTime.format(formatter)
+
+        var adjustedArrivalTimeStr = arrivalTime // ברירת מחדל – לא משתנה אם הכיוון אינו TO_WORK
+
+        if (direction == RideDirection.TO_WORK) {
+            val adjustedArrivalTime = LocalTime
+                .parse(arrivalTime, formatter)
+                .minusMinutes(maxDetourMinutes.toLong())
+
+            adjustedArrivalTimeStr = adjustedArrivalTime.format(formatter)
+        }
 
         val rideId = firestore.collection("rides").document().id
 
@@ -492,7 +498,8 @@ class RideRepository(
             startLocation = startLocation,
             destination = destination,
             direction = direction,
-            preferredArrivalTime = adjustedArrivalTimeStr,
+            arrivalTime = adjustedArrivalTimeStr,
+            departureTime = departureTime.format(formatter),
             date = date,
             availableSeats = availableSeats,
             occupiedSeats = occupiedSeats,
@@ -504,19 +511,30 @@ class RideRepository(
             notes = notes
         )
 
+        val timeReference = if (direction == RideDirection.TO_WORK) {
+            adjustedArrivalTimeStr
+        } else {
+            departureTime
+        }
+
         val result = try {
             calculateRideDepartureTime(
                 ride = baseRide,
                 origin = startLocation,
                 destination = destination,
-                arrivalTime = adjustedArrivalTimeStr
+                timeReference = timeReference,
+                date = date
             )
         } catch (e: Exception) {
-            Log.e("RideLogic", "❌ שגיאה בחישוב זמן היציאה: ${e.message}", e)
+            if(direction == RideDirection.TO_WORK)
+                Log.e("RideLogic", "❌ שגיאה בחישוב זמן היציאה: ${e.message}", e)
+            else
+                Log.e("RideLogic", "❌ שגיאה בחישוב זמן הההגעה: ${e.message}", e)
             return@withContext false
         }
 
         val finalizedRide = baseRide.copy(
+            arrivalTime = result.arrivalTime,
             departureTime = result.departureTime,
             encodedPolyline = result.encodedPolyline
         )
@@ -532,27 +550,46 @@ class RideRepository(
         ride: Ride,
         origin: GeoPoint,
         destination: GeoPoint,
-        arrivalTime: String
+        timeReference: String,
+        date: String
     ): DepartureCalculationResult {
-        val result = getDurationAndRouteFromGoogleApi(origin, destination, arrivalTime)
-        //val totalMinutesBefore = result.durationMinutes + ride.maxDetourMinutes
-        //val departureTime = subtractMinutesFromTime(arrivalTime, totalMinutesBefore)
-        val departureTime = subtractMinutesFromTime(arrivalTime, result.durationMinutes)
-        return DepartureCalculationResult(departureTime, result.encodedPolyline)
+        val result = getDurationAndRouteFromGoogleApi(origin, destination, timeReference, date,  ride.direction!!)
+        val timeInHours = adjustTimeAccordingToDirection(
+            time = timeReference,
+            minutes = result.durationMinutes,
+            direction = ride.direction
+        )
+        if(ride.direction == RideDirection.TO_WORK)
+            return DepartureCalculationResult(timeInHours, timeReference ,result.encodedPolyline)
+        else
+            return DepartureCalculationResult(timeReference, timeInHours ,result.encodedPolyline)
     }
 
     private suspend fun getDurationAndRouteFromGoogleApi(
         origin: GeoPoint,
         destination: GeoPoint,
-        arrivalTime: String
+        timeReference: String,
+        date: String,
+        direction: RideDirection
     ): DurationAndRoute {
-        return mapsService.getDurationAndRouteFromGoogleApi(origin, destination, arrivalTime)
+        return mapsService.getDurationAndRouteFromGoogleApi(origin, destination, timeReference, date, direction)
     }
 
-    override suspend fun subtractMinutesFromTime(time: String, minutes: Int): String {
+    override suspend fun adjustTimeAccordingToDirection(time: String, minutes: Int, direction: RideDirection): String {
         val formatter = DateTimeFormatter.ofPattern("HH:mm") // הגדרת פורמט זמן
         val localTime = LocalTime.parse(time, formatter) // הופך את המחרוזת של time לאובייקט מסוג localTime
-        val adjustedTime = localTime.minusMinutes(minutes.toLong()) // מפחית את כמות הדקות מהשעה המקורית
-        return adjustedTime.format(formatter) // מחזיר את השעה החדשה כמחרוזת בפורמט "HH:mm"
+        val adjustedTime = when (direction) {
+            RideDirection.TO_WORK -> localTime.minusMinutes(minutes.toLong())
+            RideDirection.TO_HOME -> localTime.plusMinutes(minutes.toLong())
+        }
+        return adjustedTime.format(formatter)
+    }
+
+    private suspend fun calculateTimeDifferenceInMinutes(startTime: String, endTime: String): Int {
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
+        val start = LocalTime.parse(startTime, formatter)
+        val end = LocalTime.parse(endTime, formatter)
+
+        return abs(Duration.between(start, end).toMinutes().toInt())
     }
 }

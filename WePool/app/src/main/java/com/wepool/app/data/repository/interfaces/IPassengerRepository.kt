@@ -10,6 +10,7 @@ interface IPassengerRepository {
     suspend fun savePassengerData(uid: String, passenger: Passenger)
     suspend fun addFavoriteLocation(uid: String, location: LocationData)
     suspend fun removeFavoriteLocation(uid: String, placeId: String)
+    suspend fun deletePassenger(uid:String)
     //suspend fun updatePreferredPickupLocation(uid: String, location: GeoPoint)
   //  suspend fun updatePreferredArrivalTime(uid: String, arrivalTime: String)
 

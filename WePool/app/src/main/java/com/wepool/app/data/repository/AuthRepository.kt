@@ -13,7 +13,6 @@ class AuthRepository(
 ) {
 
      // התחברות עם מייל וסיסמה
-
     suspend fun loginWithEmailAndPassword(email: String, password: String): Result<String> {
         return try {
             val result: AuthResult = auth.signInWithEmailAndPassword(email, password).await()

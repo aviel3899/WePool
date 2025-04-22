@@ -63,5 +63,5 @@ fun RideHistoryMenuScreen(navController: NavController, uid: String) {
         ) {
             Text("Back")
             }
-       }
+        }
 }

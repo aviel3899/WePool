@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
+import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.model.users.Driver
 import kotlinx.coroutines.tasks.await
@@ -51,7 +52,7 @@ class UserRepository(
     }
 
     // deletes an user
-    override suspend fun deleteUser(uid: String, driverRepository: IDriverRepository) {
+    override suspend fun deleteUser(uid: String, driverRepository: IDriverRepository, passengerRepository: IPassengerRepository) {
         try {
             val userSnapshot = usersCollection.document(uid).get().await()
             val user = userSnapshot.toObject(User::class.java) ?: return
@@ -60,7 +61,7 @@ class UserRepository(
             user.roles.forEach { role ->
                 when (role) {
                     "DRIVER" -> driverRepository.deleteDriver(uid)
-                    // "PASSENGER" -> passengerRepository.deletePassenger(uid)
+                    "PASSENGER" -> passengerRepository.deletePassenger(uid)
                     // תוסיף תפקידים נוספים במידת הצורך
                 }
             }
@@ -75,11 +76,11 @@ class UserRepository(
         }
     }
 
-    override suspend fun deleteAllUsers(driverRepository: IDriverRepository) {
+    override suspend fun deleteAllUsers(driverRepository: IDriverRepository, passengerRepository: IPassengerRepository) {
         try {
             val allUsers = getAllUsers() // מחזירה List<User>
             for (user in allUsers) {
-                deleteUser(user.uid, driverRepository)
+                deleteUser(user.uid, driverRepository, passengerRepository)
             }
             Log.d("UserRepository", "🧹 כל המשתמשים נמחקו בהצלחה עם כל הנתונים המשויכים להם.")
         } catch (e: Exception) {

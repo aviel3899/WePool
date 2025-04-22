@@ -7,5 +7,5 @@ data class DetourEvaluationResult(
     val pickupLocation: GeoPoint? = null,
     val encodedPolyline: String? = null,
     val addedDetourMinutes: Int = 0,
-    val updatedDepartureTime: String? = null
+    val updatedReferenceTime: String? = null, //TO_WORK - departure time, TO_HOME - arrival time
 )

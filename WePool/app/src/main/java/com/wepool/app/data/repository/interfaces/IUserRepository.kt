@@ -4,8 +4,8 @@ import com.wepool.app.data.model.users.User
 
 interface IUserRepository {
     suspend fun createOrUpdateUser(user: User)
-    suspend fun deleteUser(uid: String, driverRepository: IDriverRepository)
-    suspend fun deleteAllUsers(driverRepository: IDriverRepository)
+    suspend fun deleteUser(uid: String, driverRepository: IDriverRepository, passengerRepository: IPassengerRepository)
+    suspend fun deleteAllUsers(driverRepository: IDriverRepository, passengerRepository: IPassengerRepository)
 
     suspend fun getUser(uid: String): User?
     suspend fun getAllUsers(): List<User>

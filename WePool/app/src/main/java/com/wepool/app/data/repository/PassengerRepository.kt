@@ -65,6 +65,15 @@ class PassengerRepository(
         }
     }
 
+    override suspend fun deletePassenger(uid: String) {
+        firestore.collection("users")
+            .document(uid)
+            .collection("passengerData")
+            .document("info")
+            .delete()
+            .await()
+        }
+
       // מעדכן את מיקום האיסוף המועדף של הנוסע במסמך
     /*override suspend fun updatePreferredPickupLocation(uid: String, location: GeoPoint)  {
         firestore.collection("users")

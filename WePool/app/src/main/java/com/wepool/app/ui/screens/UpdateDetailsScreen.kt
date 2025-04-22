@@ -11,6 +11,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.users.Driver
+import com.wepool.app.data.model.users.Passenger
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -23,16 +25,18 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
 
     val coroutineScope = rememberCoroutineScope()
     val userRepository = RepositoryProvider.provideUserRepository()
+    val driverRepository = RepositoryProvider.provideDriverRepository()
+    val passengerRepository = RepositoryProvider.providePassengerRepository()
     val auth = FirebaseAuth.getInstance()
 
     var user by remember { mutableStateOf<User?>(null) }
     var phoneNumber by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var selectedRoles by remember { mutableStateOf(setOf<String>()) }
+    var originalRoles by remember { mutableStateOf(setOf<String>()) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Load current user data
     LaunchedEffect(uid) {
         try {
             val loadedUser = userRepository.getUser(uid)
@@ -40,6 +44,7 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                 user = loadedUser
                 phoneNumber = loadedUser.phoneNumber ?: ""
                 selectedRoles = loadedUser.roles.toSet()
+                originalRoles = loadedUser.roles.toSet()
             }
         } catch (e: Exception) {
             errorMessage = "Error loading user: ${e.message}"
@@ -107,7 +112,34 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
             onClick = {
                 coroutineScope.launch {
                     try {
-                        // 1. Update Firestore
+                        val removedRoles = originalRoles - selectedRoles
+                        val addedRoles = selectedRoles - originalRoles
+
+                        // Delete subcollections if needed
+                        if ("DRIVER" in removedRoles) {
+                            val exists = driverRepository.getDriver(uid)
+                            if (exists != null) {
+                                driverRepository.deleteDriver(uid)
+                            }
+                        }
+                        if ("PASSENGER" in removedRoles) {
+                            val exists = passengerRepository.getPassenger(uid)
+                            if (exists != null) {
+                                passengerRepository.deletePassenger(uid)
+                            }
+                        }
+
+                        // Create subcollections if added
+                        if ("DRIVER" in addedRoles) {
+                            val driver = Driver(user = user!!)
+                            driverRepository.saveDriver(driver)
+                        }
+                        if ("PASSENGER" in addedRoles) {
+                            val passenger = Passenger(user = user!!)
+                            passengerRepository.savePassengerData(uid, passenger)
+                        }
+
+                        // Update user data
                         user?.let {
                             val updatedUser = it.copy(
                                 phoneNumber = phoneNumber,
@@ -116,13 +148,13 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                             userRepository.createOrUpdateUser(updatedUser)
                         }
 
-                        // 2. Update Password (if entered)
+                        // Update password if needed
                         if (newPassword.isNotBlank()) {
                             auth.currentUser?.updatePassword(newPassword)
                         }
-
-                        // 3. Close app
-                        activity?.finishAffinity()
+                        navController.navigate("intermediate/$uid") {
+                            popUpTo("updateDetails/$uid") { inclusive = true }
+                        }
                     } catch (e: Exception) {
                         errorMessage = "Update failed: ${e.message}"
                     }
@@ -152,4 +184,3 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
            }
        }
 }
-

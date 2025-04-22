@@ -11,7 +11,7 @@ data class Ride(
     val startLocation: GeoPoint = GeoPoint(0.0, 0.0),
     val destination: GeoPoint = GeoPoint(0.0, 0.0),
     val direction: RideDirection? = null, // האם הנסיעה היא TO_WORK או TO_HOME
-    val preferredArrivalTime: String? = null,
+    val arrivalTime: String? = null,
     val departureTime: String? = null,
     val date: String = "",
     val availableSeats: Int = 0,
