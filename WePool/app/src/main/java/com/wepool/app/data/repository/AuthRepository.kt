@@ -58,7 +58,7 @@ class AuthRepository(
             val authResult = auth.createUserWithEmailAndPassword(email, password).await()
             val uid = authResult.user?.uid ?: return Result.failure(Exception("UID לא נוצר"))
 
-            val newUser = user.copy(uid = uid, email = email)
+            val newUser = user.copy(uid = uid, email = email, companyCode = user.companyCode)
             userRepository.createOrUpdateUser(newUser)
 
             Log.d("AuthRepository", "🟢 הרשמה הצליחה | UID: $uid")

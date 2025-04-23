@@ -7,7 +7,7 @@ data class User(
     val name: String = "",
     val email: String = "",
     val phoneNumber: String = "",
-    val companyId: String = "",
+    val companyCode: String = "",
     val isBanned: Boolean = false,
     val isActive: Boolean = true,
     val roles: List<String> = emptyList()

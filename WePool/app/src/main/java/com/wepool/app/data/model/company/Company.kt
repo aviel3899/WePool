@@ -5,11 +5,11 @@ import com.wepool.app.data.model.common.LocationData
 
 data class Company(
     val companyId: String = "",
+    val companyCode: String = "",
     val companyName: String = "",
-    val domain: String = "", // דומיין האימייל של החברה, לדוגמה: afeka.ac.il - משמש לוודא שכתובת המייל של המשתמש תואמת לארגון
     val location: LocationData? = null,
     val logoUrl: String? = null, // קישור ללוגו של החברה, לשימוש בעתיד בממשק משתמש
-    val active: Boolean = true, // האם החברה םעילה
+    val active: Boolean = true, // האם החברה פעילה
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp? = null,
     val employees: List<String> = emptyList(),

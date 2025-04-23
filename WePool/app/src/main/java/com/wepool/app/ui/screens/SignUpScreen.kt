@@ -137,7 +137,7 @@ fun SignUpScreen(navController: NavController) {
                         name = name,
                         email = email,
                         phoneNumber = phoneNumber,
-                        companyId = "",
+                        companyCode = "",
                         isBanned = false,
                         roles = chosenRoles
                     )

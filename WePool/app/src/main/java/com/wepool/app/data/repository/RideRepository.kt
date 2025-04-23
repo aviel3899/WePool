@@ -60,7 +60,7 @@ class RideRepository(
 
     override suspend fun getRidesByCompanyAndDirection(companyId: String, direction: RideDirection): List<Ride> {
         return rideCollection
-            .whereEqualTo("companyId", companyId)
+            .whereEqualTo("companyId", companyCode)
             .whereEqualTo("direction", direction)
             .get()
             .await()

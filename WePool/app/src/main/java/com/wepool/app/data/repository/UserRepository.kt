@@ -2,14 +2,12 @@ package com.wepool.app.data.repository
 
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.model.users.User
-import com.wepool.app.data.model.users.Driver
 import kotlinx.coroutines.tasks.await
 
 class UserRepository(
@@ -90,10 +88,10 @@ class UserRepository(
 
     // makes a query where all the users with the same companyID
     // return a list of user objects with the same companyID
-    override suspend fun getUsersByCompany(companyId: String): List<User> {
+    override suspend fun getUsersByCompany(companyCode: String): List<User> {
         return try {
             usersCollection
-                .whereEqualTo("companyId", companyId)
+                .whereEqualTo("companyCode", companyCode)
                 .get()
                 .await()
                 .documents
@@ -148,9 +146,9 @@ class UserRepository(
     }
 
     // if user exists -> updates only his companyID
-    override suspend fun updateUserCompanyId(uid: String, newCompanyId: String?) {
+    override suspend fun updateUserCompanyCode(uid: String, newCompanyCode: String?) {
         try {
-            usersCollection.document(uid).update("companyId", newCompanyId).await()
+            usersCollection.document(uid).update("companyId", newCompanyCode).await()
         } catch (e: Exception) {
             logException("updateUserCompanyId", e)
         }

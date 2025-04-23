@@ -5,7 +5,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.wepool.app.data.model.company.Company
 import com.wepool.app.data.repository.interfaces.ICompanyRepository
 import com.wepool.app.data.remote.IGoogleMapsService
-import com.wepool.app.data.repository.interfaces.IUserRepository
 import kotlinx.coroutines.tasks.await
 
 class CompanyRepository(
@@ -25,6 +24,39 @@ class CompanyRepository(
         }
     }
 
+    override suspend fun getCompanyByCode(companyCode: String): Company? {
+        return try {
+            val snapshot = companiesCollection
+                .whereEqualTo("companyCode", companyCode)
+                .get()
+                .await()
+
+            snapshot.documents.firstOrNull()?.toObject(Company::class.java)
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to get company by code", e)
+            null
+        }
+    }
+
+    override suspend fun generateRandomUniqueCompanyCode(): String {
+        val allowedChars = ('0'..'9') + ('A'..'Z')
+        var code: String
+        var attempts = 0
+
+        do {
+            // יצירת קוד רנדומלי בן 6 תווים
+            code = (1..6)
+                .map { allowedChars.random() }
+                .joinToString("")
+            attempts++
+            // הגבלת מספר ניסיונות למניעת לולאה אינסופית
+            if (attempts > 50) throw Exception("לא ניתן למצוא קוד חברה פנוי. נסה שוב.")
+        } while (isCompanyCodeTaken(code)) // בדיקה שהקוד לא קיים בfirebase
+
+        return code
+    }
+
+
     override suspend fun createOrUpdateCompany(company: Company) {
         try {
             companiesCollection.document(company.companyId).set(company).await()
@@ -34,16 +66,20 @@ class CompanyRepository(
         }
     }
 
-    override suspend fun updateDomain(companyId: String, newDomain: String) {
-        try {
-            companiesCollection.document(companyId)
-                .update("domain", newDomain)
+    override suspend fun isCompanyCodeTaken(companyCode: String): Boolean {
+        return try {
+            val snapshot = companiesCollection
+                .whereEqualTo("companyCode", companyCode)
+                .get()
                 .await()
-            Log.d("CompanyRepository", "🌐 Domain updated to: $newDomain")
+
+            snapshot.documents.isNotEmpty()
         } catch (e: Exception) {
-            Log.e("CompanyRepository", "❌ Failed to update domain", e)
+            Log.e("CompanyRepository", "❌ Failed to check companyCode uniqueness", e)
+            true // אם הייתה שגיאה, עדיף לא לאפשר יצירה עם הקוד הזה
         }
     }
+
 
     override suspend fun updateLocation(companyId: String, newAddress: String) {
         try {
