@@ -19,6 +19,8 @@ interface IUserRepository {
 
     suspend fun banUser(uid: String)
     suspend fun unbanUser(uid: String)
+    suspend fun activateUser(uid: String)
+    suspend fun unActivateUser(uid: String)
 
     suspend fun addRoleToUser(uid: String, role: String)
     suspend fun removeRoleFromUser(uid: String, role: String)

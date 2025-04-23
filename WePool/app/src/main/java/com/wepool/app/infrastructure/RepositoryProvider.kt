@@ -16,6 +16,10 @@ import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.repository.interfaces.ILocationDataRepository
 import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
+import com.wepool.app.data.repository.interfaces.ICompanyRepository
+import com.wepool.app.data.repository.CompanyRepository
+import com.wepool.app.data.repository.HRManagerRepository
+import com.wepool.app.data.repository.interfaces.IHRManagerRepository
 
 object RepositoryProvider {
 
@@ -33,7 +37,7 @@ object RepositoryProvider {
     }
 
     fun provideAuthRepository(): AuthRepository {
-        return AuthRepository(auth = auth)
+        return AuthRepository(auth = auth, userRepository = provideUserRepository())
     }
 
     fun provideLocationDataRepository(): ILocationDataRepository {
@@ -52,9 +56,15 @@ object RepositoryProvider {
         return PassengerRepository(firestore = firestore)
     }
 
-    //need to create HRManagerRepository
+    fun provideHRManagerRepository(): IHRManagerRepository {
+        return HRManagerRepository(firestore = firestore, userRepository = provideUserRepository(), companyRepository = provideCompanyRepository())
+    }
 
     //need to create AdminRepository
+
+    fun provideCompanyRepository(): ICompanyRepository {
+        return CompanyRepository(firestore = firestore, mapsService = mapsService)
+    }
 
     fun provideRideRepository(): IRideRepository {
         return RideRepository(firestore = firestore, mapsService = mapsService, rideRequestRepository = provideRideRequestRepository())

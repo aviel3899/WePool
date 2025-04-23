@@ -59,10 +59,9 @@ fun IntermediateScreen(navController: NavController, uid: String) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // ✅ Cancel Button to Close the App
         TextButton(
             onClick = {
-                activity?.finishAffinity()
+                navController.navigate("login")
             },
             modifier = Modifier.fillMaxWidth()
         ) {

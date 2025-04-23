@@ -1,34 +1,144 @@
 package com.wepool.app.data.repository
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wepool.app.data.model.company.Company
+import com.wepool.app.data.repository.interfaces.ICompanyRepository
+import com.wepool.app.data.remote.IGoogleMapsService
+import com.wepool.app.data.repository.interfaces.IUserRepository
 import kotlinx.coroutines.tasks.await
 
 class CompanyRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-) {
+    private val firestore: FirebaseFirestore,
+    private val mapsService: IGoogleMapsService
+) : ICompanyRepository {
 
-    suspend fun createCompany(company: Company): String {
-        val docRef = firestore.collection("companies").add(company).await()
-        return docRef.id // מחזיר את ה-ID של החברה החדשה
-    }
+    private val companiesCollection = firestore.collection("companies")
 
-    suspend fun getCompany(companyId: String): Company? {
-        val snapshot = firestore.collection("companies").document(companyId).get().await()
-        return snapshot.toObject(Company::class.java)
-    }
-
-    suspend fun getAllCompanies(): List<Pair<String, Company>> {
-        val snapshot = firestore.collection("companies").get().await()
-        return snapshot.documents.mapNotNull {
-            val company = it.toObject(Company::class.java)
-            company?.let { c -> it.id to c }
+    override suspend fun getCompanyById(companyId: String): Company? {
+        return try {
+            val snapshot = companiesCollection.document(companyId).get().await()
+            snapshot.toObject(Company::class.java)
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to get company $companyId", e)
+            null
         }
     }
 
-    suspend fun updateCompanyName(companyId: String, newName: String) {
-        firestore.collection("companies").document(companyId)
-            .update("companyName", newName)
-            .await()
+    override suspend fun createOrUpdateCompany(company: Company) {
+        try {
+            companiesCollection.document(company.companyId).set(company).await()
+            Log.d("CompanyRepository", "✅ Company saved/updated: ${company.companyId}")
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to save company", e)
+        }
+    }
+
+    override suspend fun updateDomain(companyId: String, newDomain: String) {
+        try {
+            companiesCollection.document(companyId)
+                .update("domain", newDomain)
+                .await()
+            Log.d("CompanyRepository", "🌐 Domain updated to: $newDomain")
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to update domain", e)
+        }
+    }
+
+    override suspend fun updateLocation(companyId: String, newAddress: String) {
+        try {
+            val locationData = mapsService.getCoordinatesFromAddress(newAddress)
+
+            if (locationData == null) {
+                Log.e("CompanyRepository", "❌ Address not found or invalid: $newAddress")
+                return
+            }
+
+            companiesCollection.document(companyId)
+                .update("location", locationData)
+                .await()
+            Log.d("CompanyRepository", "📍 Location updated from address: $newAddress")
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to update location from address", e)
+        }
+    }
+
+    override suspend fun updateLogoUrl(companyId: String, newLogoUrl: String?) {
+        try {
+            companiesCollection.document(companyId)
+                .update("logoUrl", newLogoUrl)
+                .await()
+            Log.d("CompanyRepository", "🖼️ Logo URL updated")
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to update logoUrl", e)
+        }
+    }
+
+    override suspend fun updateIsCompanyActive(companyId: String, isActive: Boolean) {
+        try {
+            companiesCollection.document(companyId)
+                .update("active", isActive)
+                .await()
+            Log.d("CompanyRepository", "✅ Active status updated to: $isActive")
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to update active status", e)
+        }
+    }
+
+    override suspend fun addEmployeeToCompany(companyId: String, userUid: String) {
+        try {
+            val docRef = companiesCollection.document(companyId)
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(docRef)
+                val company = snapshot.toObject(Company::class.java)
+                if (company != null && !company.employees.contains(userUid)) {
+                    val updatedEmployees = company.employees + userUid
+                    transaction.update(docRef, "employees", updatedEmployees)
+                }
+            }.await()
+            Log.d("CompanyRepository", "👤 Added employee $userUid to company $companyId")
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to add employee", e)
+        }
+    }
+
+    override suspend fun removeEmployeeFromCompany(companyId: String, userUid: String) {
+        try {
+            val docRef = companiesCollection.document(companyId)
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(docRef)
+                val company = snapshot.toObject(Company::class.java)
+                if (company != null && company.employees.contains(userUid)) {
+                    val updatedEmployees = company.employees - userUid
+                    transaction.update(docRef, "employees", updatedEmployees)
+                }
+            }.await()
+
+            Log.d("CompanyRepository", "🗑️ Removed employee $userUid from company $companyId")
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to remove employee", e)
+        }
+    }
+
+    override suspend fun updateCompanyName(companyId: String, newName: String) {
+        try {
+            companiesCollection.document(companyId)
+                .update("companyName", newName)
+                .await()
+            Log.d("CompanyRepository", "🏷️ Company name updated to: $newName")
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to update company name", e)
+        }
+    }
+
+    override suspend fun setHrManager(companyId: String, hrManagerUid: String) {
+        try {
+            companiesCollection.document(companyId)
+                .update("hrManagerUid", hrManagerUid)
+                .await()
+            Log.d("CompanyRepository", "🏢 HR manager set: $hrManagerUid for $companyId")
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to set HR manager", e)
+        }
     }
 }

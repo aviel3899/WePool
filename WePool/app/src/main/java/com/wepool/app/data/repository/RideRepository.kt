@@ -117,7 +117,6 @@ class RideRepository(
                         currentDetourMinutes = currentRide.currentDetourMinutes + detour.addedDetourMinutes,
                         encodedPolyline = detour.encodedPolyline ?: currentRide.encodedPolyline,
                         pickupStops = currentRide.pickupStops + pickupLocation,
-                        //departureTime = detour.updatedDepartureTime ?: currentRide.departureTime
                         departureTime = detour.updatedReferenceTime ?: currentRide.departureTime
                     )
                 } else{
@@ -127,7 +126,6 @@ class RideRepository(
                         currentDetourMinutes = currentRide.currentDetourMinutes + detour.addedDetourMinutes,
                         encodedPolyline = detour.encodedPolyline ?: currentRide.encodedPolyline,
                         pickupStops = currentRide.pickupStops + pickupLocation,
-                        //departureTime = detour.updatedDepartureTime ?: currentRide.departureTime
                         arrivalTime = detour.updatedReferenceTime ?: currentRide.arrivalTime
                     )
                 }

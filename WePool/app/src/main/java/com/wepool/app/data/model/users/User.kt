@@ -9,5 +9,6 @@ data class User(
     val phoneNumber: String = "",
     val companyId: String = "",
     val isBanned: Boolean = false,
+    val isActive: Boolean = true,
     val roles: List<String> = emptyList()
 )

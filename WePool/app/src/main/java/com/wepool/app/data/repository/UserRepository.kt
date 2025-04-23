@@ -66,7 +66,7 @@ class UserRepository(
                 }
             }
 
-            // ולבסוף – מחיקת המשתמש עצמו
+            //  מחיקת המשתמש עצמו
             usersCollection.document(uid).delete().await()
 
             Log.d("Firestore", "🧹 המשתמש $uid וכל הנתונים המשויכים לו נמחקו")
@@ -169,6 +169,28 @@ class UserRepository(
             usersCollection.document(uid).update("isBanned", false).await()
         } catch (e: Exception) {
             logException("unbanUser", e)
+        }
+    }
+
+    override suspend fun activateUser(uid: String) {
+        try {
+            usersCollection.document(uid)
+                .update("isActive", true)
+                .await()
+            Log.d("UserRepository", "✅ המשתמש $uid הופעל מחדש")
+        } catch (e: Exception) {
+            Log.e("UserRepository", "❌ שגיאה בהפעלת המשתמש", e)
+        }
+    }
+
+    override suspend fun unActivateUser(uid: String) {
+        try {
+            usersCollection.document(uid)
+                .update("isActive", false)
+                .await()
+            Log.d("UserRepository", "🚫 המשתמש $uid הפך ללא פעיל")
+        } catch (e: Exception) {
+            Log.e("UserRepository", "❌ שגיאה בהשבתת המשתמש", e)
         }
     }
 

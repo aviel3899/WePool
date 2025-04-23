@@ -110,7 +110,7 @@ fun LoginScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
         ) {
-            Text("Cancel", color = MaterialTheme.colorScheme.error)
+            Text("Exit", color = MaterialTheme.colorScheme.error)
         }
 
         errorMessage?.let {
