@@ -7,6 +7,9 @@ import com.wepool.app.data.model.users.User
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.AuthRepository
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+
 
 class AuthRepository(
     private val auth: FirebaseAuth,
@@ -69,4 +72,17 @@ class AuthRepository(
             Result.failure(e)
         }
     }
+
+    // איפוס סיסמה באמצעות מייל
+    suspend fun resetPassword(email: String): Boolean = withContext(Dispatchers.IO) {
+        return@withContext try {
+            FirebaseAuth.getInstance().sendPasswordResetEmail(email).await()
+            Log.d("AuthRepository", "✅ מייל איפוס סיסמה נשלח לכתובת: $email")
+            true
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "❌ שגיאה בשליחת מייל איפוס סיסמה: ${e.message}", e)
+            false
+        }
+    }
+
 }
