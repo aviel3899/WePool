@@ -98,6 +98,34 @@ class RideRequestRepository(
         }
     }
 
+    override suspend fun getRequestsByDriver(driverId: String): List<RideRequest> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val allRides = firestore.collection("rides")
+                .whereEqualTo("driverId", driverId)
+                .get()
+                .await()
+
+            val result = mutableListOf<RideRequest>()
+
+            for (rideDoc in allRides.documents) {
+                val rideId = rideDoc.id
+                val requests = firestore.collection("rides").document(rideId)
+                    .collection("requests")
+                    .get()
+                    .await()
+                    .toObjects(RideRequest::class.java)
+
+                result += requests
+            }
+
+            result
+        } catch (e: Exception) {
+            Log.e("RideRequest", "❌ שגיאה בשליפת בקשות לפי driverId: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+
     override suspend fun deleteRequest(rideId: String, requestId: String) {
             firestore.collection("rides")
                 .document(rideId)

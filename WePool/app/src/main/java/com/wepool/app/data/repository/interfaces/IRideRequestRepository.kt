@@ -13,5 +13,6 @@ interface IRideRequestRepository {
     suspend fun updateRequestStatus(rideId: String, requestId: String, newStatus: RequestStatus): Boolean
     suspend fun getRequestsForRide(rideId: String): List<RideRequest>
     suspend fun getRequestsByPassenger(passengerId: String): List<RideRequest>
+    suspend fun getRequestsByDriver(driverId: String): List<RideRequest>
     suspend fun deleteRequest(rideId: String, requestId: String)
 }

@@ -212,7 +212,7 @@ class MainActivity : ComponentActivity() {
             name = "Test Driver",
             email = "test@wepool.com",
             phoneNumber = "050-7137453",
-            companyId = "company123",
+            companyCode = "company123",
             isBanned = false,
             roles = listOf(UserRole.DRIVER.name)
         )
@@ -229,8 +229,6 @@ class MainActivity : ComponentActivity() {
     private fun createTestPassenger(user: User): Passenger {
         return Passenger(
             user = user,
-            //preferredPickupLocation = GeoPoint(32.2913673, 34.8808613), // המחקר 3 נתניה
-           // preferredArrivalTime = "09:10"
         )
     }
 
