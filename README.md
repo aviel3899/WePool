@@ -51,7 +51,7 @@ Run the app on an Android Emulator or a physical device.
 
 ## 📫 Contact
 
-Aviel Smolanski
+**Aviel Smolanski**
 
 LinkedIn - https://www.linkedin.com/in/aviel-smolanski-229099247/
 
@@ -59,9 +59,7 @@ GitHub - https://github.com/aviel3899
 
 Email: aviel3899@gmail.com
 
-
-
-Elior Uzan
+**Elior Uzan**
 
 LinkedIn - https://www.linkedin.com/in/elior-uzan-b36548228/
 
