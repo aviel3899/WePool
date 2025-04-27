@@ -63,6 +63,6 @@ Email: aviel3899@gmail.com
 
 LinkedIn - https://www.linkedin.com/in/elior-uzan-b36548228/
 
-GitHub - 
+GitHub - https://github.com/elior97
 
 Email: elioruzan06@gmail.com
