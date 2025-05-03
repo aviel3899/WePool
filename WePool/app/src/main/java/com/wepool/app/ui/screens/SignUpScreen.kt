@@ -25,6 +25,7 @@ fun SignUpScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
+    var companyCode by remember { mutableStateOf("") } // NEW
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isRegistering by remember { mutableStateOf(false) }
 
@@ -35,7 +36,7 @@ fun SignUpScreen(navController: NavController) {
     } }
 
     fun isInputValid(): Boolean {
-        return name.isNotBlank() && email.isNotBlank() && password.length >= 6 && phoneNumber.isNotBlank()
+        return name.isNotBlank() && email.isNotBlank() && password.length >= 6 && phoneNumber.isNotBlank() && companyCode.isNotBlank()
     }
 
     Column(
@@ -46,7 +47,6 @@ fun SignUpScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Create an Account", style = MaterialTheme.typography.headlineSmall)
-
         Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
@@ -101,6 +101,20 @@ fun SignUpScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // NEW: Company Code Field
+        OutlinedTextField(
+            value = companyCode,
+            onValueChange = {
+                companyCode = it
+                errorMessage = null
+            },
+            label = { Text("Company Code") },
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         Text("Select Your Role(s)", style = MaterialTheme.typography.titleMedium)
         availableRoles.forEach { role ->
             Row(
@@ -137,7 +151,7 @@ fun SignUpScreen(navController: NavController) {
                         name = name,
                         email = email,
                         phoneNumber = phoneNumber,
-                        companyCode = "",
+                        companyCode = companyCode, // ✅ save it properly
                         isBanned = false,
                         roles = chosenRoles
                     )
@@ -171,6 +185,6 @@ fun SignUpScreen(navController: NavController) {
         errorMessage?.let {
             Spacer(modifier = Modifier.height(16.dp))
             Text("❌ $it", color = MaterialTheme.colorScheme.error)
-            }
-       }
+        }
+    }
 }

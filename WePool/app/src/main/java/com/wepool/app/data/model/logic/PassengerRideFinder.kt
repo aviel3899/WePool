@@ -19,8 +19,8 @@ class PassengerRideFinder(
     private val routeMatcher: RouteMatcher
 ) {
 
-    private val maxArrivalTimeDifferenceMinutes = 30L
-    private val maxDepartureTimeDifferenceMinutes = 15L
+    private val maxArrivalTimeDifferenceMinutes = 30L //workbound
+    private val maxDepartureTimeDifferenceMinutes = 15L //homwbound
     private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     suspend fun getAvailableRidesForPassenger(
@@ -40,10 +40,9 @@ class PassengerRideFinder(
             val dateOK = ride.date == passengerDate
             //val timeOK = isArrivalTimeValid(ride.arrivalTime!!, passengerArrivalTime)
             val timeOK: Boolean
-            if(direction == RideDirection.TO_WORK){
+            if (direction == RideDirection.TO_WORK) {
                 timeOK = isRideTimeValid(ride.arrivalTime!!, passengerArrivalTime, direction)
-            }
-            else{
+            } else {
                 timeOK = isRideTimeValid(ride.departureTime!!, passengerDepartureTime, direction)
             }
             val seatOK = ride.occupiedSeats < ride.availableSeats
@@ -58,10 +57,9 @@ class PassengerRideFinder(
                 return@mapNotNull null
             }
 
-            val timeReference = if(ride.direction == RideDirection.TO_WORK){
+            val timeReference = if (ride.direction == RideDirection.TO_WORK) {
                 ride.arrivalTime!!
-            }
-            else{
+            } else {
                 ride.departureTime!!
             }
 
@@ -84,7 +82,8 @@ class PassengerRideFinder(
             val detourOK = evaluation.isAllowed
 
             if (!dateOK || !timeOK || !seatOK || !notAlreadyJoined || !detourOK) {
-                Log.d("RideFilter", """ ❌ נסיעה לא מתאימה:
+                Log.d(
+                    "RideFilter", """ ❌ נסיעה לא מתאימה:
         - תאריך תואם? $dateOK
         - זמן תואם? $timeOK
         - יש מקומות פנויים? $seatOK

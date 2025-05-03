@@ -161,7 +161,7 @@ fun WorkboundRideCreationScreen(navController: NavController, uid: String) {
                 true
             ).show()
         }) {
-            Text(if (selectedTime.isNotBlank()) "Selected Time: $selectedTime" else "Pick a Time")
+            Text(if (selectedTime.isNotBlank()) "Selected Time: $selectedTime" else "Pick an arrival Time")
         }
 
         Spacer(modifier = Modifier.height(24.dp))

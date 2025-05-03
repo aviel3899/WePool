@@ -51,6 +51,9 @@ import com.wepool.app.ui.screens.UpdateDetailsScreen
 import com.wepool.app.ui.screens.CreateRideDirectionScreen
 import com.wepool.app.ui.screens.DriverCarDetailsScreen
 import com.wepool.app.ui.screens.HomeboundRideCreationScreen
+import com.wepool.app.ui.screens.PassengerHomeboundRideSearchScreen
+import com.wepool.app.ui.screens.PassengerRideDirectionScreen
+import com.wepool.app.ui.screens.PassengerWorkboundRideSearchScreen
 import com.wepool.app.ui.screens.WorkboundRideCreationScreen
 
 class MainActivity : ComponentActivity() {
@@ -199,6 +202,19 @@ class MainActivity : ComponentActivity() {
                             val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
                             DriverCarDetailsScreen(uid = uid, navController = navController)
                             }
+                        composable("passengerRideDirection/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            PassengerRideDirectionScreen(navController = navController, uid = uid)
+                        }
+                        composable("passengerHomeboundRideSearch/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            PassengerHomeboundRideSearchScreen(navController = navController, uid = uid)
+                        }
+
+                        composable("passengerWorkboundRideSearch/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            PassengerWorkboundRideSearchScreen(navController = navController, uid = uid)
+                        }
                     }
                 }
             }

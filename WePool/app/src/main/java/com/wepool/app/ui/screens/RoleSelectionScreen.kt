@@ -79,7 +79,7 @@ fun RoleSelectionScreen(
                                                 )
                                                 Log.d("RoleSelection", "✅ Passenger data created")
                                             }
-                                            // navigate to passenger screen when available
+                                            navController.navigate("passengerRideDirection/$uid")
                                         }
 
                                         "DRIVER" -> {

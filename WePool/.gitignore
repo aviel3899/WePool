@@ -74,3 +74,6 @@ gradle.properties
 .gradle/
 .idea/
 
+# Android Studio build output
+app/build/
+build/

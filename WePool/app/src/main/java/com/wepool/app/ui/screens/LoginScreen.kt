@@ -3,6 +3,9 @@ package com.wepool.app.ui.screens
 import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,7 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.CircleShape
 import androidx.navigation.NavController
 import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
@@ -26,6 +31,7 @@ fun LoginScreen(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -57,8 +63,29 @@ fun LoginScreen(navController: NavController) {
                 errorMessage = null
             },
             label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                IconButton(
+                    onClick = { passwordVisible = !passwordVisible },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation = 4.dp,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                            modifier = Modifier
+                                .padding(6.dp)
+                                .size(20.dp)
+                        )
+                    }
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -116,6 +143,6 @@ fun LoginScreen(navController: NavController) {
         errorMessage?.let {
             Spacer(modifier = Modifier.height(16.dp))
             Text("❌ $it", color = MaterialTheme.colorScheme.error)
-            }
-       }
+        }
+    }
 }

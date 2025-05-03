@@ -32,6 +32,10 @@ fun HomeboundRideCreationScreen(navController: NavController, uid: String) {
     var selectedDate by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
+    val isFormValid = destination.isNotBlank() &&
+            maxDetour.isNotBlank() &&
+            selectedDate.isNotBlank() &&
+            selectedTime.isNotBlank()
 
     val seatOptions = listOf(1, 2, 3, 4)
     val coroutineScope = rememberCoroutineScope()
@@ -149,7 +153,7 @@ fun HomeboundRideCreationScreen(navController: NavController, uid: String) {
                 true
             ).show()
         }) {
-            Text(if (selectedTime.isNotBlank()) "Selected Time: $selectedTime" else "Pick a Time")
+            Text(if (selectedTime.isNotBlank()) "Selected Time: $selectedTime" else "Pick a departure Time")
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -179,7 +183,8 @@ fun HomeboundRideCreationScreen(navController: NavController, uid: String) {
                      }
                  }
              },
-             modifier = Modifier.fillMaxWidth()
+             modifier = Modifier.fillMaxWidth(),
+             enabled = isFormValid
          ) {
              Text("Save")
          }
