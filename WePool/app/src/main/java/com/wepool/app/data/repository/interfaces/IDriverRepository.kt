@@ -17,9 +17,8 @@ interface IDriverRepository {
     //suspend fun getUpcomingRide(driverUid: String): Ride?
 
     // שליפת היסטוריית נסיעות של הנהג
-   // suspend fun getRideHistory(driverUid: String): List<Ride>
+    // suspend fun getRideHistory(driverUid: String): List<Ride>
 
     suspend fun updateVehicleDetails(uid: String, vehicleDetails: String)
     suspend fun updateActiveRideId(uid: String, rideId: String?)
 }
-

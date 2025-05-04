@@ -2,6 +2,7 @@ package com.wepool.app.data.repository.interfaces
 
 import com.google.firebase.firestore.GeoPoint
 import com.google.android.gms.maps.model.LatLng
+import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.logic.DepartureCalculationResult
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideCandidate
@@ -15,9 +16,11 @@ interface IRideRepository {
     suspend fun getAllRides(): List<Ride>
     suspend fun getRidesByDriver(driverId: String): List<Ride>
     suspend fun getRidesByCompanyAndDirection(companyId: String, direction: RideDirection): List<Ride>
+    fun getPickupTimeForPassenger(ride: Ride, passengerId: String): String?
+    fun getDropoffTimeForPassenger(ride: Ride, passengerId: String):String?
 
     suspend fun updateRide(ride: Ride)
-    suspend fun deleteRide(rideId: String)
+    //suspend fun deleteRide(rideId: String)
     suspend fun updateAvailableSeats(rideId: String, seats: Int)
     suspend fun updateMaxDetourMinutes(rideId: String, maxDetour: Int)
     suspend fun updateArrivalTime(rideId: String, time: String)
@@ -30,7 +33,7 @@ interface IRideRepository {
     suspend fun addPassengerToRide(
         rideId: String,
         passengerId: String,
-        pickupLocation: GeoPoint
+        pickupLocation: LocationData
     ): Boolean
     suspend fun approvePassengerRequest(
         candidate: RideCandidate,
@@ -45,7 +48,7 @@ interface IRideRepository {
         rideId: String,
         requestId: String,
     ): Boolean
-    suspend fun removePassengerFromRide(rideId: String, passengerId: String)
+    //suspend fun removePassengerFromRide(rideId: String, passengerId: String)
 
     suspend fun calculateRideDepartureTime(
         ride: Ride,
@@ -57,8 +60,8 @@ interface IRideRepository {
     suspend fun planRideFromUserInput(
         driverId: String,
         companyId: String,
-        startAddress: String,
-        destinationAddress: String,
+        startAddress: LocationData,
+        destinationAddress: LocationData,
         arrivalTime: String = "",
         departureTime: String = "",
         date: String,
@@ -68,6 +71,5 @@ interface IRideRepository {
         maxDetourMinutes: Int,
         notes: String
     ): Boolean
-    suspend fun adjustTimeAccordingToDirection(time: String, minutes: Int, direction: RideDirection): String
+    suspend fun adjustTimeAccordingToDirection(time: String, minutes: Int, direction: RideDirection):String
 }
-

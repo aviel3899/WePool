@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.toObject
+import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.ride.RideRequest
 import com.wepool.app.data.model.enums.RequestStatus
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
@@ -18,7 +19,7 @@ class RideRequestRepository(
     override suspend fun sendRequest(
         rideId: String,
         passengerId: String,
-        pickupLocation: GeoPoint
+        pickupLocation: LocationData
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             val requestId = firestore.collection("rides").document(rideId)
@@ -125,14 +126,45 @@ class RideRequestRepository(
         }
     }
 
+    override suspend fun getPendingRequestsByDriver(driverId: String): List<RideRequest> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val ridesSnapshot = firestore.collection("rides")
+                .whereEqualTo("driverId", driverId)
+                .get()
+                .await()
+
+            val pendingRequests = mutableListOf<RideRequest>()
+
+            for (rideDoc in ridesSnapshot.documents) {
+                val rideId = rideDoc.id
+
+                val requestsSnapshot = firestore.collection("rides")
+                    .document(rideId)
+                    .collection("requests")
+                    .whereEqualTo("status", RequestStatus.PENDING.name)
+                    .get()
+                    .await()
+
+                val rideRequests = requestsSnapshot.toObjects(RideRequest::class.java)
+                pendingRequests += rideRequests
+            }
+
+            Log.d("RideRequest", "✅ נמצאו ${pendingRequests.size} בקשות ממתינות לנהג $driverId")
+            pendingRequests
+        } catch (e: Exception) {
+            Log.e("RideRequest", "❌ שגיאה בשליפת בקשות ממתינות לנהג $driverId: ${e.message}", e)
+            emptyList()
+        }
+    }
+
 
     override suspend fun deleteRequest(rideId: String, requestId: String) {
-            firestore.collection("rides")
-                .document(rideId)
-                .collection("requests")
-                .document(requestId)
-                .delete()
-                .await()
+        firestore.collection("rides")
+            .document(rideId)
+            .collection("requests")
+            .document(requestId)
+            .delete()
+            .await()
     }
 
 }

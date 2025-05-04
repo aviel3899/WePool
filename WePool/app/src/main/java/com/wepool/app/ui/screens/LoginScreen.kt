@@ -1,15 +1,27 @@
 package com.wepool.app.ui.screens
 
 import android.app.Activity
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.infrastructure.RepositoryProvider
@@ -26,96 +38,131 @@ fun LoginScreen(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xFFE3F2FD), Color(0xFFBBDEFB))
+                )
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        Text("Login to WePool", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(24.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp)
+                .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(24.dp))
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.DirectionsCar,
+                contentDescription = "Carpool Icon",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(48.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Welcome to WePool", style = MaterialTheme.typography.headlineSmall)
+            Spacer(modifier = Modifier.height(24.dp))
 
-        OutlinedTextField(
-            value = email,
-            onValueChange = {
-                email = it
-                errorMessage = null
-            },
-            label = { Text("Email") },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
-        )
+            OutlinedTextField(
+                value = email,
+                onValueChange = {
+                    email = it
+                    errorMessage = null
+                },
+                label = { Text("Email") },
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-                errorMessage = null
-            },
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    if (email.isBlank() || password.isBlank()) {
-                        errorMessage = "Email and password must not be empty."
-                        return@launch
+            OutlinedTextField(
+                value = password,
+                onValueChange = {
+                    password = it
+                    errorMessage = null
+                },
+                label = { Text("Password") },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    IconButton(
+                        onClick = { passwordVisible = !passwordVisible }
+                    ) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                        )
                     }
-                    isLoading = true
-                    val result = authRepository.loginWithEmailAndPassword(email, password)
-                    isLoading = false
-                    result.onSuccess { uid ->
-                        navController.navigate("intermediate/$uid") {
-                            popUpTo("login") { inclusive = true }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        if (email.isBlank() || password.isBlank()) {
+                            errorMessage = "Email and password must not be empty."
+                            return@launch
                         }
-                    }.onFailure {
-                        errorMessage = it.message
+                        isLoading = true
+                        val result = authRepository.loginWithEmailAndPassword(email, password)
+                        isLoading = false
+                        result.onSuccess { uid ->
+                            navController.navigate("intermediate/$uid") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }.onFailure {
+                            errorMessage = it.message
+                        }
                     }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
-        ) {
-            Text(if (isLoading) "Logging in..." else "Log In")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedButton(
-            onClick = {
-                navController.navigate("signup")
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
-        ) {
-            Text("Sign Up")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextButton(
-            onClick = {
-                activity?.finishAffinity()
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
-        ) {
-            Text("Exit", color = MaterialTheme.colorScheme.error)
-        }
-
-        errorMessage?.let {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("❌ $it", color = MaterialTheme.colorScheme.error)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(if (isLoading) "Logging in..." else "Log In")
             }
-       }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = {
+                    navController.navigate("signup")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("Sign Up")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TextButton(
+                onClick = {
+                    activity?.finishAffinity()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
+            ) {
+                Text("Exit", color = MaterialTheme.colorScheme.error)
+            }
+
+            errorMessage?.let {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("❌ $it", color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
 }

@@ -121,7 +121,4 @@ class HRManagerRepository(
             Log.e("HRManagerRepository", "❌ Failed to remove employee and deactivate", e)
         }
     }
-
-
-
 }

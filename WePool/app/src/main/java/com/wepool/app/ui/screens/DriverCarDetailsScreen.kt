@@ -103,7 +103,6 @@ fun DriverCarDetailsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Back")
-            }
-       }
+        }
+    }
 }
-

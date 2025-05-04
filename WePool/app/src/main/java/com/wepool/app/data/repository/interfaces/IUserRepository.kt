@@ -25,5 +25,3 @@ interface IUserRepository {
     suspend fun addRoleToUser(uid: String, role: String)
     suspend fun removeRoleFromUser(uid: String, role: String)
 }
-
-

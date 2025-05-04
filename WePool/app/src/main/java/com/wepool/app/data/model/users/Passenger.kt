@@ -6,5 +6,5 @@ data class Passenger(
     val user: User = User(),
     val favoriteLocations: List<LocationData> = emptyList()
     // val preferredPickupLocation: GeoPoint? = null,
-   // val preferredArrivalTime: String = ""
+    // val preferredArrivalTime: String = ""
 )

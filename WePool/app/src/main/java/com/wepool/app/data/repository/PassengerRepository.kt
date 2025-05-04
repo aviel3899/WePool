@@ -13,17 +13,17 @@ class PassengerRepository(
     private val firestore: FirebaseFirestore
 ) : IPassengerRepository {
 
-     // מחזיר נוסע לפי uid
-     override suspend fun getPassenger(uid: String): Passenger? {
-         val snapshot = firestore.collection("users")
-             .document(uid)
-             .collection("passengerData")
-             .document("info")
-             .get()
-             .await()
+    // מחזיר נוסע לפי uid
+    override suspend fun getPassenger(uid: String): Passenger? {
+        val snapshot = firestore.collection("users")
+            .document(uid)
+            .collection("passengerData")
+            .document("info")
+            .get()
+            .await()
 
-         return snapshot.toObject(Passenger::class.java)
-     }
+        return snapshot.toObject(Passenger::class.java)
+    }
 
     // שומר את נתוני הנוסע - מעדכן אם כבר קיימים נתונים, יוצר חדש אם לא קיימים
     override suspend fun savePassengerData(uid: String, passenger: Passenger)  {
@@ -72,9 +72,9 @@ class PassengerRepository(
             .document("info")
             .delete()
             .await()
-        }
+    }
 
-      // מעדכן את מיקום האיסוף המועדף של הנוסע במסמך
+    // מעדכן את מיקום האיסוף המועדף של הנוסע במסמך
     /*override suspend fun updatePreferredPickupLocation(uid: String, location: GeoPoint)  {
         firestore.collection("users")
             .document(uid)
@@ -94,4 +94,3 @@ class PassengerRepository(
             .await()
     }*/
 }
-

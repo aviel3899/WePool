@@ -26,13 +26,13 @@ object PolylineDecoder {
         toleranceMeters = newTolerance
     }
 
-     // מפענח מחרוזת Polyline מקודדת לרשימת נקודות LatLng
+    // מפענח מחרוזת Polyline מקודדת לרשימת נקודות LatLng
     fun decode(encodedPolyline: String): List<LatLng> {
         return PolyUtil.decode(encodedPolyline)
     }
 
 
-     // מפשט רשימת נקודות לפי טולרנס במטרים (פחות נקודות, אותה צורה)
+    // מפשט רשימת נקודות לפי טולרנס במטרים (פחות נקודות, אותה צורה)
     private fun simplifyRoute(
         route: List<LatLng>,
         toleranceMeters: Double = this.toleranceMeters
@@ -41,7 +41,7 @@ object PolylineDecoder {
     }
 
 
-     // מפשט מסלול מקודד ישירות לפי טולרנס במטרים
+    // מפשט מסלול מקודד ישירות לפי טולרנס במטרים
     fun decodeAndSimplify(
         encodedPolyline: String,
         toleranceMeters: Double = this.toleranceMeters
