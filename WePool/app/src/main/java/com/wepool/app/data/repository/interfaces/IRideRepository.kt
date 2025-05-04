@@ -20,7 +20,7 @@ interface IRideRepository {
     fun getDropoffTimeForPassenger(ride: Ride, passengerId: String):String?
 
     suspend fun updateRide(ride: Ride)
-    suspend fun deleteRide(rideId: String)
+    //suspend fun deleteRide(rideId: String)
     suspend fun updateAvailableSeats(rideId: String, seats: Int)
     suspend fun updateMaxDetourMinutes(rideId: String, maxDetour: Int)
     suspend fun updateArrivalTime(rideId: String, time: String)
@@ -48,7 +48,7 @@ interface IRideRepository {
         rideId: String,
         requestId: String,
     ): Boolean
-    suspend fun removePassengerFromRide(rideId: String, passengerId: String)
+    //suspend fun removePassengerFromRide(rideId: String, passengerId: String)
 
     suspend fun calculateRideDepartureTime(
         ride: Ride,
