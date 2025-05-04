@@ -3,6 +3,7 @@ package com.wepool.app.data.model.logic
 import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.remote.IGoogleMapsService
@@ -29,8 +30,9 @@ class PassengerRideFinder(
         passengerArrivalTime: String = "",
         passengerDepartureTime: String = "",
         passengerDate: String,
-        pickupPoint: LatLng,
-        passengerId: String,
+        //pickupPoint: LatLng,
+        pickupPoint: PickupStop,
+        //passengerId: String, // לא צריך כי אני מעביר בתוך PickupStop את passengerId
         rideRepository: IRideRepository,
     ): List<RideCandidate> = withContext(Dispatchers.IO) {
 
@@ -41,13 +43,14 @@ class PassengerRideFinder(
             //val timeOK = isArrivalTimeValid(ride.arrivalTime!!, passengerArrivalTime)
             val timeOK: Boolean
             if(direction == RideDirection.TO_WORK){
-                timeOK = isRideTimeValid(ride.arrivalTime!!, passengerArrivalTime, direction)
+                timeOK = isRideTimeValid(ride.arrivalTime!!, ride.maxDetourMinutes, passengerArrivalTime, direction)
             }
             else{
-                timeOK = isRideTimeValid(ride.departureTime!!, passengerDepartureTime, direction)
+                timeOK = isRideTimeValid(ride.departureTime!!, ride.maxDetourMinutes, passengerDepartureTime, direction)
             }
             val seatOK = ride.occupiedSeats < ride.availableSeats
-            val notAlreadyJoined = !ride.passengers.contains(passengerId)
+            //val notAlreadyJoined = !ride.passengers.contains(passengerId)
+            val notAlreadyJoined = !ride.passengers.contains(pickupPoint.passengerId)
 
             val currentRouteTimeMinutes = try {
                 val departure = LocalTime.parse(ride.departureTime, timeFormatter)
@@ -74,8 +77,8 @@ class PassengerRideFinder(
                 timeReference = timeReference,
                 date = ride.date,
                 mapsService = mapsService,
-                startLocation = ride.startLocation,
-                destination = ride.destination,
+                startLocation = ride.startLocation.geoPoint,
+                destination = ride.destination.geoPoint,
                 currentPickupStops = ride.pickupStops,
                 rideRepository = rideRepository,
                 rideDirection = direction
@@ -107,19 +110,22 @@ class PassengerRideFinder(
 
     private fun isRideTimeValid(
         driverTime: String,
+        detourMinutes: Int,
         passengerTime: String,
         direction: RideDirection
     ): Boolean {
         val formatter = DateTimeFormatter.ofPattern("HH:mm")
         val driver = LocalTime.parse(driverTime, formatter)
+        val driverToWork = driver.plusMinutes(detourMinutes.toLong())
         val passenger = LocalTime.parse(passengerTime, formatter)
 
         return if (direction == RideDirection.TO_WORK) { //זמן ההגעה של הנוסע לא אחרי זמן ההגעה של הנהג ולא X דקות לםניו
-            !passenger.isBefore(driver) &&
-                    passenger.isBefore(driver.plusMinutes(maxArrivalTimeDifferenceMinutes))
+            !passenger.isAfter(driverToWork.plusMinutes(maxArrivalTimeDifferenceMinutes)) &&
+                    !passenger.isBefore(driverToWork)
         } else { //זמן היציאה של הנוסע לא אחרי זמן היציאה של הנהג ולא X דקות לפניו
             !passenger.isBefore(driver.minusMinutes(maxDepartureTimeDifferenceMinutes)) &&
                     !passenger.isAfter(driver)
+
         }
     }
 }

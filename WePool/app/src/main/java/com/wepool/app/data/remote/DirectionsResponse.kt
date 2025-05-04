@@ -30,4 +30,3 @@ data class Leg(
 data class Duration(
     val value: Int // משך זמן ב־שניות
 )
-

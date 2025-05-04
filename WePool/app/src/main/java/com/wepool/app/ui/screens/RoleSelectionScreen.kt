@@ -79,7 +79,7 @@ fun RoleSelectionScreen(
                                                 )
                                                 Log.d("RoleSelection", "✅ Passenger data created")
                                             }
-                                            // navigate to passenger screen when available
+                                            navController.navigate("passengerRideDirection/$uid")
                                         }
 
                                         "DRIVER" -> {
@@ -89,7 +89,7 @@ fun RoleSelectionScreen(
                                                 navController.navigate("driverCarDetails/$uid")
                                             } else {
                                                 // already has driver data → go to next screen
-                                                navController.navigate("createRideDirection/$uid")
+                                                navController.navigate("driverMenu/$uid")
                                             }
                                         }
                                     }
@@ -117,6 +117,6 @@ fun RoleSelectionScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Back")
-            }
         }
+    }
 }

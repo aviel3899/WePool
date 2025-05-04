@@ -9,6 +9,7 @@ import com.wepool.app.data.model.users.User
 import com.wepool.app.data.remote.IGoogleMapsService
 import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.google.firebase.firestore.GeoPoint
+import com.wepool.app.data.model.ride.PickupStop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -47,7 +48,7 @@ object RouteMatcher {
             throw SecurityException("Unauthorized: Only Admin can update average speed.")
         }
 
-       val newSpeedInMetersPerMinute = convertKmHtoMetersPerMinute(newSpeedInKilometerPerHour)
+        val newSpeedInMetersPerMinute = convertKmHtoMetersPerMinute(newSpeedInKilometerPerHour)
 
         if (newSpeedInMetersPerMinute < 40.0) {
             throw IllegalArgumentException("Speed must be at least 40 m/min.")
@@ -69,7 +70,8 @@ object RouteMatcher {
      */
     suspend fun evaluatePickupDetour(
         encodedPolyline: String,
-        pickupPoint: LatLng,
+        //pickupPoint: LatLng,
+        pickupPoint: PickupStop,
         maxAllowedDetourMinutes: Int,
         currentDetourMinutes: Int,
         currentRouteTimeMinutes: Int,
@@ -78,7 +80,8 @@ object RouteMatcher {
         mapsService: IGoogleMapsService,
         startLocation: GeoPoint,
         destination: GeoPoint,
-        currentPickupStops: List<GeoPoint>,
+        //currentPickupStops: List<GeoPoint>,
+        currentPickupStops: List<PickupStop>,
         rideRepository: IRideRepository,
         rideDirection: RideDirection,
         averageSpeedMetersPerMinute: Double = this.averageSpeedMetersPerMinute
@@ -93,14 +96,15 @@ object RouteMatcher {
             val estimated = estimateOfflineDetourMinutes(point, pickupPoint, averageSpeedMetersPerMinute)
             if (currentDetourMinutes + estimated <= maxAllowedDetourMinutes) {
 
-                val pickupGeoPoint = GeoPoint(pickupPoint.latitude, pickupPoint.longitude)
+                //val pickupGeoPoint = GeoPoint(pickupPoint.latitude, pickupPoint.longitude)
 
                 val routeAfter = try {
                     getActualDetourData(
                         start = startLocation,
                         destination = destination,
                         currentStops = currentPickupStops,
-                        pickupLocation = pickupGeoPoint,
+                        //pickupLocation = pickupGeoPoint,
+                        pickupLocation = pickupPoint,
                         timeReference = timeReference,
                         date = date,
                         direction = rideDirection,
@@ -122,7 +126,14 @@ object RouteMatcher {
                     val updatedReferenceTime = rideRepository.adjustTimeAccordingToDirection(timeReference, routeAfter.durationMinutes, rideDirection)
                     return DetourEvaluationResult(
                         isAllowed = true,
-                        pickupLocation = pickupGeoPoint,
+                        //pickupLocation = pickupGeoPoint,
+                        //pickupLocation = pickupPoint,
+                        pickupLocation = PickupStop(
+                            location = pickupPoint.location,
+                            passengerId = pickupPoint.passengerId,
+                            pickupTime = routeAfter.pickupTimes[pickupPoint.passengerId],
+                            dropoffTime = routeAfter.dropoffTimes[pickupPoint.passengerId]
+                        ),
                         encodedPolyline = routeAfter.encodedPolyline,
                         addedDetourMinutes = addedDetour,
                         //updatedDepartureTime = updatedDepartureTime
@@ -137,14 +148,24 @@ object RouteMatcher {
 
 
     //  מחזיר את הקוארדינטות שקרובות לנקודת האיסוף לפי מרחק אווירי
-    private fun getNearbyPoints(route: List<LatLng>, pickupPoint: LatLng): List<LatLng> {
+    /*private fun getNearbyPoints(route: List<LatLng>, pickupPoint: LatLng): List<LatLng> {
         return route.filter {
             SphericalUtil.computeDistanceBetween(it, pickupPoint) <= maxDistanceMeters
+        }
+    }*/
+
+    private fun getNearbyPoints(route: List<LatLng>, pickupStop: PickupStop): List<LatLng> {
+        val pickupLatLng = LatLng(
+            pickupStop.location.geoPoint.latitude,
+            pickupStop.location.geoPoint.longitude
+        )
+        return route.filter {
+            SphericalUtil.computeDistanceBetween(it, pickupLatLng) <= maxDistanceMeters
         }
     }
 
     // מחזיר את הסטייה בדקות מהקוארדינטה לנקודת האיסוף לפי מרחק אווירי ומהירות ממוצעת
-    private fun estimateOfflineDetourMinutes(
+    /*private fun estimateOfflineDetourMinutes(
         routePoint: LatLng,
         pickupPoint: LatLng,
         speedMetersPerMinute: Double
@@ -152,14 +173,31 @@ object RouteMatcher {
         val toPickup = SphericalUtil.computeDistanceBetween(routePoint, pickupPoint)
         val roundTrip = toPickup * 2 // הלוך וחזור
         return roundTrip / speedMetersPerMinute
+    }*/
+
+    private fun estimateOfflineDetourMinutes(
+        routePoint: LatLng,
+        pickupStop: PickupStop,
+        speedMetersPerMinute: Double
+    ): Double {
+        val pickupLatLng = LatLng(
+            pickupStop.location.geoPoint.latitude,
+            pickupStop.location.geoPoint.longitude
+        )
+        val toPickup = SphericalUtil.computeDistanceBetween(routePoint, pickupLatLng)
+        val roundTrip = toPickup * 2 // הלוך וחזור
+        return roundTrip / speedMetersPerMinute
     }
+
 
     // DurationAndRoute מחזיר גם את זמן הנסיעה החדש כולל הסטייה וגם את המסלול - מחזיר משתנה מסוג
     private suspend fun getActualDetourData(
         start: GeoPoint,
         destination: GeoPoint,
-        currentStops: List<GeoPoint>,
-        pickupLocation: GeoPoint,
+        //currentStops: List<GeoPoint>,
+        currentStops: List<PickupStop>,
+        //pickupLocation: GeoPoint,
+        pickupLocation: PickupStop,
         timeReference: String,
         date: String,
         direction: RideDirection,

@@ -66,6 +66,6 @@ fun IntermediateScreen(navController: NavController, uid: String) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Cancel", color = MaterialTheme.colorScheme.error)
-            }
-      }
+        }
+    }
 }

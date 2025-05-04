@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import com.google.android.gms.maps.model.LatLng
+import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.enums.RequestStatus
 import com.wepool.app.data.model.logic.DepartureCalculationResult
 import com.wepool.app.data.model.logic.DurationAndRoute
@@ -16,6 +17,7 @@ import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
 import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.model.logic.RouteMatcher
+import com.wepool.app.data.model.ride.PickupStop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -67,17 +69,29 @@ class RideRepository(
             .toObjects(Ride::class.java)
     }
 
+    override fun getPickupTimeForPassenger(ride: Ride, passengerId: String): String? {
+        return ride.pickupStops
+            .firstOrNull { it.passengerId == passengerId }
+            ?.pickupTime
+    }
+
+    override fun getDropoffTimeForPassenger(ride: Ride, passengerId: String): String? {
+        return ride.pickupStops
+            .firstOrNull { it.passengerId == passengerId }
+            ?.dropoffTime
+    }
+
     override suspend fun addPassengerToRide(
         rideId: String,
         passengerId: String,
-        pickupLocation: GeoPoint
+        pickupLocation: LocationData
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             val success = rideRequestRepository.sendRequest(rideId, passengerId, pickupLocation)
             if (success) {
                 Log.d("RideRequest", "📤 בקשת הצטרפות נשלחה (rideId: $rideId, passengerId: $passengerId)")
             } else {
-                Log.w("RideRequest", "⚠️ הבקשה לא נשלחה")
+                Log.w("RideRequest", "⚠ הבקשה לא נשלחה")
             }
             return@withContext success
         } catch (e: Exception) {
@@ -100,42 +114,39 @@ class RideRepository(
         try {
             val success = firestore.runTransaction { tx ->
                 val rideSnapshot = tx.get(rideRef)
-                val currentRide =
-                    rideSnapshot.toObject(Ride::class.java) ?: return@runTransaction false
+                val currentRide = rideSnapshot.toObject(Ride::class.java)
+                    ?: return@runTransaction false
 
                 val requestSnapshot = tx.get(requestRef)
-                val request =
-                    requestSnapshot.toObject(RideRequest::class.java) ?: return@runTransaction false
+                val request = requestSnapshot.toObject(RideRequest::class.java)
+                    ?: return@runTransaction false
 
-                val pickupLocation = request.pickupLocation ?: return@runTransaction false
+                val pickupLocation = request.pickupLocation
 
-                val updatedRide: Ride
-                if(ride.direction == RideDirection.TO_WORK) {
-                    updatedRide = currentRide.copy(
-                        passengers = currentRide.passengers + passengerId,
-                        occupiedSeats = currentRide.occupiedSeats + 1,
-                        currentDetourMinutes = currentRide.currentDetourMinutes + detour.addedDetourMinutes,
-                        encodedPolyline = detour.encodedPolyline ?: currentRide.encodedPolyline,
-                        pickupStops = currentRide.pickupStops + pickupLocation,
-                        departureTime = detour.updatedReferenceTime ?: currentRide.departureTime
-                    )
-                } else{
-                    updatedRide = currentRide.copy(
-                        passengers = currentRide.passengers + passengerId,
-                        occupiedSeats = currentRide.occupiedSeats + 1,
-                        currentDetourMinutes = currentRide.currentDetourMinutes + detour.addedDetourMinutes,
-                        encodedPolyline = detour.encodedPolyline ?: currentRide.encodedPolyline,
-                        pickupStops = currentRide.pickupStops + pickupLocation,
-                        arrivalTime = detour.updatedReferenceTime ?: currentRide.arrivalTime
-                    )
-                }
+                val pickupStop = PickupStop(
+                    location = pickupLocation,
+                    passengerId = passengerId,
+                    pickupTime = if (ride.direction == RideDirection.TO_WORK)
+                        detour.updatedReferenceTime else null,
+                    dropoffTime = if (ride.direction == RideDirection.TO_HOME)
+                        detour.updatedReferenceTime else null
+                )
+
+                val updatedRide = currentRide.copy(
+                    passengers = currentRide.passengers + passengerId,
+                    occupiedSeats = currentRide.occupiedSeats + 1,
+                    currentDetourMinutes = currentRide.currentDetourMinutes + detour.addedDetourMinutes,
+                    encodedPolyline = detour.encodedPolyline ?: currentRide.encodedPolyline,
+                    pickupStops = currentRide.pickupStops + pickupStop,
+                    departureTime = if (ride.direction == RideDirection.TO_WORK)
+                        detour.updatedReferenceTime ?: currentRide.departureTime
+                    else currentRide.departureTime,
+                    arrivalTime = if (ride.direction == RideDirection.TO_HOME)
+                        detour.updatedReferenceTime ?: currentRide.arrivalTime
+                    else currentRide.arrivalTime
+                )
 
                 tx.set(rideRef, updatedRide)
-
-                Log.d(
-                    "RideJoin",
-                    "✅ הנוסע נוסף לנסיעה (rideId=${ride.rideId}, passengerId=$passengerId)"
-                )
                 true
             }.await()
 
@@ -169,14 +180,14 @@ class RideRepository(
             )
 
             if (!statusUpdated) {
-                Log.w("RideRequest", "⚠️ לא ניתן לעדכן סטטוס ל-DECLINED (requestId=$requestId)")
+                Log.w("RideRequest", "⚠ לא ניתן לעדכן סטטוס ל-DECLINED (requestId=$requestId)")
                 return@withContext false
             }
 
             //  מחיקת הבקשה ע"י הפונקציה מ-RideRequestRepository
             rideRequestRepository.deleteRequest(rideId, requestId)
 
-            Log.d("RideRequest", "🗑️ בקשה נדחתה ונמחקה בהצלחה (requestId=$requestId)")
+            Log.d("RideRequest", "🗑 בקשה נדחתה ונמחקה בהצלחה (requestId=$requestId)")
             return@withContext true
 
         } catch (e: Exception) {
@@ -190,7 +201,6 @@ class RideRepository(
         requestId: String,
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            //  עדכון סטטוס ל-CANCELLED
             val statusUpdated = rideRequestRepository.updateRequestStatus(
                 rideId = rideId,
                 requestId = requestId,
@@ -198,11 +208,10 @@ class RideRepository(
             )
 
             if (!statusUpdated) {
-                Log.w("RideRequest", "⚠️ לא ניתן לעדכן סטטוס ל-CANCELLED (requestId=$requestId)")
+                Log.w("RideRequest", "⚠ לא ניתן לעדכן סטטוס ל-CANCELLED (requestId=$requestId)")
                 return@withContext false
             }
 
-            //  מחיקת הבקשה
             rideRequestRepository.deleteRequest(rideId, requestId)
 
             Log.d("RideRequest", "🚫 הבקשה בוטלה ונמחקה בהצלחה (requestId=$requestId)")
@@ -213,7 +222,6 @@ class RideRepository(
             return@withContext false
         }
     }
-
 
     override suspend fun removePassengerFromRide(
         rideId: String,
@@ -226,7 +234,7 @@ class RideRepository(
             val ride = snapshot.toObject(Ride::class.java)
 
             if (ride == null || !ride.passengers.contains(passengerId)) {
-                Log.w("RideLeave", "⚠️ הנוסע $passengerId לא נמצא בנסיעה (rideId: $rideId)")
+                Log.w("RideLeave", "⚠ הנוסע $passengerId לא נמצא בנסיעה (rideId: $rideId)")
                 return@runTransaction null
             }
 
@@ -254,11 +262,10 @@ class RideRepository(
         val updatedPassengers = ride.passengers - passengerId
         val updatedOccupiedSeats = maxOf(ride.occupiedSeats - 1, 0)
 
-        val pickupToRemove = getPickupLocationFromRequest(ride.rideId, passengerId)
-        val updatedPickupStops = ride.pickupStops.filterNot { it == pickupToRemove }
+        val updatedPickupStops = ride.pickupStops.filterNot { it.passengerId == passengerId }
 
         val timeFlag: Boolean
-        val timeReference = if(ride.direction == RideDirection.TO_WORK){
+        val timeReference = if (ride.direction == RideDirection.TO_WORK) {
             timeFlag = true
             ride.arrivalTime
         } else {
@@ -268,20 +275,21 @@ class RideRepository(
 
         val route = if (updatedPickupStops.isNotEmpty()) {
             mapsService.getDurationAndRouteWithWaypoints(
-                origin = ride.startLocation,
+                origin = ride.startLocation.geoPoint,
                 waypoints = updatedPickupStops,
-                destination = ride.destination,
+                destination = ride.destination.geoPoint,
                 timeReference = timeReference!!,
                 date = ride.date,
                 direction = ride.direction!!,
+                passengerStop = null // לא רלוונטי בהסרה
             )
         } else {
             mapsService.getDurationAndRouteFromGoogleApi(
-                origin = ride.startLocation,
-                destination = ride.destination,
+                origin = ride.startLocation.geoPoint,
+                destination = ride.destination.geoPoint,
                 timeReference = timeReference!!,
                 date = ride.date,
-                direction = ride.direction!!,
+                direction = ride.direction!!
             )
         }
 
@@ -291,20 +299,21 @@ class RideRepository(
             direction = ride.direction
         )
 
-        val previousDetourMinutes = calculateTimeDifferenceInMinutes(ride.arrivalTime!!, ride.departureTime!!)
-        Log.d("RideUpdate", "📏 סטייה קודמת: $previousDetourMinutes דקות (arrival=${ride.arrivalTime}, departure=${ride.departureTime})")
+        val previousDetourMinutes = calculateTimeDifferenceInMinutes(
+            ride.arrivalTime!!,
+            ride.departureTime!!
+        )
+        Log.d("RideUpdate", "📏 סטייה קודמת: $previousDetourMinutes דקות")
 
-        val newDetourMinutes: Int
-        if(timeFlag){
-            newDetourMinutes = calculateTimeDifferenceInMinutes(ride.departureTime, updatedTimeReference)
-        } else{
-            newDetourMinutes = calculateTimeDifferenceInMinutes(ride.arrivalTime, updatedTimeReference)
+        val newDetourMinutes = if (timeFlag) {
+            calculateTimeDifferenceInMinutes(ride.departureTime, updatedTimeReference)
+        } else {
+            calculateTimeDifferenceInMinutes(ride.arrivalTime, updatedTimeReference)
         }
-        Log.d("RideUpdate", "📏 סטייה נוכחית חדשה: $newDetourMinutes דקות (arrival=${ride.arrivalTime}, new departure=$updatedTimeReference)")
+        Log.d("RideUpdate", "📏 סטייה חדשה: $newDetourMinutes דקות")
 
-        Log.d("RideDebug", "📏 סטייה נוכחית מהמסלול: ${ride.currentDetourMinutes} דקות")
         val updatedDetourMinutes = ride.currentDetourMinutes - newDetourMinutes
-        Log.d("RideUpdate", "🔁 עדכון סטייה: קודם ${ride.currentDetourMinutes}, נוכחית $newDetourMinutes → לאחר העדכון: $updatedDetourMinutes")
+        Log.d("RideUpdate", "🔁 עדכון סטייה מצטברת: $updatedDetourMinutes דקות")
 
         val baseUpdatedRide = ride.copy(
             passengers = updatedPassengers,
@@ -324,7 +333,7 @@ class RideRepository(
     private suspend fun getPickupLocationFromRequest(
         rideId: String,
         passengerId: String
-    ): GeoPoint? {
+    ): LocationData? {
         return try {
             val snapshot = rideCollection.document(rideId)
                 .collection("requests")
@@ -341,14 +350,26 @@ class RideRepository(
         }
     }
 
+
     private suspend fun deletePassengerRequestsForRide(rideId: String, passengerId: String) {
         try {
-            val requests = rideRequestRepository.getRequestsByPassenger(passengerId)
-            val relevant = requests.filter { it.rideId == rideId }
+            val snapshot = firestore.collection("rides")
+                .document(rideId)
+                .collection("requests")
+                .whereEqualTo("passengerId", passengerId)
+                .get()
+                .await()
 
-            for (request in relevant) {
-                rideRequestRepository.deleteRequest(rideId, request.requestId)
-                Log.d("RideLeave", "🗑️ בקשה ${request.requestId} נמחקה")
+            for (doc in snapshot.documents) {
+                val requestId = doc.id
+                firestore.collection("rides")
+                    .document(rideId)
+                    .collection("requests")
+                    .document(requestId)
+                    .delete()
+                    .await()
+
+                Log.d("RideLeave", "🗑 בקשה $requestId נמחקה")
             }
 
             Log.d("RideLeave", "✅ כל בקשות ההצטרפות של $passengerId לנסיעה $rideId נמחקו")
@@ -369,28 +390,33 @@ class RideRepository(
             val ride = rideSnapshot.toObject(Ride::class.java)
 
             if (ride == null) {
-                Log.w("RideDelete", "⚠️ לא נמצאה נסיעה למחיקה (rideId=$rideId)")
+                Log.w("RideDelete", "⚠ לא נמצאה נסיעה למחיקה (rideId=$rideId)")
                 return@withContext
             }
 
-            // מחיקת כל הנוסעים מהנסיעה
             if (ride.passengers.isNotEmpty()) {
                 Log.d("RideDelete", "🔁 התחלת הסרת ${ride.passengers.size} נוסעים מהנסיעה")
 
-                for (passengerId in ride.passengers) {
-                    removePassengerFromRide(rideId, passengerId)
+                for (passengerId in ride.passengers.toList()) {
+                    try {
+                        // קריאה רגילה לפונקציה עם חישוב מסלול
+                        removePassengerFromRide(rideId, passengerId)
+                    } catch (e: Exception) {
+                        Log.e("RideDelete", "❌ שגיאה בהסרת נוסע $passengerId: ${e.message}", e)
+                    }
                 }
 
                 Log.d("RideDelete", "✅ כל הנוסעים הוסרו מהנסיעה (rideId=$rideId)")
             }
 
             rideCollection.document(rideId).delete().await()
-            Log.d("RideDelete", "🗑️ הנסיעה נמחקה בהצלחה (rideId=$rideId)")
+            Log.d("RideDelete", "🗑 הנסיעה נמחקה בהצלחה (rideId=$rideId)")
 
         } catch (e: Exception) {
             Log.e("RideDelete", "❌ שגיאה במחיקת נסיעה: ${e.message}", e)
         }
     }
+
 
     override suspend fun updateAvailableSeats(rideId: String, seats: Int) {
         firestore.collection("rides")
@@ -444,8 +470,8 @@ class RideRepository(
     override suspend fun planRideFromUserInput(
         driverId: String,
         companyId: String,
-        startAddress: String,
-        destinationAddress: String,
+        startAddress: LocationData,
+        destinationAddress: LocationData,
         arrivalTime: String,
         departureTime: String,
         date: String,
@@ -463,17 +489,12 @@ class RideRepository(
         }
 
         if (alreadyExists) {
-            Log.d("RideLogic", "⚠️ נסיעה כזו כבר קיימת — לא נוצרת חדשה")
+            Log.d("RideLogic", "⚠ נסיעה כזו כבר קיימת — לא נוצרת חדשה")
             return@withContext false
         }
 
-        val startLocation = mapsService.getCoordinatesFromAddress(startAddress)?.geoPoint
-        val destination = mapsService.getCoordinatesFromAddress(destinationAddress)?.geoPoint
-
-        if (startLocation == null || destination == null) {
-            Log.e("RideLogic", "❌ כתובת לא תקינה - התחלה: $startAddress, יעד: $destinationAddress")
-            return@withContext false
-        }
+        val startLocation = startAddress.geoPoint
+        val destination = destinationAddress.geoPoint
 
         val formatter = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -493,8 +514,8 @@ class RideRepository(
             rideId = rideId,
             driverId = driverId,
             companyId = companyId,
-            startLocation = startLocation,
-            destination = destination,
+            startLocation = startAddress,
+            destination = destinationAddress,
             direction = direction,
             arrivalTime = adjustedArrivalTimeStr,
             departureTime = departureTime.format(formatter),
@@ -542,7 +563,6 @@ class RideRepository(
         Log.d("RideLogic", "✅ נסיעה נוצרה בהצלחה: ${finalizedRide.rideId}")
         return@withContext true
     }
-
 
     override suspend fun calculateRideDepartureTime(
         ride: Ride,

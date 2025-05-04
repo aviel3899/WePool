@@ -47,6 +47,6 @@ fun CreateRideDirectionScreen(navController: NavController, uid: String) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Back")
-          }
         }
+    }
 }

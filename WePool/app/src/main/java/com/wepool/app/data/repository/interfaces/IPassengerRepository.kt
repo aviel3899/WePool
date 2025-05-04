@@ -12,6 +12,6 @@ interface IPassengerRepository {
     suspend fun removeFavoriteLocation(uid: String, placeId: String)
     suspend fun deletePassenger(uid:String)
     //suspend fun updatePreferredPickupLocation(uid: String, location: GeoPoint)
-  //  suspend fun updatePreferredArrivalTime(uid: String, arrivalTime: String)
+    //  suspend fun updatePreferredArrivalTime(uid: String, arrivalTime: String)
 
 }

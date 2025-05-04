@@ -62,7 +62,7 @@ fun DriverCarDetailsScreen(
                             val driver = Driver(
                                 user = user,
                                 vehicleDetails = carDetails,
-                                activeRideId = ""
+                                activeRideId = emptyList()
                             )
                             driverRepository.saveDriver(driver)
                             Log.d("DriverCarDetails", "✅ Driver saved")
@@ -103,7 +103,6 @@ fun DriverCarDetailsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Back")
-            }
-       }
+        }
+    }
 }
-

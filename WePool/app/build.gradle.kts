@@ -89,5 +89,6 @@ dependencies {
     implementation(libs.maps.utils)
     implementation(libs.maps.sdk)
     implementation(libs.navigation.compose)
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
 }

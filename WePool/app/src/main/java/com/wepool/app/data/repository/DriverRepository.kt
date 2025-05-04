@@ -11,7 +11,6 @@ class DriverRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) : IDriverRepository {
 
-    // יוצרת או מעדכנת את נתוני הנהג במסמך info
     override suspend fun saveDriver(driver: Driver) {
         val uid = auth.currentUser?.uid ?: throw Exception("User not logged in")
         firestore.collection("users")
@@ -22,7 +21,6 @@ class DriverRepository(
             .await()
     }
 
-    // מחזירה את אובייקט הנהג לפי uid
     override suspend fun getDriver(uid: String): Driver? {
         val snapshot = firestore.collection("users")
             .document(uid)
@@ -33,7 +31,6 @@ class DriverRepository(
         return snapshot.toObject(Driver::class.java)
     }
 
-    // מוחקת את מסמך הנהג
     override suspend fun deleteDriver(uid: String) {
         firestore.collection("users")
             .document(uid)
@@ -52,12 +49,12 @@ class DriverRepository(
             .await()
     }
 
-    override suspend fun updateActiveRideId(uid: String, rideId: String?) {
+    override suspend fun updateActiveRideIds(uid: String, rideIds: List<String>) {
         firestore.collection("users")
             .document(uid)
             .collection("driverData")
             .document("info")
-            .update("activeRideId", rideId)
+            .update("activeRideIds", rideIds)
             .await()
     }
 }
