@@ -14,22 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import com.wepool.app.ui.theme.WePoolTheme
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.GeoPoint
-import com.google.firebase.auth.FirebaseAuth
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.GoogleApiAvailability
-import com.wepool.app.BuildConfig
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.users.Driver
 import com.wepool.app.data.model.users.Passenger
-import com.wepool.app.data.model.logic.PolylineDecoder
 import com.wepool.app.data.model.logic.RouteMatcher
-import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
@@ -37,7 +28,6 @@ import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
 import com.wepool.app.data.model.logic.PassengerRideFinder
 import com.wepool.app.infrastructure.RepositoryProvider
-import com.wepool.app.data.remote.GoogleMapsService
 import com.google.android.gms.maps.model.LatLng
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
@@ -327,7 +317,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun testPassengerJoinFlow(passengerId: String) {
+   /* private fun testPassengerJoinFlow(passengerId: String) {
         lifecycleScope.launch {
             try {
                 Log.d("TestFlow", "🚀 התחלת תהליך הצטרפות נוסע לנסיעה (passengerId=$passengerId)")
@@ -423,7 +413,7 @@ class MainActivity : ComponentActivity() {
                 Log.e("TestFlow", "❌ שגיאה חריגה בתהליך ההצטרפות", e)
             }
         }
-    }
+    }*/
 
 
 

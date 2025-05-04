@@ -67,6 +67,18 @@ class RideRepository(
             .toObjects(Ride::class.java)
     }
 
+    override fun getPickupTimeForPassenger(ride: Ride, passengerId: String): String? {
+        return ride.pickupStops
+            .firstOrNull { it.passengerId == passengerId }
+            ?.pickupTime
+    }
+
+    override fun getDropoffTimeForPassenger(ride: Ride, passengerId: String): String? {
+        return ride.pickupStops
+            .firstOrNull { it.passengerId == passengerId }
+            ?.dropoffTime
+        }
+
     override suspend fun addPassengerToRide(
         rideId: String,
         passengerId: String,
@@ -77,7 +89,7 @@ class RideRepository(
             if (success) {
                 Log.d("RideRequest", "📤 בקשת הצטרפות נשלחה (rideId: $rideId, passengerId: $passengerId)")
             } else {
-                Log.w("RideRequest", "⚠️ הבקשה לא נשלחה")
+                Log.w("RideRequest", "⚠ הבקשה לא נשלחה")
             }
             return@withContext success
         } catch (e: Exception) {
@@ -86,7 +98,7 @@ class RideRepository(
         }
     }
 
-    override suspend fun approvePassengerRequest(
+    /*override suspend fun approvePassengerRequest(
         candidate: RideCandidate,
         requestId: String,
         passengerId: String
@@ -154,7 +166,7 @@ class RideRepository(
             Log.e("RideJoin", "❌ שגיאה באישור הבקשה: ${e.message}", e)
             return@withContext false
         }
-    }
+    }*/
 
     override suspend fun declineAndDeleteRideRequest(
         rideId: String,
@@ -169,14 +181,14 @@ class RideRepository(
             )
 
             if (!statusUpdated) {
-                Log.w("RideRequest", "⚠️ לא ניתן לעדכן סטטוס ל-DECLINED (requestId=$requestId)")
+                Log.w("RideRequest", "⚠ לא ניתן לעדכן סטטוס ל-DECLINED (requestId=$requestId)")
                 return@withContext false
             }
 
             //  מחיקת הבקשה ע"י הפונקציה מ-RideRequestRepository
             rideRequestRepository.deleteRequest(rideId, requestId)
 
-            Log.d("RideRequest", "🗑️ בקשה נדחתה ונמחקה בהצלחה (requestId=$requestId)")
+            Log.d("RideRequest", "🗑 בקשה נדחתה ונמחקה בהצלחה (requestId=$requestId)")
             return@withContext true
 
         } catch (e: Exception) {
@@ -198,7 +210,7 @@ class RideRepository(
             )
 
             if (!statusUpdated) {
-                Log.w("RideRequest", "⚠️ לא ניתן לעדכן סטטוס ל-CANCELLED (requestId=$requestId)")
+                Log.w("RideRequest", "⚠ לא ניתן לעדכן סטטוס ל-CANCELLED (requestId=$requestId)")
                 return@withContext false
             }
 
@@ -215,7 +227,7 @@ class RideRepository(
     }
 
 
-    override suspend fun removePassengerFromRide(
+    /*override suspend fun removePassengerFromRide(
         rideId: String,
         passengerId: String
     ): Unit = withContext(Dispatchers.IO) {
@@ -226,7 +238,7 @@ class RideRepository(
             val ride = snapshot.toObject(Ride::class.java)
 
             if (ride == null || !ride.passengers.contains(passengerId)) {
-                Log.w("RideLeave", "⚠️ הנוסע $passengerId לא נמצא בנסיעה (rideId: $rideId)")
+                Log.w("RideLeave", "⚠ הנוסע $passengerId לא נמצא בנסיעה (rideId: $rideId)")
                 return@runTransaction null
             }
 
@@ -319,7 +331,7 @@ class RideRepository(
         } else {
             baseUpdatedRide.copy(arrivalTime = updatedTimeReference)
         }
-    }
+    }*/
 
     private suspend fun getPickupLocationFromRequest(
         rideId: String,
@@ -348,7 +360,7 @@ class RideRepository(
 
             for (request in relevant) {
                 rideRequestRepository.deleteRequest(rideId, request.requestId)
-                Log.d("RideLeave", "🗑️ בקשה ${request.requestId} נמחקה")
+                Log.d("RideLeave", "🗑 בקשה ${request.requestId} נמחקה")
             }
 
             Log.d("RideLeave", "✅ כל בקשות ההצטרפות של $passengerId לנסיעה $rideId נמחקו")
@@ -363,13 +375,13 @@ class RideRepository(
     }
 
     // מוחק נסיעה
-    override suspend fun deleteRide(rideId: String) = withContext(Dispatchers.IO) {
+    /*override suspend fun deleteRide(rideId: String) = withContext(Dispatchers.IO) {
         try {
             val rideSnapshot = rideCollection.document(rideId).get().await()
             val ride = rideSnapshot.toObject(Ride::class.java)
 
             if (ride == null) {
-                Log.w("RideDelete", "⚠️ לא נמצאה נסיעה למחיקה (rideId=$rideId)")
+                Log.w("RideDelete", "⚠ לא נמצאה נסיעה למחיקה (rideId=$rideId)")
                 return@withContext
             }
 
@@ -385,12 +397,12 @@ class RideRepository(
             }
 
             rideCollection.document(rideId).delete().await()
-            Log.d("RideDelete", "🗑️ הנסיעה נמחקה בהצלחה (rideId=$rideId)")
+            Log.d("RideDelete", "🗑 הנסיעה נמחקה בהצלחה (rideId=$rideId)")
 
         } catch (e: Exception) {
             Log.e("RideDelete", "❌ שגיאה במחיקת נסיעה: ${e.message}", e)
         }
-    }
+    }*/
 
     override suspend fun updateAvailableSeats(rideId: String, seats: Int) {
         firestore.collection("rides")
@@ -463,7 +475,7 @@ class RideRepository(
         }
 
         if (alreadyExists) {
-            Log.d("RideLogic", "⚠️ נסיעה כזו כבר קיימת — לא נוצרת חדשה")
+            Log.d("RideLogic", "⚠ נסיעה כזו כבר קיימת — לא נוצרת חדשה")
             return@withContext false
         }
 
@@ -589,5 +601,5 @@ class RideRepository(
         val end = LocalTime.parse(endTime, formatter)
 
         return abs(Duration.between(start, end).toMinutes().toInt())
-    }
+        }
 }

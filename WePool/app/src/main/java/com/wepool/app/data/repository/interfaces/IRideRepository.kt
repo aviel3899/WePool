@@ -15,9 +15,11 @@ interface IRideRepository {
     suspend fun getAllRides(): List<Ride>
     suspend fun getRidesByDriver(driverId: String): List<Ride>
     suspend fun getRidesByCompanyAndDirection(companyId: String, direction: RideDirection): List<Ride>
+    fun getPickupTimeForPassenger(ride: Ride, passengerId: String): String?
+    fun getDropoffTimeForPassenger(ride: Ride, passengerId: String):String?
 
     suspend fun updateRide(ride: Ride)
-    suspend fun deleteRide(rideId: String)
+    //suspend fun deleteRide(rideId: String)
     suspend fun updateAvailableSeats(rideId: String, seats: Int)
     suspend fun updateMaxDetourMinutes(rideId: String, maxDetour: Int)
     suspend fun updateArrivalTime(rideId: String, time: String)
@@ -32,11 +34,11 @@ interface IRideRepository {
         passengerId: String,
         pickupLocation: GeoPoint
     ): Boolean
-    suspend fun approvePassengerRequest(
+    /*suspend fun approvePassengerRequest(
         candidate: RideCandidate,
         requestId: String,
         passengerId: String
-    ): Boolean
+    ): Boolean*/
     suspend fun declineAndDeleteRideRequest(
         rideId: String,
         requestId: String
@@ -45,7 +47,7 @@ interface IRideRepository {
         rideId: String,
         requestId: String,
     ): Boolean
-    suspend fun removePassengerFromRide(rideId: String, passengerId: String)
+    //suspend fun removePassengerFromRide(rideId: String, passengerId: String)
 
     suspend fun calculateRideDepartureTime(
         ride: Ride,
@@ -68,6 +70,5 @@ interface IRideRepository {
         maxDetourMinutes: Int,
         notes: String
     ): Boolean
-    suspend fun adjustTimeAccordingToDirection(time: String, minutes: Int, direction: RideDirection): String
+    suspend fun adjustTimeAccordingToDirection(time: String, minutes: Int, direction: RideDirection):String
 }
-

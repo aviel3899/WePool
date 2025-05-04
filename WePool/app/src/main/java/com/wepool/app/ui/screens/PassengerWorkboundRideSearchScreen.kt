@@ -2,8 +2,8 @@ package com.wepool.app.ui.screens
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
-import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,14 +11,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.maps.model.LatLng
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.logic.PassengerRideFinder
-import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.model.logic.RouteMatcher
+import com.wepool.app.data.model.ride.PickupStop
+import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -27,23 +33,30 @@ import java.util.*
 @Composable
 fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String) {
     val context = LocalContext.current
-
-    var startLocation by remember { mutableStateOf("") }
     val destination = "מכללת אפקה"
+    var startLocation by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf("") }
     var isFormValid by remember { mutableStateOf(false) }
+    var startLocationSuggestions by remember { mutableStateOf(emptyList<String>()) }
+    var expanded by remember { mutableStateOf(false) }
+    var textFieldSize by remember { mutableStateOf(IntSize.Zero) }
 
     val coroutineScope = rememberCoroutineScope()
-
+    val rideRepository = RepositoryProvider.provideRideRepository()
     val passengerRideFinder = PassengerRideFinder(
-        rideRepository = RepositoryProvider.provideRideRepository(),
+        rideRepository = rideRepository,
         mapsService = RepositoryProvider.mapsService,
         routeMatcher = RouteMatcher
     )
-
     var rides by remember { mutableStateOf<List<RideCandidate>>(emptyList()) }
     var ridesFetched by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val focusRequester = remember { FocusRequester() }
+
+    var pickupStop = PickupStop()
+
 
     LaunchedEffect(startLocation, selectedDate, selectedTime) {
         isFormValid = startLocation.isNotBlank() && selectedDate.isNotBlank() && selectedTime.isNotBlank()
@@ -57,12 +70,47 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
         Text("Join a Workbound Ride", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(24.dp))
 
-        OutlinedTextField(
-            value = startLocation,
-            onValueChange = { startLocation = it },
-            label = { Text("Start Location") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        // Autocomplete input
+        Box {
+            OutlinedTextField(
+                value = startLocation,
+                onValueChange = {
+                    startLocation = it
+                    expanded = true
+                    coroutineScope.launch {
+                        startLocationSuggestions = RepositoryProvider.mapsService.getAddressSuggestions(it)
+                    }
+                },
+                label = { Text("Start Location") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates ->
+                        textFieldSize = coordinates.size
+                    }
+                    .focusRequester(focusRequester),
+                singleLine = true,
+                interactionSource = remember { MutableInteractionSource() }
+            )
+
+            DropdownMenu(
+                expanded = expanded && startLocationSuggestions.isNotEmpty(),
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.width(with(LocalDensity.current) { textFieldSize.width.toDp() })
+            ) {
+                startLocationSuggestions.forEach { suggestion ->
+                    DropdownMenuItem(
+                        text = { Text(suggestion) },
+                        onClick = {
+                            startLocation = suggestion
+                            expanded = false
+                            coroutineScope.launch {
+                                focusRequester.requestFocus()
+                            }
+                        }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -71,7 +119,8 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
             onValueChange = {},
             label = { Text("Destination") },
             enabled = false,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -127,6 +176,7 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
         Button(
             onClick = {
                 coroutineScope.launch {
+                    isLoading = true
                     try {
                         val locationData = RepositoryProvider.mapsService.getCoordinatesFromAddress(startLocation)
 
@@ -134,18 +184,19 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
                             Toast.makeText(context, "❌ Address not found", Toast.LENGTH_SHORT).show()
                             return@launch
                         }
-
-                        val latLng = LatLng(locationData.geoPoint.latitude, locationData.geoPoint.longitude)
+                         pickupStop = PickupStop(
+                            location = locationData,
+                            passengerId = uid
+                        )
 
                         val availableRides = passengerRideFinder.getAvailableRidesForPassenger(
-                            companyId = "company123", // change later
+                            companyId = "company123",
                             direction = RideDirection.TO_WORK,
                             passengerArrivalTime = selectedTime,
                             passengerDepartureTime = "",
                             passengerDate = selectedDate,
-                            pickupPoint = latLng,
-                            passengerId = uid,
-                            rideRepository = RepositoryProvider.provideRideRepository()
+                            pickupPoint = pickupStop,
+                            rideRepository = rideRepository
                         )
 
                         rides = availableRides
@@ -153,12 +204,18 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
                     } catch (e: Exception) {
                         Toast.makeText(context, "❌ Error fetching rides", Toast.LENGTH_SHORT).show()
                         e.printStackTrace()
+                    } finally {
+                        isLoading = false
                     }
                 }
             },
             enabled = isFormValid,
             modifier = Modifier.fillMaxWidth()
         ) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(8.dp))
+            }
             Text("Show Available Rides")
         }
 
@@ -184,6 +241,7 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
                                 Text("Destination: ${ride.ride.destination}")
                                 Text("Date: ${ride.ride.date}")
                                 Text("Time: ${ride.ride.arrivalTime ?: ride.ride.departureTime}")
+                                Text("Pickup Time: ${rideRepository.getPickupTimeForPassenger(ride.ride,pickupStop.passengerId )}")
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Button(
                                     onClick = {

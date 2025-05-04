@@ -6,6 +6,7 @@ import com.wepool.app.data.remote.DirectionsResponse
 import com.wepool.app.data.model.logic.DurationAndRoute
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.ride.PickupStop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -57,12 +58,16 @@ class GoogleMapsService(
 
     override suspend fun getDurationAndRouteWithWaypoints(
         origin: GeoPoint,
-        waypoints: List<GeoPoint>,
+        //waypoints: List<GeoPoint>,
+        waypoints: List<PickupStop>, //חדש
         destination: GeoPoint,
         timeReference: String,
         date: String,
-        direction: RideDirection
+        direction: RideDirection,
+        passengerStop: PickupStop?
     ): DurationAndRoute = withContext(Dispatchers.IO) {
+
+        val waypointGeoPoints = waypoints.map { it.location.geoPoint }
 
         val url = buildGoogleDirectionsUrl(
             origin = origin,
@@ -70,20 +75,60 @@ class GoogleMapsService(
             timeReference = timeReference,
             date = date,
             apiKey = apiKey,
-            waypoints = waypoints,
-            rideDirection = direction
+            //waypoints = waypoints,
+            waypoints = waypointGeoPoints, //חדש
+            rideDirection = direction,
         )
         val response = fetchDirections(url)
         val route = extractRoute(response)
+
+        val legs = route.legs //חדש
+
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
+        val baseTime = LocalTime.parse(timeReference, formatter)
+
+        var accumulatedSeconds = 0L
+        val pickupTimes = mutableMapOf<String, String>()
+        val dropoffTimes = mutableMapOf<String, String>()
+
+        for ((index, leg) in legs.withIndex()) {
+            val pickupStop = waypoints.getOrNull(index)
+
+            accumulatedSeconds += leg.duration.value.toLong()
+
+            // pickupTime
+            if (pickupStop != null && !pickupTimes.containsKey(pickupStop.passengerId)) {
+                val pickupTime = baseTime.plusSeconds(accumulatedSeconds - leg.duration.value.toLong())
+                    .format(formatter)
+                pickupTimes[pickupStop.passengerId] = pickupTime
+                Log.d(
+                    "GoogleMapsService",
+                    "🟢 זמן איסוף ל-${pickupStop.passengerId} (Index $index): $pickupTime"
+                )
+            }
+
+            // dropoffTime
+            if (pickupStop != null && !dropoffTimes.containsKey(pickupStop.passengerId)) {
+                val dropoffTime = baseTime.plusSeconds(accumulatedSeconds).format(formatter)
+                dropoffTimes[pickupStop.passengerId] = dropoffTime
+                Log.d(
+                    "GoogleMapsService",
+                    "🔵 זמן הורדה ל-${pickupStop.passengerId} (Index $index): $dropoffTime"
+                    )
+                }
+        }
+
         val durationSeconds = getDurationSeconds(route, withWaypoints = true)
 
         return@withContext DurationAndRoute(
             durationMinutes = durationSeconds / 60,
-            encodedPolyline = route.overview_polyline.points
+            encodedPolyline = route.overview_polyline.points,
+            pickupTimes = pickupTimes,
+            dropoffTimes = dropoffTimes
         )
     }
 
-    // ממיר כתובת טקסטואלית ל־LocationData (קואורדינטות, כתובת מילוילת ומזהה מיוחד) באמצעות Google Geocoding API.
+    // ממיר כתובת טקסטואלית ל־LocationData (קואורדינטות, כתובת מילוילת ומזהה מיוחד) באמצעות Google Geocoding API
     override suspend fun getCoordinatesFromAddress(address: String): LocationData? {
         val url = buildUrl(GEOCODING_URL, mapOf(
             "address" to address,
@@ -114,7 +159,7 @@ class GoogleMapsService(
         )
     }
 
-   // מחזיר רשימת כתובות מוצעות לפי google autocomplete
+    // מחזיר רשימת כתובות מוצעות לפי google autocomplete
     override suspend fun getAddressSuggestions(input: String): List<String> = withContext(Dispatchers.IO) {
         val url = buildUrl(AUTOCOMPLETE_URL, mapOf(
             "input" to input,
@@ -127,7 +172,7 @@ class GoogleMapsService(
         val json = getJsonFromUrl(url) ?: return@withContext emptyList()
         val status = json.optString("status")
         if (status != "OK") {
-            Log.w("Autocomplete", "⚠️ סטטוס לא תקין: $status")
+            Log.w("Autocomplete", "⚠ סטטוס לא תקין: $status")
             return@withContext emptyList()
         }
 
@@ -138,7 +183,7 @@ class GoogleMapsService(
         }
     }
 
-     // מבצע בקשת HTTP ומחזיר את התוצאה כ־JSONObject.
+    // מבצע בקשת HTTP ומחזיר את התוצאה כ־JSONObject.
     private suspend fun getJsonFromUrl(url: String): JSONObject? = withContext(Dispatchers.IO) {
         return@withContext try {
             val request = Request.Builder().url(url).build()
@@ -219,9 +264,7 @@ class GoogleMapsService(
         } else {
             route.legs.firstOrNull()?.duration?.value
                 ?: throw Exception("Duration not found")
+            }
         }
-    }
 
 }
-
-

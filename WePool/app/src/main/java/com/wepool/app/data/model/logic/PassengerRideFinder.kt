@@ -3,6 +3,7 @@ package com.wepool.app.data.model.logic
 import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.remote.IGoogleMapsService
@@ -19,8 +20,8 @@ class PassengerRideFinder(
     private val routeMatcher: RouteMatcher
 ) {
 
-    private val maxArrivalTimeDifferenceMinutes = 30L //workbound
-    private val maxDepartureTimeDifferenceMinutes = 15L //homwbound
+    private val maxArrivalTimeDifferenceMinutes = 30L
+    private val maxDepartureTimeDifferenceMinutes = 15L
     private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     suspend fun getAvailableRidesForPassenger(
@@ -29,8 +30,9 @@ class PassengerRideFinder(
         passengerArrivalTime: String = "",
         passengerDepartureTime: String = "",
         passengerDate: String,
-        pickupPoint: LatLng,
-        passengerId: String,
+        //pickupPoint: LatLng,
+        pickupPoint: PickupStop,
+        //passengerId: String, // לא צריך כי אני מעביר בתוך PickupStop את passengerId
         rideRepository: IRideRepository,
     ): List<RideCandidate> = withContext(Dispatchers.IO) {
 
@@ -40,13 +42,15 @@ class PassengerRideFinder(
             val dateOK = ride.date == passengerDate
             //val timeOK = isArrivalTimeValid(ride.arrivalTime!!, passengerArrivalTime)
             val timeOK: Boolean
-            if (direction == RideDirection.TO_WORK) {
-                timeOK = isRideTimeValid(ride.arrivalTime!!, passengerArrivalTime, direction)
-            } else {
-                timeOK = isRideTimeValid(ride.departureTime!!, passengerDepartureTime, direction)
+            if(direction == RideDirection.TO_WORK){
+                timeOK = isRideTimeValid(ride.arrivalTime!!, ride.maxDetourMinutes, passengerArrivalTime, direction)
+            }
+            else{
+                timeOK = isRideTimeValid(ride.departureTime!!, ride.maxDetourMinutes, passengerDepartureTime, direction)
             }
             val seatOK = ride.occupiedSeats < ride.availableSeats
-            val notAlreadyJoined = !ride.passengers.contains(passengerId)
+            //val notAlreadyJoined = !ride.passengers.contains(passengerId)
+            val notAlreadyJoined = !ride.passengers.contains(pickupPoint.passengerId)
 
             val currentRouteTimeMinutes = try {
                 val departure = LocalTime.parse(ride.departureTime, timeFormatter)
@@ -57,9 +61,10 @@ class PassengerRideFinder(
                 return@mapNotNull null
             }
 
-            val timeReference = if (ride.direction == RideDirection.TO_WORK) {
+            val timeReference = if(ride.direction == RideDirection.TO_WORK){
                 ride.arrivalTime!!
-            } else {
+            }
+            else{
                 ride.departureTime!!
             }
 
@@ -82,8 +87,7 @@ class PassengerRideFinder(
             val detourOK = evaluation.isAllowed
 
             if (!dateOK || !timeOK || !seatOK || !notAlreadyJoined || !detourOK) {
-                Log.d(
-                    "RideFilter", """ ❌ נסיעה לא מתאימה:
+                Log.d("RideFilter", """ ❌ נסיעה לא מתאימה:
         - תאריך תואם? $dateOK
         - זמן תואם? $timeOK
         - יש מקומות פנויים? $seatOK
@@ -106,19 +110,21 @@ class PassengerRideFinder(
 
     private fun isRideTimeValid(
         driverTime: String,
+        detourMinutes: Int,
         passengerTime: String,
         direction: RideDirection
     ): Boolean {
         val formatter = DateTimeFormatter.ofPattern("HH:mm")
-        val driver = LocalTime.parse(driverTime, formatter)
+        var driver = LocalTime.parse(driverTime, formatter)
+        driver = driver.plusMinutes(detourMinutes.toLong())
         val passenger = LocalTime.parse(passengerTime, formatter)
 
         return if (direction == RideDirection.TO_WORK) { //זמן ההגעה של הנוסע לא אחרי זמן ההגעה של הנהג ולא X דקות לםניו
-            !passenger.isBefore(driver) &&
-                    passenger.isBefore(driver.plusMinutes(maxArrivalTimeDifferenceMinutes))
+            !passenger.isAfter(driver.plusMinutes(maxArrivalTimeDifferenceMinutes)) &&
+                    !passenger.isBefore(driver)
         } else { //זמן היציאה של הנוסע לא אחרי זמן היציאה של הנהג ולא X דקות לפניו
             !passenger.isBefore(driver.minusMinutes(maxDepartureTimeDifferenceMinutes)) &&
                     !passenger.isAfter(driver)
+            }
         }
-    }
 }
