@@ -3,7 +3,6 @@ package com.wepool.app.data.repository
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
-import com.google.android.gms.maps.model.LatLng
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.enums.RequestStatus
 import com.wepool.app.data.model.logic.DepartureCalculationResult
@@ -15,15 +14,14 @@ import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.remote.IGoogleMapsService
 import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
-import com.wepool.app.data.repository.interfaces.IPassengerRepository
-import com.wepool.app.data.model.logic.RouteMatcher
 import com.wepool.app.data.model.ride.PickupStop
+import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.sql.Time
 import kotlin.math.abs
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -81,24 +79,51 @@ class RideRepository(
             ?.dropoffTime
     }
 
-    override suspend fun addPassengerToRide(
-        rideId: String,
-        passengerId: String,
-        pickupLocation: LocationData
-    ): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun deactivateExpiredRides(): Unit = withContext(Dispatchers.IO) {
         try {
-            val success = rideRequestRepository.sendRequest(rideId, passengerId, pickupLocation)
-            if (success) {
-                Log.d("RideRequest", "📤 בקשת הצטרפות נשלחה (rideId: $rideId, passengerId: $passengerId)")
-            } else {
-                Log.w("RideRequest", "⚠ הבקשה לא נשלחה")
+            val activeRidesSnapshot = firestore.collection("rides")
+                .whereEqualTo("isActive", true)
+                .get()
+                .await()
+
+            val formatter = DateTimeFormatter.ofPattern("HH:mm")
+            val today = LocalDate.now()
+            val now = LocalTime.now()
+
+            for (doc in activeRidesSnapshot.documents) {
+                val ride = doc.toObject(Ride::class.java) ?: continue
+                val rideDate = LocalDate.parse(ride.date)
+                val arrivalTimeStr = ride.arrivalTime ?: continue
+                val arrivalTime = LocalTime.parse(arrivalTimeStr, formatter)
+
+                val safeArrivalTime = arrivalTime.plusMinutes(10)
+
+                val isExpired = rideDate.isBefore(today) ||
+                        (rideDate.isEqual(today) && safeArrivalTime.isBefore(now))
+
+                if (isExpired) {
+                    firestore.collection("rides")
+                        .document(ride.rideId)
+                        .update("isActive", false)
+                        .await()
+
+                    RepositoryProvider.provideDriverRepository()
+                        .removeActiveRideFromDriver(ride.driverId, ride.rideId)
+
+                    val passengerRepo = RepositoryProvider.providePassengerRepository()
+                    for (passengerId in ride.passengers) {
+                        passengerRepo.removeActiveRideFromPassenger(passengerId, ride.rideId)
+                    }
+
+                    Log.d("RideRepo", "🛑 נסיעה ${ride.rideId} כובתה והוסרה מכל משתמש")
+                }
             }
-            return@withContext success
         } catch (e: Exception) {
-            Log.e("RideRequest", "❌ שגיאה בשליחת בקשה לנסיעה: ${e.message}", e)
-            return@withContext false
+            Log.e("RideRepo", "❌ שגיאה בבדיקת תוקף נסיעות: ${e.message}", e)
         }
     }
+
+
 
     override suspend fun approvePassengerRequest(
         candidate: RideCandidate,
@@ -157,6 +182,9 @@ class RideRepository(
                     RequestStatus.ACCEPTED
                 )
                 Log.d("RideRequest", "📥 סטטוס הבקשה עודכן ל-ACCEPTED (requestId=$requestId)")
+
+                RepositoryProvider.providePassengerRepository()
+                    .addActiveRideToPassenger(passengerId, ride.rideId) // הוספה של הנסיעה לרשימת הנסיעות הפעילות של הנוסע
             }
 
             return@withContext success
@@ -249,6 +277,9 @@ class RideRepository(
 
             deletePassengerRequestsForRide(rideId, passengerId)
 
+            RepositoryProvider.providePassengerRepository()
+                .removeActiveRideFromPassenger(passengerId, rideId) // מחיקה של הנסיעה מרשימת הנסיעות הפעילות של הנוסע
+
             Log.d("RideLeave", "✅ הנוסע $passengerId הוסר והמסלול עודכן (rideId=$rideId)")
         } catch (e: Exception) {
             Log.e("RideLeave", "❌ שגיאה בהסרת נוסע: ${e.message}", e)
@@ -281,7 +312,7 @@ class RideRepository(
                 timeReference = timeReference!!,
                 date = ride.date,
                 direction = ride.direction!!,
-                passengerStop = null // לא רלוונטי בהסרה
+                passengerStop = null
             )
         } else {
             mapsService.getDurationAndRouteFromGoogleApi(
@@ -349,7 +380,6 @@ class RideRepository(
             null
         }
     }
-
 
     private suspend fun deletePassengerRequestsForRide(rideId: String, passengerId: String) {
         try {
@@ -467,6 +497,13 @@ class RideRepository(
             .await()
     }
 
+    override suspend fun updateRideIsActive(rideId: String, isActive: Boolean) {
+        firestore.collection("rides")
+            .document(rideId)
+            .update("isActive", isActive)
+            .await()
+    }
+
     override suspend fun planRideFromUserInput(
         driverId: String,
         companyId: String,
@@ -527,6 +564,7 @@ class RideRepository(
             maxDetourMinutes = maxDetourMinutes,
             currentDetourMinutes = 0,
             encodedPolyline = "",
+            isActive = true,
             notes = notes
         )
 
@@ -559,6 +597,9 @@ class RideRepository(
         )
 
         createRide(finalizedRide)
+
+        val driverRepository = RepositoryProvider.provideDriverRepository()
+        driverRepository.addActiveRideToDriver(driverId, finalizedRide.rideId)
 
         Log.d("RideLogic", "✅ נסיעה נוצרה בהצלחה: ${finalizedRide.rideId}")
         return@withContext true

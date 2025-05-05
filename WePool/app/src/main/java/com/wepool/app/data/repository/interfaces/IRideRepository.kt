@@ -1,14 +1,12 @@
 package com.wepool.app.data.repository.interfaces
 
 import com.google.firebase.firestore.GeoPoint
-import com.google.android.gms.maps.model.LatLng
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.logic.DepartureCalculationResult
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.model.enums.RideDirection
-import com.wepool.app.data.model.logic.RouteMatcher
-import com.wepool.app.data.remote.IGoogleMapsService
+
 
 interface IRideRepository {
     suspend fun createRide(ride: Ride)
@@ -28,13 +26,10 @@ interface IRideRepository {
     suspend fun updateDepartureTime(rideId: String, departureTime: String)
     suspend fun updateRideDate(rideId: String, date: String)
     suspend fun updateEncodedPolyline(rideId: String, encodedPolyline: String)
+    suspend fun updateRideIsActive(rideId: String, isActive: Boolean)
 
+    suspend fun deactivateExpiredRides()
 
-    suspend fun addPassengerToRide(
-        rideId: String,
-        passengerId: String,
-        pickupLocation: LocationData
-    ): Boolean
     suspend fun approvePassengerRequest(
         candidate: RideCandidate,
         requestId: String,

@@ -1,5 +1,6 @@
 package com.wepool.app.data.repository.interfaces
 
+import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.Driver
 
 interface IDriverRepository {
@@ -7,6 +8,10 @@ interface IDriverRepository {
     suspend fun getDriver(uid: String): Driver?
     suspend fun deleteDriver(uid: String)
     suspend fun updateVehicleDetails(uid: String, vehicleDetails: String)
-    suspend fun updateActiveRideIds(uid: String, rideIds: List<String>) // ← חדש
+
+    suspend fun addActiveRideToDriver(driverId: String, rideId: String)
+    suspend fun removeActiveRideFromDriver(driverId: String, rideId: String)
+    suspend fun getActiveRidesForDriver(driverId: String): List<Ride>
+
 }
 

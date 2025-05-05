@@ -10,25 +10,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.wepool.app.ui.theme.WePoolTheme
-import com.wepool.app.data.model.users.User
-import com.wepool.app.data.model.enums.UserRole
-import com.wepool.app.data.model.enums.RideDirection
-import com.wepool.app.data.model.users.Driver
-import com.wepool.app.data.model.users.Passenger
-import com.wepool.app.data.model.logic.RouteMatcher
 import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
-import com.wepool.app.data.model.logic.PassengerRideFinder
 import com.wepool.app.infrastructure.RepositoryProvider
-import com.google.android.gms.maps.model.LatLng
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -53,17 +46,6 @@ class MainActivity : ComponentActivity() {
         RepositoryProvider.initialize(BuildConfig.MAPS_API_KEY)
     }
 
-    private val authRepository = RepositoryProvider.provideAuthRepository()
-    private val userRepository: IUserRepository = RepositoryProvider.provideUserRepository()
-    private val driverRepository: IDriverRepository = RepositoryProvider.provideDriverRepository()
-    private val passengerRepository: IPassengerRepository =
-        RepositoryProvider.providePassengerRepository()
-    private val rideRepository: IRideRepository = RepositoryProvider.provideRideRepository()
-    private val rideRequestRepository: IRideRequestRepository =
-        RepositoryProvider.provideRideRequestRepository()
-    private val mapsService = RepositoryProvider.mapsService
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -75,6 +57,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             WePoolTheme {
                 val navController = rememberNavController()
+
+                LaunchedEffect(Unit) { // בדיקה וכיבוי כל הנסיעות הלא פעילות פעם אחת בעת פתיחת האפליקציה
+                    RepositoryProvider.provideRideRepository().deactivateExpiredRides()
+                }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(

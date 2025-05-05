@@ -19,7 +19,9 @@ import com.wepool.app.data.repository.interfaces.IRideRequestRepository
 import com.wepool.app.data.repository.interfaces.ICompanyRepository
 import com.wepool.app.data.repository.CompanyRepository
 import com.wepool.app.data.repository.HRManagerRepository
+import com.wepool.app.data.repository.RideChatRepository
 import com.wepool.app.data.repository.interfaces.IHRManagerRepository
+import com.wepool.app.data.repository.interfaces.IRideChatRepository
 
 object RepositoryProvider {
 
@@ -72,5 +74,9 @@ object RepositoryProvider {
 
     fun provideRideRequestRepository(): IRideRequestRepository {
         return RideRequestRepository(firestore = firestore)
+    }
+
+    fun provideRideChatRepository(): IRideChatRepository {
+        return RideChatRepository(firestore = firestore)
     }
 }

@@ -1,7 +1,7 @@
 package com.wepool.app.data.repository.interfaces
 
-import com.google.firebase.firestore.GeoPoint
 import com.wepool.app.data.model.common.LocationData
+import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.Passenger
 
 interface IPassengerRepository {
@@ -11,7 +11,11 @@ interface IPassengerRepository {
     suspend fun addFavoriteLocation(uid: String, location: LocationData)
     suspend fun removeFavoriteLocation(uid: String, placeId: String)
     suspend fun deletePassenger(uid:String)
+    suspend fun addActiveRideToPassenger(passengerId: String, rideId: String)
+    suspend fun removeActiveRideFromPassenger(passengerId: String, rideId: String)
+    suspend fun getActiveRidesForPassenger(passengerId: String): List<Ride>
+
     //suspend fun updatePreferredPickupLocation(uid: String, location: GeoPoint)
-    //  suspend fun updatePreferredArrivalTime(uid: String, arrivalTime: String)
+    //suspend fun updatePreferredArrivalTime(uid: String, arrivalTime: String)
 
 }
