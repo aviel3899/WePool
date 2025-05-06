@@ -17,8 +17,6 @@ class UserRepository(
 
     private val usersCollection = db.collection("users")
 
-    // searches a user by UID
-    // if exists -> turns it into an user (object), if not -> returns null
     override suspend fun getUser(uid: String): User? {
         return try {
             val doc = usersCollection.document(uid).get().await()
@@ -29,7 +27,6 @@ class UserRepository(
         }
     }
 
-    // searches for all the users that are not null
     override suspend fun getAllUsers(): List<User> {
         return try {
             db.collection("users").get().await().documents.mapNotNull { it.toObject(User::class.java) }
@@ -39,8 +36,6 @@ class UserRepository(
         }
     }
 
-    // writes an user (object) to the firestore's document with the same UID
-    // if doesnt exist -> will be created, if exists -> override
     override suspend fun createOrUpdateUser(user: User) {
         try {
             usersCollection.document(user.uid).set(user).await()
@@ -49,22 +44,19 @@ class UserRepository(
         }
     }
 
-    // deletes an user
     override suspend fun deleteUser(uid: String, driverRepository: IDriverRepository, passengerRepository: IPassengerRepository) {
         try {
             val userSnapshot = usersCollection.document(uid).get().await()
             val user = userSnapshot.toObject(User::class.java) ?: return
 
-            // מחיקת כל Role לפי הרשימה
             user.roles.forEach { role ->
                 when (role) {
                     "DRIVER" -> driverRepository.deleteDriver(uid)
                     "PASSENGER" -> passengerRepository.deletePassenger(uid)
-                    // תוסיף תפקידים נוספים במידת הצורך
+                    // צריך להוסיף HRManager & Admin
                 }
             }
 
-            //  מחיקת המשתמש עצמו
             usersCollection.document(uid).delete().await()
 
             Log.d("Firestore", "🧹 המשתמש $uid וכל הנתונים המשויכים לו נמחקו")
@@ -76,7 +68,7 @@ class UserRepository(
 
     override suspend fun deleteAllUsers(driverRepository: IDriverRepository, passengerRepository: IPassengerRepository) {
         try {
-            val allUsers = getAllUsers() // מחזירה List<User>
+            val allUsers = getAllUsers()
             for (user in allUsers) {
                 deleteUser(user.uid, driverRepository, passengerRepository)
             }
@@ -86,8 +78,6 @@ class UserRepository(
         }
     }
 
-    // makes a query where all the users with the same companyID
-    // return a list of user objects with the same companyID
     override suspend fun getUsersByCompany(companyCode: String): List<User> {
         return try {
             usersCollection
@@ -102,8 +92,6 @@ class UserRepository(
         }
     }
 
-    // makes a query where all the users with the same role
-    // return a list of user objects with the same role
     override suspend fun getUsersByRole(role: String): List<User> {
         return try {
             usersCollection
@@ -118,7 +106,6 @@ class UserRepository(
         }
     }
 
-    // if user exists -> updates only his name
     override suspend fun updateUserName(uid: String, newName: String) {
         try {
             usersCollection.document(uid).update("name", newName).await()
@@ -127,7 +114,6 @@ class UserRepository(
         }
     }
 
-    // if user exists -> updates only his email
     override suspend fun updateUserEmail(uid: String, newEmail: String) {
         try {
             usersCollection.document(uid).update("email", newEmail).await()
@@ -136,7 +122,6 @@ class UserRepository(
         }
     }
 
-    // if user exists -> updates only his phoneNumber
     override suspend fun updateUserPhoneNumber(uid: String, newPhone: String) {
         try {
             usersCollection.document(uid).update("phoneNumber", newPhone).await()
@@ -145,7 +130,6 @@ class UserRepository(
         }
     }
 
-    // if user exists -> updates only his companyID
     override suspend fun updateUserCompanyCode(uid: String, newCompanyCode: String?) {
         try {
             usersCollection.document(uid).update("companyId", newCompanyCode).await()
@@ -201,7 +185,6 @@ class UserRepository(
         }
     }
 
-    // add a role to user's role list, checks for duplicates
     override suspend fun addRoleToUser(uid: String, role: String) {
         try {
             usersCollection.document(uid)
@@ -223,7 +206,6 @@ class UserRepository(
     }
 
     private fun logException(func: String, e: Exception) {
-        // כאן תוכל להוסיף הדפסה, שליחה ל-Firebase Crashlytics, Sentry, וכו'
         println("🔥 [UserRepository::$func] ${e.message}")
     }
 }

@@ -2,5 +2,7 @@ package com.wepool.app.data.model.ride
 
 data class RideRequestUpdateResult(
     val hasUpdates: Boolean,
-    val requests: List<RideRequest>
+    val newPendingRequestForDriver: List<RideRequest>,
+    val newAcceptedRequestsAsPassenger: List<RideRequest>,
+    val totallRequests: List<RideRequest>
 )

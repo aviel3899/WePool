@@ -215,11 +215,13 @@ class RideRequestRepository(
 
             RideRequestUpdateResult(
                 hasUpdates = newRequests.isNotEmpty(),
-                requests = newRequests
+                newPendingRequestForDriver = pendingAsDriver,
+                newAcceptedRequestsAsPassenger = acceptedAsPassenger,
+                totallRequests = newRequests
             )
         } catch (e: Exception) {
             Log.e("RideRequestUpdate", "❌ שגיאה בבדיקת בקשות חדשות עבור $uid: ${e.message}", e)
-            RideRequestUpdateResult(false, emptyList())
+            RideRequestUpdateResult(false, emptyList(), emptyList(), emptyList())
         }
     }
 }
