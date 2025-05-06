@@ -66,6 +66,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController) {
                             Text("Date: ${ride.date}")
                             Text("Departure Time: ${ride.departureTime}")
                             Text("Arrival Time: ${ride.arrivalTime}")
+                            Text("Stops on the way: ${ride.pickupStops.size}")
                         }
                     }
                 }

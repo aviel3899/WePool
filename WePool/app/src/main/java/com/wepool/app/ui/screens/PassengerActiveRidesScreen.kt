@@ -62,18 +62,19 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController) {
                             .padding(vertical = 8.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Ride ID: ${ride.rideId}")
                             Text("From: ${ride.startLocation.name}")
                             Text("To: ${ride.destination.name}")
-                            if(ride.direction == RideDirection.TO_WORK) {
-                                Text("Arrival Time: ${ride.arrivalTime}")
-                                //Text("Pickup Time: ${ride.}")
-                            }
-                            else {
-                                Text("Departure Time: ${ride.departureTime}")
-                                //Text("Dropoff Time: ${ride.arrivalTime}")
-                            }
+                            Text("Date: ${ride.date}")
 
+                            val rideRepo = RepositoryProvider.provideRideRepository()
+
+                            if (ride.direction == RideDirection.TO_WORK) {
+                                Text("Arrival Time: ${ride.arrivalTime}")
+                                Text("Pickup Time: ${rideRepo.getPickupTimeForPassenger(ride, uid)}")
+                            } else {
+                                Text("Departure Time: ${ride.departureTime}")
+                                Text("Dropoff Time: ${rideRepo.getDropoffTimeForPassenger(ride, uid)}")
+                            }
                         }
                     }
                 }

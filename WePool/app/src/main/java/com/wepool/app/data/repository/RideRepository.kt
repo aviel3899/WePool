@@ -83,17 +83,18 @@ class RideRepository(
     override suspend fun deactivateExpiredRides(): Unit = withContext(Dispatchers.IO) {
         try {
             val activeRidesSnapshot = firestore.collection("rides")
-                .whereEqualTo("isActive", true)
+                .whereEqualTo("active", true)
                 .get()
                 .await()
 
             val formatter = DateTimeFormatter.ofPattern("HH:mm")
+            val dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
             val today = LocalDate.now()
             val now = LocalTime.now()
 
             for (doc in activeRidesSnapshot.documents) {
                 val ride = doc.toObject(Ride::class.java) ?: continue
-                val rideDate = LocalDate.parse(ride.date)
+                val rideDate = LocalDate.parse(ride.date, dateFormatter)
                 val arrivalTimeStr = ride.arrivalTime ?: continue
                 val arrivalTime = LocalTime.parse(arrivalTimeStr, formatter)
 
@@ -105,7 +106,7 @@ class RideRepository(
                 if (isExpired) {
                     firestore.collection("rides")
                         .document(ride.rideId)
-                        .update("isActive", false)
+                        .update("active", false)
                         .await()
 
                     RepositoryProvider.provideDriverRepository()
