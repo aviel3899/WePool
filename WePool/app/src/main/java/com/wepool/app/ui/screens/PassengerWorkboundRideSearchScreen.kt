@@ -20,7 +20,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.google.android.gms.maps.model.LatLng
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.logic.PassengerRideFinder
 import com.wepool.app.data.model.logic.RouteMatcher
@@ -47,7 +46,6 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
     val rideRepository = RepositoryProvider.provideRideRepository()
     val rideRequestRepository = RepositoryProvider.provideRideRequestRepository()
     val passengerRideFinder = PassengerRideFinder(
-        rideRepository = rideRepository,
         mapsService = RepositoryProvider.mapsService,
         routeMatcher = RouteMatcher
     )
@@ -56,7 +54,7 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
     var isLoading by remember { mutableStateOf(false) }
 
     val focusRequester = remember { FocusRequester() }
-    var pickupStop = PickupStop()
+    var pickupStop by remember { mutableStateOf(PickupStop()) }
 
     LaunchedEffect(startLocation, selectedDate, selectedTime) {
         isFormValid = startLocation.isNotBlank() && selectedDate.isNotBlank() && selectedTime.isNotBlank()
@@ -250,7 +248,7 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
                                 Text("Destination: ${ride.ride.destination.name}")
                                 Text("Date: ${ride.ride.date}")
                                 Text("Arrival Time: ${ride.ride.arrivalTime ?: ride.ride.departureTime}")
-                                Text("Pickup Time: ${ride.detourEvaluationResult.pickupLocation?.dropoffTime ?: "לא ידוע"}")
+                                Text("Pickup Time: ${ride.detourEvaluationResult.pickupLocation?.pickupTime ?: "לא ידוע"}")
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Button(
                                     onClick = {
@@ -258,7 +256,8 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
                                             val success = rideRequestRepository.sendRequest(
                                                 rideId = ride.ride.rideId,
                                                 passengerId = uid,
-                                                pickupLocation = pickupStop.location
+                                                pickupLocation = pickupStop.location,
+                                                detourEvaluationResult = ride.detourEvaluationResult
                                             )
                                             if (success) {
                                                 Toast.makeText(context, "✅ Request sent", Toast.LENGTH_SHORT).show()

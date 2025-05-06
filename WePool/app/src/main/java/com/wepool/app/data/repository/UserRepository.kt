@@ -192,6 +192,15 @@ class UserRepository(
         }
     }
 
+    override suspend fun updateLastLoginTimestamp(uid: String, timestamp: Long) {
+        try {
+            usersCollection.document(uid).update("lastLoginTimestamp", timestamp).await()
+            Log.d("UserRepository", "🕒 זמן התחברות עודכן עבור המשתמש $uid")
+        } catch (e: Exception) {
+            logException("updateLastLoginTimestamp", e)
+        }
+    }
+
     // add a role to user's role list, checks for duplicates
     override suspend fun addRoleToUser(uid: String, role: String) {
         try {

@@ -33,12 +33,14 @@ class RideRepository(
 ) : IRideRepository {
 
     private val rideCollection = firestore.collection("rides")
+    companion object {
+        private const val SAFE_ARRIVAL_MARGIN_MINUTES = 10L
+    }
 
     override suspend fun createRide(ride: Ride) {
         rideCollection.document(ride.rideId).set(ride).await()
     }
 
-    // מחזיר נסיעה מסוימת לפי rideId
     override suspend fun getRide(rideId: String): Ride? = withContext(Dispatchers.IO) {
         val snapshot = rideCollection.document(rideId).get().await()
         return@withContext snapshot.toObject(Ride::class.java)
@@ -49,7 +51,6 @@ class RideRepository(
         return@withContext snapshot.documents.mapNotNull { it.toObject(Ride::class.java) }  // המרת המסמכים למודל Ride
     }
 
-    // מחזיר את כל הנסיעות של נהג
     override suspend fun getRidesByDriver(driverId: String): List<Ride> = withContext(Dispatchers.IO) {
         val snapshot = rideCollection
             .whereEqualTo("driverId", driverId)
@@ -96,7 +97,7 @@ class RideRepository(
                 val arrivalTimeStr = ride.arrivalTime ?: continue
                 val arrivalTime = LocalTime.parse(arrivalTimeStr, formatter)
 
-                val safeArrivalTime = arrivalTime.plusMinutes(10)
+                val safeArrivalTime = arrivalTime.plusMinutes(SAFE_ARRIVAL_MARGIN_MINUTES)
 
                 val isExpired = rideDate.isBefore(today) ||
                         (rideDate.isEqual(today) && safeArrivalTime.isBefore(now))
@@ -122,8 +123,6 @@ class RideRepository(
             Log.e("RideRepo", "❌ שגיאה בבדיקת תוקף נסיעות: ${e.message}", e)
         }
     }
-
-
 
     override suspend fun approvePassengerRequest(
         candidate: RideCandidate,
@@ -168,7 +167,8 @@ class RideRepository(
                     else currentRide.departureTime,
                     arrivalTime = if (ride.direction == RideDirection.TO_HOME)
                         detour.updatedReferenceTime ?: currentRide.arrivalTime
-                    else currentRide.arrivalTime
+                    else currentRide.arrivalTime,
+                    isActive = true
                 )
 
                 tx.set(rideRef, updatedRide)

@@ -63,7 +63,7 @@ class DriverRepository(
 
         if (driver != null) {
             val updatedList = driver.activeRideId.toMutableSet().apply { add(rideId) }.toList()
-            driverRef.update("activeRideIds", updatedList).await()
+            driverRef.update("activeRideId", updatedList).await()
             Log.d("DriverUpdate", "✅ נוספה נסיעה פעילה לנהג ($rideId)")
         } else {
             Log.w("DriverUpdate", "⚠ לא נמצא נהג עם UID: $driverId")
@@ -82,7 +82,7 @@ class DriverRepository(
 
         if (driver != null) {
             val updatedList = driver.activeRideId.toMutableList().apply { remove(rideId) }
-            driverRef.update("activeRideIds", updatedList).await()
+            driverRef.update("activeRideId", updatedList).await()
             Log.d("DriverUpdate", "🗑️ הנסיעה $rideId הוסרה מ־activeRideIds של הנהג")
         } else {
             Log.w("DriverUpdate", "⚠ לא נמצא נהג עם UID: $driverId")
@@ -93,7 +93,7 @@ class DriverRepository(
         return try {
             val snapshot = firestore.collection("rides")
                 .whereEqualTo("driverId", driverId)
-                .whereEqualTo("isActive", true)
+                .whereEqualTo("active", true)
                 .get()
                 .await()
 
@@ -105,6 +105,4 @@ class DriverRepository(
             emptyList()
         }
     }
-
-
 }

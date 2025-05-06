@@ -58,8 +58,7 @@ class GoogleMapsService(
 
     override suspend fun getDurationAndRouteWithWaypoints(
         origin: GeoPoint,
-        //waypoints: List<GeoPoint>,
-        waypoints: List<PickupStop>, //חדש
+        waypoints: List<PickupStop>,
         destination: GeoPoint,
         timeReference: String,
         date: String,
@@ -75,14 +74,13 @@ class GoogleMapsService(
             timeReference = timeReference,
             date = date,
             apiKey = apiKey,
-            //waypoints = waypoints,
-            waypoints = waypointGeoPoints, //חדש
+            waypoints = waypointGeoPoints,
             rideDirection = direction,
         )
         val response = fetchDirections(url)
         val route = extractRoute(response)
 
-        val legs = route.legs //חדש
+        val legs = route.legs
 
         val formatter = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -100,28 +98,31 @@ class GoogleMapsService(
 
         for ((index, leg) in legs.withIndex()) {
             val pickupStop = waypoints.getOrNull(index)
+            val legDurationSeconds = leg.duration.value.toLong()
 
-            accumulatedSeconds += leg.duration.value.toLong()
+            accumulatedSeconds += legDurationSeconds
 
-            // pickupTime
-            if (pickupStop != null && !pickupTimes.containsKey(pickupStop.passengerId)) {
-                val pickupTime = baseTime.plusSeconds(accumulatedSeconds - leg.duration.value.toLong())
-                    .format(formatter)
-                pickupTimes[pickupStop.passengerId] = pickupTime
-                Log.d(
-                    "GoogleMapsService",
-                    "🟢 זמן איסוף ל-${pickupStop.passengerId} (Index $index): $pickupTime"
-                )
-            }
+            if (pickupStop != null) {
+                val passengerId = pickupStop.passengerId
 
-            // dropoffTime
-            if (pickupStop != null && !dropoffTimes.containsKey(pickupStop.passengerId)) {
-                val dropoffTime = baseTime.plusSeconds(accumulatedSeconds).format(formatter)
-                dropoffTimes[pickupStop.passengerId] = dropoffTime
-                Log.d(
-                    "GoogleMapsService",
-                    "🔵 זמן הורדה ל-${pickupStop.passengerId} (Index $index): $dropoffTime"
-                )
+                if (direction == RideDirection.TO_WORK) {
+                    // מחשבים זמן איסוף בלבד
+                    if (!pickupTimes.containsKey(passengerId)) {
+                        //val pickupTime = baseTime.plusSeconds(accumulatedSeconds - legDurationSeconds)
+                        //    .format(formatter)
+                        val pickupTime = baseTime.plusSeconds(accumulatedSeconds).format(formatter)
+                        pickupTimes[passengerId] = pickupTime
+                        Log.d("GoogleMapsService", "🟢 זמן איסוף ל-$passengerId (Index $index): $pickupTime")
+                    }
+                } else {
+                    // מחשבים זמן הורדה בלבד
+                    if (!dropoffTimes.containsKey(passengerId)) {
+                        val dropoffTime = baseTime.plusSeconds(accumulatedSeconds)
+                            .format(formatter)
+                        dropoffTimes[passengerId] = dropoffTime
+                        Log.d("GoogleMapsService", "🔵 זמן הורדה ל-$passengerId (Index $index): $dropoffTime")
+                    }
+                }
             }
         }
 

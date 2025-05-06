@@ -37,7 +37,7 @@ fun DriverMenuScreen(navController: NavController, uid: String) {
 
             Button(
                 onClick = {
-                    // TODO: Hook up to pending rides screen
+                    navController.navigate("driverPendingRequests/$uid")
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -46,7 +46,7 @@ fun DriverMenuScreen(navController: NavController, uid: String) {
 
             Button(
                 onClick = {
-                    // TODO: Hook up to active rides screen
+                    navController.navigate("driverActiveRides/$uid")
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

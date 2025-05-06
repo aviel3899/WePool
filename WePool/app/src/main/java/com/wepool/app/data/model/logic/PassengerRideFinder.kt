@@ -1,10 +1,8 @@
 package com.wepool.app.data.model.logic
 
 import android.util.Log
-import com.google.android.gms.maps.model.LatLng
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.ride.PickupStop
-import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.remote.IGoogleMapsService
 import com.wepool.app.data.repository.interfaces.IRideRepository
@@ -13,9 +11,10 @@ import kotlinx.coroutines.withContext
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 class PassengerRideFinder(
-    private val rideRepository: IRideRepository,
     private val mapsService: IGoogleMapsService,
     private val routeMatcher: RouteMatcher
 ) {
@@ -23,6 +22,9 @@ class PassengerRideFinder(
     private val maxArrivalTimeDifferenceMinutes = 30L
     private val maxDepartureTimeDifferenceMinutes = 15L
     private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+    private val minDepartureDelayToWorkMinutes = 60L
+    private val minDepartureDelayToHomeMinutes = 5L
 
     suspend fun getAvailableRidesForPassenger(
         companyId: String,
@@ -30,9 +32,7 @@ class PassengerRideFinder(
         passengerArrivalTime: String = "",
         passengerDepartureTime: String = "",
         passengerDate: String,
-        //pickupPoint: LatLng,
         pickupPoint: PickupStop,
-        //passengerId: String, // לא צריך כי אני מעביר בתוך PickupStop את passengerId
         rideRepository: IRideRepository,
     ): List<RideCandidate> = withContext(Dispatchers.IO) {
 
@@ -40,7 +40,6 @@ class PassengerRideFinder(
 
         val candidates = allRides.mapNotNull { ride ->
             val dateOK = ride.date == passengerDate
-            //val timeOK = isArrivalTimeValid(ride.arrivalTime!!, passengerArrivalTime)
             val timeOK: Boolean
             if(direction == RideDirection.TO_WORK){
                 timeOK = isRideTimeValid(ride.arrivalTime!!, ride.maxDetourMinutes, passengerArrivalTime, direction)
@@ -49,7 +48,6 @@ class PassengerRideFinder(
                 timeOK = isRideTimeValid(ride.departureTime!!, ride.maxDetourMinutes, passengerDepartureTime, direction)
             }
             val seatOK = ride.occupiedSeats < ride.availableSeats
-            //val notAlreadyJoined = !ride.passengers.contains(passengerId)
             val notAlreadyJoined = !ride.passengers.contains(pickupPoint.passengerId)
 
             val currentRouteTimeMinutes = try {
@@ -86,13 +84,27 @@ class PassengerRideFinder(
 
             val detourOK = evaluation.isAllowed
 
-            if (!dateOK || !timeOK || !seatOK || !notAlreadyJoined || !detourOK) {
+            val now = LocalDateTime.now()
+            val rideDate = LocalDate.parse(ride.date, dateFormatter)
+            val rideTime = LocalTime.parse(ride.departureTime?.trim(), timeFormatter)
+            val rideDateTime = LocalDateTime.of(rideDate, rideTime)
+            val futureEnough = when (direction) {
+                RideDirection.TO_WORK -> rideDateTime.isAfter(now.plusMinutes(minDepartureDelayToWorkMinutes)) // אי אפשר להצטרף לנסיעה שיוצאת עוד פחות משעה בכיוון לעבודה
+                RideDirection.TO_HOME -> rideDateTime.isAfter(now.plusMinutes(minDepartureDelayToHomeMinutes)) // אי אפשר להצטרף לנסיעה שיוצאת עוד פחות מ5 דקות בכיוון לבית
+            }
+
+            val notHisOwnRide = ride.driverId != pickupPoint.passengerId
+
+
+            if (!dateOK || !timeOK || !seatOK || !notAlreadyJoined || !detourOK || !futureEnough || !notHisOwnRide) {
                 Log.d("RideFilter", """ ❌ נסיעה לא מתאימה:
         - תאריך תואם? $dateOK
         - זמן תואם? $timeOK
         - יש מקומות פנויים? $seatOK
         - נוסע עדיין לא הצטרף? $notAlreadyJoined
         - סטייה מותרת? $detourOK
+        - זמן יציאה מספיק עתידי? $futureEnough
+         - האם הנסיעה היא לא של עצמו? $notHisOwnRide
         """.trimIndent()
                 )
                 return@mapNotNull null

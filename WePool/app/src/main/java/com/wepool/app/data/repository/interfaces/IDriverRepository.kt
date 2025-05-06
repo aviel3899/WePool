@@ -12,6 +12,5 @@ interface IDriverRepository {
     suspend fun addActiveRideToDriver(driverId: String, rideId: String)
     suspend fun removeActiveRideFromDriver(driverId: String, rideId: String)
     suspend fun getActiveRidesForDriver(driverId: String): List<Ride>
-
 }
 

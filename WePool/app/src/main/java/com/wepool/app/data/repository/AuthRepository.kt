@@ -5,7 +5,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.AuthResult
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.repository.interfaces.IUserRepository
-import com.wepool.app.data.repository.AuthRepository
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +36,8 @@ class AuthRepository(
                 Log.w("AuthRepository", "⚠️ המשתמש אינו פעיל | UID: $uid")
                 return Result.failure(Exception("המשתמש אינו פעיל במערכת"))
             }
+
+            userRepository.updateLastLoginTimestamp(uid, System.currentTimeMillis())
 
             val tokenResult = auth.currentUser?.getIdToken(true)?.await()
             val token = tokenResult?.token ?: return Result.failure(Exception("טוקן לא התקבל"))
@@ -84,5 +85,4 @@ class AuthRepository(
             false
         }
     }
-
 }

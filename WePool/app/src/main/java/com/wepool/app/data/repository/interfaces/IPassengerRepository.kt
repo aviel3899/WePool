@@ -17,5 +17,4 @@ interface IPassengerRepository {
 
     //suspend fun updatePreferredPickupLocation(uid: String, location: GeoPoint)
     //suspend fun updatePreferredArrivalTime(uid: String, arrivalTime: String)
-
 }

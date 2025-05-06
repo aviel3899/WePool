@@ -20,7 +20,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.google.android.gms.maps.model.LatLng
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.logic.PassengerRideFinder
 import com.wepool.app.data.model.ride.RideCandidate
@@ -52,15 +51,13 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
     var rides by remember { mutableStateOf<List<RideCandidate>>(emptyList()) }
     var ridesFetched by remember { mutableStateOf(false) }
 
-    val rideRepository = RepositoryProvider.provideRideRepository()
     val rideRequestRepository = RepositoryProvider.provideRideRequestRepository()
     val passengerRideFinder = PassengerRideFinder(
-        rideRepository = RepositoryProvider.provideRideRepository(),
         mapsService = RepositoryProvider.mapsService,
         routeMatcher = RouteMatcher
     )
 
-    var pickupStop = PickupStop()
+    var pickupStop by remember { mutableStateOf(PickupStop()) }
 
     LaunchedEffect(destination, selectedDate, selectedTime) {
         isFormValid = destination.isNotBlank() &&
@@ -205,8 +202,6 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
                             location = locationData,
                             passengerId = uid
                         )
-                        val geoPoint = locationData.geoPoint
-                        val latLng = LatLng(geoPoint.latitude, geoPoint.longitude)
 
                         val availableRides = passengerRideFinder.getAvailableRidesForPassenger(
                             companyId = "company123", // TODO: replace with actual
@@ -274,7 +269,8 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
                                             val success = rideRequestRepository.sendRequest(
                                                 rideId = rideCandidate.ride.rideId,
                                                 passengerId = uid,
-                                                pickupLocation = pickupStop.location
+                                                pickupLocation = pickupStop.location,
+                                                detourEvaluationResult = rideCandidate.detourEvaluationResult
                                             )
                                             if (success) {
                                                 Toast.makeText(context, "✅ Request sent", Toast.LENGTH_SHORT).show()

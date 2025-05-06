@@ -2,12 +2,13 @@ package com.wepool.app.data.repository
 
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.GeoPoint
-import com.google.firebase.firestore.ktx.toObject
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.ride.RideRequest
 import com.wepool.app.data.model.enums.RequestStatus
+import com.wepool.app.data.model.logic.DetourEvaluationResult
+import com.wepool.app.data.model.ride.RideRequestUpdateResult
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
+import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -19,7 +20,8 @@ class RideRequestRepository(
     override suspend fun sendRequest(
         rideId: String,
         passengerId: String,
-        pickupLocation: LocationData
+        pickupLocation: LocationData,
+        detourEvaluationResult: DetourEvaluationResult
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             val requestId = firestore.collection("rides").document(rideId)
@@ -30,6 +32,7 @@ class RideRequestRepository(
                 rideId = rideId,
                 passengerId = passengerId,
                 pickupLocation = pickupLocation,
+                detourEvaluationResult = detourEvaluationResult,
                 status = RequestStatus.PENDING
             )
 
@@ -157,6 +160,33 @@ class RideRequestRepository(
         }
     }
 
+    override suspend fun getPendingRequestsByPassenger(passengerId: String): List<RideRequest> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val ridesSnapshot = firestore.collection("rides").get().await()
+            val pendingRequests = mutableListOf<RideRequest>()
+
+            for (rideDoc in ridesSnapshot.documents) {
+                val rideId = rideDoc.id
+
+                val requestsSnapshot = firestore.collection("rides")
+                    .document(rideId)
+                    .collection("requests")
+                    .whereEqualTo("passengerId", passengerId)
+                    .whereEqualTo("status", RequestStatus.PENDING.name)
+                    .get()
+                    .await()
+
+                val rideRequests = requestsSnapshot.toObjects(RideRequest::class.java)
+                pendingRequests += rideRequests
+            }
+
+            Log.d("RideRequest", "✅ נמצאו ${pendingRequests.size} בקשות ממתינות לנוסע $passengerId")
+            pendingRequests
+        } catch (e: Exception) {
+            Log.e("RideRequest", "❌ שגיאה בשליפת בקשות ממתינות לנוסע $passengerId: ${e.message}", e)
+            emptyList()
+        }
+    }
 
     override suspend fun deleteRequest(rideId: String, requestId: String) {
         firestore.collection("rides")
@@ -167,4 +197,29 @@ class RideRequestRepository(
             .await()
     }
 
+    override suspend fun getNewRideRequestUpdatesForUser(uid: String): RideRequestUpdateResult = withContext(Dispatchers.IO) {
+        val userRepository = RepositoryProvider.provideUserRepository()
+
+        return@withContext try {
+            val user = userRepository.getUser(uid)
+            val lastLogin = user?.lastLoginTimestamp ?: 0L
+
+            val pendingAsDriver = getPendingRequestsByDriver(uid)
+                .filter { it.timestamp > lastLogin }
+
+            val acceptedAsPassenger = getRequestsByPassenger(uid)
+                .filter { it.status == RequestStatus.ACCEPTED && it.timestamp > lastLogin }
+
+            val newRequests = (pendingAsDriver + acceptedAsPassenger)
+                .distinctBy { it.requestId }
+
+            RideRequestUpdateResult(
+                hasUpdates = newRequests.isNotEmpty(),
+                requests = newRequests
+            )
+        } catch (e: Exception) {
+            Log.e("RideRequestUpdate", "❌ שגיאה בבדיקת בקשות חדשות עבור $uid: ${e.message}", e)
+            RideRequestUpdateResult(false, emptyList())
+        }
+    }
 }

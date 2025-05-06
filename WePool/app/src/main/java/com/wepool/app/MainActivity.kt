@@ -1,7 +1,6 @@
 package com.wepool.app
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -13,14 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import com.wepool.app.ui.theme.WePoolTheme
-import com.wepool.app.data.repository.interfaces.IRideRepository
-import com.wepool.app.data.repository.interfaces.IUserRepository
-import com.wepool.app.data.repository.interfaces.IDriverRepository
-import com.wepool.app.data.repository.interfaces.IPassengerRepository
-import com.wepool.app.data.repository.interfaces.IRideRequestRepository
 import com.wepool.app.infrastructure.RepositoryProvider
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
@@ -39,6 +31,11 @@ import com.wepool.app.ui.screens.PassengerRideDirectionScreen
 import com.wepool.app.ui.screens.PassengerWorkboundRideSearchScreen
 import com.wepool.app.ui.screens.WorkboundRideCreationScreen
 import com.wepool.app.ui.screens.DriverMenuScreen
+import com.wepool.app.ui.screens.PassengerActiveRidesScreen
+import com.wepool.app.ui.screens.PassengerMenuScreen
+import com.wepool.app.ui.screens.DriverActiveRidesScreen
+import com.wepool.app.ui.screens.DriverPendingRequestsScreen
+import com.wepool.app.ui.screens.PassengerPendingRequestsScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -139,6 +136,26 @@ class MainActivity : ComponentActivity() {
                         composable("driverMenu/{uid}") { backStackEntry ->
                             val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
                             DriverMenuScreen(navController = navController, uid = uid)
+                        }
+                        composable("passengerMenu/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            PassengerMenuScreen(uid = uid, navController = navController)
+                        }
+                        composable("passengerActiveRides/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            PassengerActiveRidesScreen(uid = uid, navController = navController)
+                        }
+                        composable("driverActiveRides/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            DriverActiveRidesScreen(uid = uid, navController = navController)
+                        }
+                        composable("driverPendingRequests/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            DriverPendingRequestsScreen(uid = uid, navController = navController)
+                        }
+                        composable("passengerPendingRequests/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+                            PassengerPendingRequestsScreen(uid = uid, navController = navController)
                         }
                     }
                 }
