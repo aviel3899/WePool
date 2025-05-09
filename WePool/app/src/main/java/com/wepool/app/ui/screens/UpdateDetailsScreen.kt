@@ -169,7 +169,7 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
 
         OutlinedButton(
             onClick = {
-                navController.navigate("intermediate/$uid") {
+                navController.navigate("intermediate/$uid?fromLogin=false") {
                     popUpTo("updateDetails/$uid") { inclusive = true }
                 }
             },

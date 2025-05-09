@@ -40,9 +40,7 @@ fun CreateRideDirectionScreen(navController: NavController, uid: String) {
 
         OutlinedButton(
             onClick = {
-                navController.navigate("roleSelection/$uid") {
-                    popUpTo("createRideDirection/$uid") { inclusive = true }
-                }
+                navController.popBackStack()
             },
             modifier = Modifier.fillMaxWidth()
         ) {

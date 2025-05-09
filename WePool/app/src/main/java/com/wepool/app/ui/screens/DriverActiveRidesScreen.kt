@@ -77,9 +77,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController) {
 
         OutlinedButton(
             onClick = {
-                navController.navigate("driverMenu/$uid") {
-                    popUpTo("driverActiveRides/$uid") { inclusive = true }
-                }
+                navController.popBackStack()
             },
             modifier = Modifier.fillMaxWidth()
         ) {

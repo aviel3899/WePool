@@ -8,7 +8,6 @@ import com.wepool.app.data.model.enums.RequestStatus
 import com.wepool.app.data.model.logic.DetourEvaluationResult
 import com.wepool.app.data.model.ride.RideRequestUpdateResult
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
-import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -24,6 +23,18 @@ class RideRequestRepository(
         detourEvaluationResult: DetourEvaluationResult
     ): Boolean = withContext(Dispatchers.IO) {
         try {
+            val rideDoc = firestore.collection("rides").document(rideId).get().await()
+            if (!rideDoc.exists()) {
+                Log.e("RideRequest", "❌ לא נמצאה נסיעה עם מזהה: $rideId")
+                return@withContext false
+            }
+
+            val passengerDoc = firestore.collection("users").document(passengerId).get().await()
+            if (!passengerDoc.exists()) {
+                Log.e("RideRequest", "❌ לא נמצא משתמש נוסע עם מזהה: $passengerId")
+                return@withContext false
+            }
+
             val requestId = firestore.collection("rides").document(rideId)
                 .collection("requests").document().id
 
@@ -42,13 +53,13 @@ class RideRequestRepository(
                 .await()
 
             Log.d("RideRequest", "✅ בקשה נשלחה (requestId: $requestId)")
-            return@withContext true
-
+            true
         } catch (e: Exception) {
             Log.e("RideRequest", "❌ שגיאה בשליחת בקשה: ${e.message}", e)
-            return@withContext false
+            false
         }
     }
+
 
     override suspend fun updateRequestStatus(rideId: String, requestId: String, newStatus: RequestStatus): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -64,6 +75,40 @@ class RideRequestRepository(
         } catch (e: Exception) {
             Log.e("RideRequest", "❌ שגיאה בעדכון סטטוס: ${e.message}", e)
             return@withContext false
+        }
+    }
+
+    override suspend fun updateSeenByDriver(rideId: String, requestId: String, seen: Boolean): Boolean = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val docRef = FirebaseFirestore.getInstance()
+                .collection("rides")
+                .document(rideId)
+                .collection("requests")
+                .document(requestId)
+
+            docRef.update("seenByDriver", seen).await()
+            Log.d("RideRequest", "👀 seenByDriver עודכן ל-$seen (requestId: $requestId)")
+            true
+        } catch (e: Exception) {
+            Log.e("RideRequest", "❌ שגיאה בעדכון seenByDriver: ${e.message}", e)
+            false
+        }
+    }
+
+    override suspend fun updateApprovedByDriver(rideId: String, requestId: String, approved: Boolean): Boolean = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val docRef = FirebaseFirestore.getInstance()
+                .collection("rides")
+                .document(rideId)
+                .collection("requests")
+                .document(requestId)
+
+            docRef.update("approvedByDriver", approved).await()
+            Log.d("RideRequest", "✅ approvedByDriver עודכן ל-$approved (requestId: $requestId)")
+            true
+        } catch (e: Exception) {
+            Log.e("RideRequest", "❌ שגיאה בעדכון approvedByDriver: ${e.message}", e)
+            false
         }
     }
 
@@ -198,17 +243,12 @@ class RideRequestRepository(
     }
 
     override suspend fun getNewRideRequestUpdatesForUser(uid: String): RideRequestUpdateResult = withContext(Dispatchers.IO) {
-        val userRepository = RepositoryProvider.provideUserRepository()
-
         return@withContext try {
-            val user = userRepository.getUser(uid)
-            val lastLogin = user?.lastLoginTimestamp ?: 0L
-
             val pendingAsDriver = getPendingRequestsByDriver(uid)
-                .filter { it.timestamp > lastLogin }
+                .filter { !it.seenByDriver }
 
             val acceptedAsPassenger = getRequestsByPassenger(uid)
-                .filter { it.status == RequestStatus.ACCEPTED && it.timestamp > lastLogin }
+                .filter {!it.approvedByDriver }
 
             val newRequests = (pendingAsDriver + acceptedAsPassenger)
                 .distinctBy { it.requestId }

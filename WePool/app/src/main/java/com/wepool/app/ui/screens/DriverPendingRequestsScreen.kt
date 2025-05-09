@@ -120,9 +120,7 @@ fun DriverPendingRequestsScreen(uid: String, navController: NavController) {
 
         OutlinedButton(
             onClick = {
-                navController.navigate("driverMenu/$uid") {
-                    popUpTo("driverPendingRequests/$uid") { inclusive = true }
-                }
+                navController.popBackStack()
             },
             modifier = Modifier.fillMaxWidth()
         ) {

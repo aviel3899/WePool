@@ -1,6 +1,10 @@
 package com.wepool.app
 
+import android.app.AppOpsManager
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -8,13 +12,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import com.wepool.app.ui.theme.WePoolTheme
-import com.wepool.app.infrastructure.RepositoryProvider
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.wepool.app.ui.theme.WePoolTheme
+import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.infrastructure.navigation.RideNavigationServiceController
 import com.wepool.app.ui.screens.LoginScreen
 import com.wepool.app.ui.screens.SignUpScreen
 import com.wepool.app.ui.screens.RoleSelectionScreen
@@ -41,6 +51,7 @@ class MainActivity : ComponentActivity() {
         RepositoryProvider.initialize(BuildConfig.MAPS_API_KEY)
     }
 
+    @OptIn(ExperimentalPermissionsApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -49,9 +60,25 @@ class MainActivity : ComponentActivity() {
         setContent {
             WePoolTheme {
                 val navController = rememberNavController()
+                val context = LocalContext.current
+                val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
 
-                LaunchedEffect(Unit) { // בדיקה וכיבוי כל הנסיעות הלא פעילות פעם אחת בעת פתיחת האפליקציה
+                LaunchedEffect(Unit) {
+                    if (!locationPermissionState.status.isGranted) {
+                        locationPermissionState.launchPermissionRequest()
+                    }
+
+                    requestUsageStatsPermissionIfNeeded(context)
+
                     RepositoryProvider.provideRideRepository().deactivateExpiredRides()
+
+                    val driverId = "nC8UiZonOSRmf4DnxiaikCXypgt2"
+                    val activeRides = RepositoryProvider.provideDriverRepository().getActiveRidesForDriver(driverId)
+                    val activeRide = activeRides.firstOrNull()
+
+                    if (activeRide != null) {
+                        RideNavigationServiceController.startRideNavigation(context, activeRide.rideId)
+                    }
                 }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -71,10 +98,11 @@ class MainActivity : ComponentActivity() {
                                 backStackEntry.arguments?.getString("uid") ?: return@composable
                             RoleSelectionScreen(navController = navController, uid = uid)
                         }
-                        composable("intermediate/{uid}") { backStackEntry ->
+                        composable("intermediate/{uid}?fromLogin={fromLogin}") { backStackEntry ->
                             val uid =
                                 backStackEntry.arguments?.getString("uid") ?: return@composable
-                            IntermediateScreen(navController = navController, uid = uid)
+                            val fromLogin = backStackEntry.arguments?.getString("fromLogin")?.toBooleanStrictOrNull() ?: false
+                            IntermediateScreen(navController = navController, uid = uid, cameFromLogin = fromLogin)
                         }
                         composable("rideHistoryMenu/{uid}") { backStackEntry ->
                             val uid =
@@ -157,4 +185,21 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    @Suppress("DEPRECATION")
+    private fun requestUsageStatsPermissionIfNeeded(context: Context) {
+        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            context.packageName
+        )
+        if (mode != AppOpsManager.MODE_ALLOWED) {
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+        }
+    }
+
 }

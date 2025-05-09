@@ -110,7 +110,7 @@ fun RoleSelectionScreen(
 
         OutlinedButton(
             onClick = {
-                navController.navigate("intermediate/$uid") {
+                navController.navigate("intermediate/$uid?fromLogin=false") {
                     popUpTo("roleSelection/$uid") { inclusive = true }
                 }
             },

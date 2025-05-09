@@ -47,9 +47,7 @@ fun PassengerRideDirectionScreen(
 
         OutlinedButton(
             onClick = {
-                navController.navigate("roleSelection/$uid") {
-                    popUpTo("passengerRideDirection/$uid") { inclusive = true }
-                }
+                navController.popBackStack()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -59,4 +57,3 @@ fun PassengerRideDirectionScreen(
         }
     }
 }
-

@@ -37,11 +37,9 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
-// הפונקציה הקומפוזבילית של העיצוב
 @Composable
 fun WePoolTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -58,14 +56,13 @@ fun WePoolTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null)
-                // קביעת בהירות האייקונים ב-status bar (בהיר במצב כהה, כהה במצב בהיר)
                 WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography, // שימוש באובייקט מ-Type.kt
+        typography = Typography,
         content = content
     )
 }

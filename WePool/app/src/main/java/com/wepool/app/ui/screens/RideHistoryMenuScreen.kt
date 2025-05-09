@@ -55,7 +55,7 @@ fun RideHistoryMenuScreen(navController: NavController, uid: String) {
 
         OutlinedButton(
             onClick = {
-                navController.navigate("intermediate/$uid") {
+                navController.navigate("intermediate/$uid?fromLogin=false") {
                     popUpTo("rideHistoryMenu/$uid") { inclusive = true }
                 }
             },

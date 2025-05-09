@@ -9,5 +9,5 @@ data class User(
     val isBanned: Boolean = false,
     val isActive: Boolean = true,
     val roles: List<String> = emptyList(),
-    val lastLoginTimestamp: Long? = null
+    val lastLoginTimestamp: Long? = null,
 )
