@@ -115,7 +115,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController) {
                                         },
                                         enabled = !isActionInProgress
                                     ) {
-                                        Text("Start a Ride")
+                                        Text("Start Ride")
                                     }
 
                                     Spacer(modifier = Modifier.width(8.dp))
