@@ -71,44 +71,77 @@ fun DriverPendingRequestsScreen(uid: String, navController: NavController) {
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Button(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        try {
-                                            val ride = rideRepo.getRide(request.rideId)
-                                            if (ride == null) {
-                                                Log.w("RideApproval", "⚠ Ride not found: ${request.rideId}")
-                                                return@launch
-                                            }
-
-                                            val candidate = RideCandidate(
-                                                ride = ride,
-                                                detourEvaluationResult = request.detourEvaluationResult
-                                            )
-
-                                            val success = rideRepo.approvePassengerRequest(
-                                                candidate = candidate,
-                                                requestId = request.requestId,
-                                                passengerId = request.passengerId
-                                            )
-
-                                            if (success) {
-                                                Log.d("RideApproval", "✅ Approved request ${request.requestId}")
-                                                pendingRequests = pendingRequests.filterNot {
-                                                    it.requestId == request.requestId
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Button(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            try {
+                                                val ride = rideRepo.getRide(request.rideId)
+                                                if (ride == null) {
+                                                    Log.w("RideApproval", "⚠ Ride not found: ${request.rideId}")
+                                                    return@launch
                                                 }
-                                            } else {
-                                                Log.w("RideApproval", "⚠ Approval failed for ${request.requestId}")
-                                            }
 
-                                        } catch (e: Exception) {
-                                            Log.e("RideApproval", "❌ Error during approval: ${e.message}", e)
+                                                val candidate = RideCandidate(
+                                                    ride = ride,
+                                                    detourEvaluationResult = request.detourEvaluationResult
+                                                )
+
+                                                val success = rideRepo.approvePassengerRequest(
+                                                    candidate = candidate,
+                                                    requestId = request.requestId,
+                                                    passengerId = request.passengerId
+                                                )
+
+                                                if (success) {
+                                                    Log.d("RideApproval", "✅ Approved request ${request.requestId}")
+                                                    pendingRequests = pendingRequests.filterNot {
+                                                        it.requestId == request.requestId
+                                                    }
+                                                } else {
+                                                    Log.w("RideApproval", "⚠ Approval failed for ${request.requestId}")
+                                                }
+
+                                            } catch (e: Exception) {
+                                                Log.e("RideApproval", "❌ Error during approval: ${e.message}", e)
+                                            }
                                         }
                                     }
-                                },
-                                modifier = Modifier.align(Alignment.End)
-                            ) {
-                                Text("Approve")
+                                ) {
+                                    Text("Approve")
+                                }
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                OutlinedButton(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            try {
+                                                val success = rideRepo.declineAndDeleteRideRequest(
+                                                    rideId = request.rideId,
+                                                    requestId = request.requestId
+                                                )
+
+                                                if (success) {
+                                                    Log.d("RideDecline", "✅ Declined request ${request.requestId}")
+                                                    pendingRequests = pendingRequests.filterNot {
+                                                        it.requestId == request.requestId
+                                                    }
+                                                } else {
+                                                    Log.w("RideDecline", "⚠ Failed to decline request ${request.requestId}")
+                                                }
+
+                                            } catch (e: Exception) {
+                                                Log.e("RideDecline", "❌ Error during decline: ${e.message}", e)
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Text("Decline")
+                                }
                             }
                         }
                     }

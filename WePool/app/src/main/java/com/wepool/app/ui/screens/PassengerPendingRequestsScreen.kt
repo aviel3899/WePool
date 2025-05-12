@@ -73,9 +73,7 @@ fun PassengerPendingRequestsScreen(uid: String, navController: NavController) {
 
         OutlinedButton(
             onClick = {
-                navController.navigate("passengerMenu/$uid") {
-                    popUpTo("passengerPendingRequests/$uid") { inclusive = true }
-                }
+                navController.popBackStack()
             },
             modifier = Modifier.fillMaxWidth()
         ) {

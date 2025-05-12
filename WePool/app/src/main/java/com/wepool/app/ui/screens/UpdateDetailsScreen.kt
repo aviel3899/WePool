@@ -2,12 +2,16 @@ package com.wepool.app.ui.screens
 
 import android.app.Activity
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.enums.UserRole
@@ -17,6 +21,7 @@ import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun UpdateDetailsScreen(navController: NavController, uid: String) {
@@ -32,10 +37,17 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
     var user by remember { mutableStateOf<User?>(null) }
     var phoneNumber by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
     var selectedRoles by remember { mutableStateOf(setOf<String>()) }
     var originalRoles by remember { mutableStateOf(setOf<String>()) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val passwordsMatch = remember(newPassword, confirmPassword) {
+        confirmPassword.isEmpty() || newPassword == confirmPassword
+    }
 
     LaunchedEffect(uid) {
         try {
@@ -102,34 +114,80 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
             value = newPassword,
             onValueChange = { newPassword = it },
             label = { Text("New Password (optional)") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                    )
+                }
+            }
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Confirm Password") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                    Icon(
+                        imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (confirmPasswordVisible) "Hide confirm password" else "Show confirm password"
+                    )
+                }
+            },
+            isError = !passwordsMatch && confirmPassword.isNotEmpty()
+        )
+
+        if (!passwordsMatch && confirmPassword.isNotEmpty()) {
+            Text(
+                "Passwords do not match",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.Start)
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
+                if (!passwordsMatch) {
+                    errorMessage = "Passwords do not match. Please try again."
+                    return@Button
+                }
+
                 coroutineScope.launch {
                     try {
+                        if (newPassword.isNotBlank()) {
+                            try {
+                                auth.currentUser?.updatePassword(newPassword)?.await()
+                            } catch (e: Exception) {
+                                errorMessage = "Password update failed: ${e.message}"
+                                return@launch
+                            }
+                        }
+
                         val removedRoles = originalRoles - selectedRoles
                         val addedRoles = selectedRoles - originalRoles
 
-                        // Delete subcollections if needed
                         if ("DRIVER" in removedRoles) {
-                            val exists = driverRepository.getDriver(uid)
-                            if (exists != null) {
+                            driverRepository.getDriver(uid)?.let {
                                 driverRepository.deleteDriver(uid)
                             }
                         }
                         if ("PASSENGER" in removedRoles) {
-                            val exists = passengerRepository.getPassenger(uid)
-                            if (exists != null) {
+                            passengerRepository.getPassenger(uid)?.let {
                                 passengerRepository.deletePassenger(uid)
                             }
                         }
 
-                        // Create subcollections if added
                         if ("DRIVER" in addedRoles) {
                             val driver = Driver(user = user!!)
                             driverRepository.saveDriver(driver)
@@ -139,7 +197,6 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                             passengerRepository.savePassengerData(uid, passenger)
                         }
 
-                        // Update user data
                         user?.let {
                             val updatedUser = it.copy(
                                 phoneNumber = phoneNumber,
@@ -148,10 +205,6 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                             userRepository.createOrUpdateUser(updatedUser)
                         }
 
-                        // Update password if needed
-                        if (newPassword.isNotBlank()) {
-                            auth.currentUser?.updatePassword(newPassword)
-                        }
                         navController.navigate("intermediate/$uid") {
                             popUpTo("updateDetails/$uid") { inclusive = true }
                         }

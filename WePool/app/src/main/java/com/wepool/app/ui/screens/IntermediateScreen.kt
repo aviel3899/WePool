@@ -17,12 +17,13 @@ import com.wepool.app.data.model.ride.RideRequestUpdateResult
 import kotlinx.coroutines.launch
 
 @Composable
-fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin: Boolean = false) {
+fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin: Boolean = false) {
     val context = LocalContext.current
     val activity = remember(context) { context as? Activity }
     val coroutineScope = rememberCoroutineScope()
 
-    var showDialog by remember { mutableStateOf(cameFromLogin) }
+    var hasShownDialog by remember { mutableStateOf(false) }
+    val showDialog = cameFromLogin && !hasShownDialog
     var dialogMessage by remember { mutableStateOf<String?>(null) }
     var updateResult by remember { mutableStateOf<RideRequestUpdateResult?>(null) }
 
@@ -45,8 +46,8 @@ fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin:
 
                     dialogMessage = when {
                         x == 0 && y == 0 -> "Hello ${user.name}!\nSince your last login you have no notifications."
-                        x == 0 -> "Hello ${user.name}!\nSince your last login you have:\n$y new ride approvals"
-                        y == 0 -> "Hello ${user.name}!\nSince your last login you have:\n$x new ride requests"
+                        x == 0 -> "Hello ${user.name}!\nYou have unseen $y new ride approvals"
+                        y == 0 -> "Hello ${user.name}!\nYou have $x ride requests waiting to be approved"
                         else -> "Hello ${user.name}!\nSince your last login you have:\n$x new ride requests\n$y new ride approvals"
                     }
                 }
@@ -131,29 +132,14 @@ fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin:
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Button(onClick = {
-                            showDialog = false
+                            hasShownDialog = true
 
                             coroutineScope.launch {
                                 val requestRepo = RepositoryProvider.provideRideRequestRepository()
 
-                                // ✅ עדכון לנהג - סימון שנצפה
-                                updateResult?.newPendingRequestForDriver?.forEach { request ->
-                                    if (!request.seenByDriver) {
-                                        val updated = requestRepo.updateSeenByDriver(
-                                            rideId = request.rideId,
-                                            requestId = request.requestId,
-                                            seen = true
-                                        )
-                                        if (!updated) {
-                                            Log.w("SeenUpdate", "⚠ Failed to update seen for ${request.requestId}")
-                                        }
-                                    }
-                                }
-
-                                // ✅ עדכון לנוסע - סימון שאושר
                                 updateResult?.newAcceptedRequestsAsPassenger?.forEach { request ->
-                                    if (!request.approvedByDriver) {
-                                        val updated = requestRepo.updateApprovedByDriver(
+                                    if (!request.passengerSawApprovedRequest) {
+                                        val updated = requestRepo.updatePassengerSawApprovedRequest(
                                             rideId = request.rideId,
                                             requestId = request.requestId,
                                             approved = true
@@ -165,7 +151,7 @@ fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin:
                                 }
                             }
                         }) {
-                            Text("X")
+                            Text("OK")
                         }
 
                     }

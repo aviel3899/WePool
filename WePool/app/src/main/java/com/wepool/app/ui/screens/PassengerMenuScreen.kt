@@ -57,9 +57,7 @@ fun PassengerMenuScreen(uid: String, navController: NavController) {
 
         OutlinedButton(
             onClick = {
-                navController.navigate("roleSelection/$uid") {
-                    popUpTo("passengerMenu/$uid") { inclusive = true }
-                }
+                navController.popBackStack()
             },
             modifier = Modifier
                 .fillMaxWidth()

@@ -11,6 +11,5 @@ data class RideRequest(
     val status: RequestStatus = RequestStatus.PENDING,
     val pickupLocation: LocationData = LocationData(),
     val detourEvaluationResult: DetourEvaluationResult = DetourEvaluationResult(),
-    val seenByDriver: Boolean = false,
-    val approvedByDriver: Boolean = false
+    val passengerSawApprovedRequest: Boolean = false
 )

@@ -2,7 +2,7 @@ package com.wepool.app
 
 import android.app.AppOpsManager
 import android.content.Context
-import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -11,39 +11,18 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.wepool.app.ui.theme.WePoolTheme
 import com.wepool.app.infrastructure.RepositoryProvider
-import com.wepool.app.infrastructure.navigation.RideNavigationServiceController
-import com.wepool.app.ui.screens.LoginScreen
-import com.wepool.app.ui.screens.SignUpScreen
-import com.wepool.app.ui.screens.RoleSelectionScreen
-import com.wepool.app.ui.screens.IntermediateScreen
-import com.wepool.app.ui.screens.RideHistoryMenuScreen
-import com.wepool.app.ui.screens.UpdateDetailsScreen
-import com.wepool.app.ui.screens.CreateRideDirectionScreen
-import com.wepool.app.ui.screens.DriverCarDetailsScreen
-import com.wepool.app.ui.screens.HomeboundRideCreationScreen
-import com.wepool.app.ui.screens.PassengerHomeboundRideSearchScreen
-import com.wepool.app.ui.screens.PassengerRideDirectionScreen
-import com.wepool.app.ui.screens.PassengerWorkboundRideSearchScreen
-import com.wepool.app.ui.screens.WorkboundRideCreationScreen
-import com.wepool.app.ui.screens.DriverMenuScreen
-import com.wepool.app.ui.screens.PassengerActiveRidesScreen
-import com.wepool.app.ui.screens.PassengerMenuScreen
-import com.wepool.app.ui.screens.DriverActiveRidesScreen
-import com.wepool.app.ui.screens.DriverPendingRequestsScreen
-import com.wepool.app.ui.screens.PassengerPendingRequestsScreen
+import com.wepool.app.ui.screens.*
+import com.wepool.app.ui.theme.WePoolTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -55,29 +34,22 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // UI
         enableEdgeToEdge()
         setContent {
             WePoolTheme {
                 val navController = rememberNavController()
-                val context = LocalContext.current
-                val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    rememberPermissionState(android.Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    null
+                }
 
                 LaunchedEffect(Unit) {
-                    if (!locationPermissionState.status.isGranted) {
-                        locationPermissionState.launchPermissionRequest()
-                    }
-
-                    requestUsageStatsPermissionIfNeeded(context)
-
                     RepositoryProvider.provideRideRepository().deactivateExpiredRides()
-
-                    val driverId = "nC8UiZonOSRmf4DnxiaikCXypgt2"
-                    val activeRides = RepositoryProvider.provideDriverRepository().getActiveRidesForDriver(driverId)
-                    val activeRide = activeRides.firstOrNull()
-
-                    if (activeRide != null) {
-                        RideNavigationServiceController.startRideNavigation(context, activeRide.rideId)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        !notificationPermissionState!!.status.isGranted
+                    ) {
+                        notificationPermissionState.launchPermissionRequest()
                     }
                 }
 
@@ -87,119 +59,83 @@ class MainActivity : ComponentActivity() {
                         startDestination = "login",
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        composable("login") {
-                            LoginScreen(navController = navController)
+                        composable("login") { LoginScreen(navController) }
+                        composable("signup") { SignUpScreen(navController) }
+                        composable("roleSelection/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            RoleSelectionScreen(uid, navController)
                         }
-                        composable("signup") {
-                            SignUpScreen(navController = navController)
+                        composable("intermediate/{uid}?fromLogin={fromLogin}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            val fromLogin = it.arguments?.getString("fromLogin")?.toBooleanStrictOrNull() ?: false
+                            IntermediateScreen(navController, uid, fromLogin)
                         }
-                        composable("roleSelection/{uid}") { backStackEntry ->
-                            val uid =
-                                backStackEntry.arguments?.getString("uid") ?: return@composable
-                            RoleSelectionScreen(navController = navController, uid = uid)
+                        composable("rideHistoryMenu/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            RideHistoryMenuScreen(navController, uid)
                         }
-                        composable("intermediate/{uid}?fromLogin={fromLogin}") { backStackEntry ->
-                            val uid =
-                                backStackEntry.arguments?.getString("uid") ?: return@composable
-                            val fromLogin = backStackEntry.arguments?.getString("fromLogin")?.toBooleanStrictOrNull() ?: false
-                            IntermediateScreen(navController = navController, uid = uid, cameFromLogin = fromLogin)
+                        composable("rideHistoryDriver/{uid}") { /* ... */ }
+                        composable("rideHistoryPassenger/{uid}") { /* ... */ }
+                        composable("rideHistoryCombined/{uid}") { /* ... */ }
+                        composable("updateDetails/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            UpdateDetailsScreen(navController, uid)
                         }
-                        composable("rideHistoryMenu/{uid}") { backStackEntry ->
-                            val uid =
-                                backStackEntry.arguments?.getString("uid") ?: return@composable
-                            RideHistoryMenuScreen(navController = navController, uid = uid)
+                        composable("createRideDirection/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            CreateRideDirectionScreen(navController, uid)
                         }
-
-                        composable("rideHistoryDriver/{uid}") {
-                            Text("📘 Ride History as a Driver (Placeholder)")
+                        composable("homeboundRide/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            HomeboundRideCreationScreen(navController, uid)
                         }
-
-                        composable("rideHistoryPassenger/{uid}") {
-                            Text("📕 Ride History as a Passenger (Placeholder)")
+                        composable("workboundRide/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            WorkboundRideCreationScreen(navController, uid)
                         }
-
-                        composable("rideHistoryCombined/{uid}") {
-                            Text("📗 Ride History Combined (Placeholder)")
+                        composable("driverCarDetails/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            DriverCarDetailsScreen(uid, navController)
                         }
-                        composable("updateDetails/{uid}") { backStackEntry ->
-                            val uid =
-                                backStackEntry.arguments?.getString("uid") ?: return@composable
-                            UpdateDetailsScreen(navController = navController, uid = uid)
+                        composable("passengerRideDirection/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            PassengerRideDirectionScreen(navController, uid)
                         }
-                        composable("createRideDirection/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            CreateRideDirectionScreen(navController = navController, uid = uid)
+                        composable("passengerHomeboundRideSearch/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            PassengerHomeboundRideSearchScreen(navController, uid)
                         }
-                        composable("homeboundRide/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            HomeboundRideCreationScreen(navController = navController, uid = uid)
+                        composable("passengerWorkboundRideSearch/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            PassengerWorkboundRideSearchScreen(navController, uid)
                         }
-                        composable("workboundRide/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            WorkboundRideCreationScreen(navController = navController, uid = uid)
+                        composable("driverMenu/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            DriverMenuScreen(navController, uid)
                         }
-                        composable("driverCarDetails/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            DriverCarDetailsScreen(uid = uid, navController = navController)
+                        composable("passengerMenu/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            PassengerMenuScreen(uid, navController)
                         }
-                        composable("passengerRideDirection/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            PassengerRideDirectionScreen(navController = navController, uid = uid)
+                        composable("passengerActiveRides/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            PassengerActiveRidesScreen(uid, navController)
                         }
-                        composable("passengerHomeboundRideSearch/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            PassengerHomeboundRideSearchScreen(navController = navController, uid = uid)
+                        composable("driverActiveRides/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            DriverActiveRidesScreen(uid, navController)
                         }
-
-                        composable("passengerWorkboundRideSearch/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            PassengerWorkboundRideSearchScreen(navController = navController, uid = uid)
+                        composable("driverPendingRequests/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            DriverPendingRequestsScreen(uid, navController)
                         }
-
-                        composable("driverMenu/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            DriverMenuScreen(navController = navController, uid = uid)
-                        }
-                        composable("passengerMenu/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            PassengerMenuScreen(uid = uid, navController = navController)
-                        }
-                        composable("passengerActiveRides/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            PassengerActiveRidesScreen(uid = uid, navController = navController)
-                        }
-                        composable("driverActiveRides/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            DriverActiveRidesScreen(uid = uid, navController = navController)
-                        }
-                        composable("driverPendingRequests/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            DriverPendingRequestsScreen(uid = uid, navController = navController)
-                        }
-                        composable("passengerPendingRequests/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
-                            PassengerPendingRequestsScreen(uid = uid, navController = navController)
+                        composable("passengerPendingRequests/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            PassengerPendingRequestsScreen(uid, navController)
                         }
                     }
                 }
             }
         }
     }
-
-    @Suppress("DEPRECATION")
-    private fun requestUsageStatsPermissionIfNeeded(context: Context) {
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.checkOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            android.os.Process.myUid(),
-            context.packageName
-        )
-        if (mode != AppOpsManager.MODE_ALLOWED) {
-            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            context.startActivity(intent)
-        }
-    }
-
 }

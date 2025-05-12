@@ -61,9 +61,10 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Top
     ) {
         Text("Join a Workbound Ride", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(24.dp))
@@ -81,15 +82,12 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
                 label = { Text("Start Location") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .onGloballyPositioned { coordinates ->
-                        textFieldSize = coordinates.size
-                    }
+                    .onGloballyPositioned { coordinates -> textFieldSize = coordinates.size }
                     .focusRequester(focusRequester),
                 singleLine = true,
                 interactionSource = remember { MutableInteractionSource() }
             )
 
-            // Proper offset below the text field
             if (expanded && startLocationSuggestions.isNotEmpty()) {
                 Card(
                     modifier = Modifier
@@ -203,7 +201,8 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
                             passengerDepartureTime = "",
                             passengerDate = selectedDate,
                             pickupPoint = pickupStop,
-                            rideRepository = rideRepository
+                            rideRepository = rideRepository,
+                            rideRequestRepository = RepositoryProvider.provideRideRequestRepository()
                         )
 
                         rides = availableRides
@@ -228,47 +227,58 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (ridesFetched) {
-            if (rides.isEmpty()) {
-                Text("❌ No available rides matching your request.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(16.dp)
-                )
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(rides) { ride ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("Start: ${ride.ride.startLocation.name}")
-                                Text("Destination: ${ride.ride.destination.name}")
-                                Text("Date: ${ride.ride.date}")
-                                Text("Arrival Time: ${ride.ride.arrivalTime ?: ride.ride.departureTime}")
-                                Text("Pickup Time: ${ride.detourEvaluationResult.pickupLocation?.pickupTime ?: "לא ידוע"}")
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            val success = rideRequestRepository.sendRequest(
-                                                rideId = ride.ride.rideId,
-                                                passengerId = uid,
-                                                pickupLocation = pickupStop.location,
-                                                detourEvaluationResult = ride.detourEvaluationResult
-                                            )
-                                            if (success) {
-                                                Toast.makeText(context, "✅ Request sent", Toast.LENGTH_SHORT).show()
-                                            } else {
-                                                Toast.makeText(context, "❌ Failed to send request", Toast.LENGTH_SHORT).show()
+        // LazyColumn in scrollable container
+        Column(
+            modifier = Modifier
+                .weight(1f, fill = true)
+                .fillMaxWidth()
+        ) {
+            if (ridesFetched) {
+                if (rides.isEmpty()) {
+                    Text(
+                        "❌ No available rides matching your request.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(rides) { ride ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text("Start: ${ride.ride.startLocation.name}")
+                                    Text("Destination: ${ride.ride.destination.name}")
+                                    Text("Date: ${ride.ride.date}")
+                                    Text("Arrival Time: ${ride.ride.arrivalTime ?: ride.ride.departureTime}")
+                                    Text("Pickup Time: ${ride.detourEvaluationResult.pickupLocation?.pickupTime ?: "לא ידוע"}")
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Button(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                val success = rideRequestRepository.sendRequest(
+                                                    rideId = ride.ride.rideId,
+                                                    passengerId = uid,
+                                                    pickupLocation = pickupStop.location,
+                                                    detourEvaluationResult = ride.detourEvaluationResult
+                                                )
+                                                Toast.makeText(
+                                                    context,
+                                                    if (success) "✅ Request sent" else "❌ Failed to send request",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
                                             }
-                                        }
-                                              },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Send Request")
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Send Request")
+                                    }
                                 }
                             }
                         }
@@ -284,6 +294,6 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Back")
-            }
         }
+    }
 }

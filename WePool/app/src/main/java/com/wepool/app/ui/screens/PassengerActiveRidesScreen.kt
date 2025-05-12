@@ -18,16 +18,53 @@ import kotlinx.coroutines.launch
 @Composable
 fun PassengerActiveRidesScreen(uid: String, navController: NavController) {
     val passengerRepository = RepositoryProvider.providePassengerRepository()
+    val rideRepository = RepositoryProvider.provideRideRepository()
     var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    var approvalUpdated by remember { mutableStateOf(false) }
+
+    fun refreshRides() {
+        scope.launch {
+            loading = true
+            try {
+                rides = passengerRepository.getActiveRidesForPassenger(uid)
+                Log.d("PassengerActiveRides", "✅ Refreshed ${rides.size} active rides")
+            } catch (e: Exception) {
+                error = "❌ Failed to refresh rides: ${e.message}"
+                Log.e("PassengerActiveRides", "❌ Error: ${e.message}", e)
+            } finally {
+                loading = false
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         scope.launch {
             try {
                 rides = passengerRepository.getActiveRidesForPassenger(uid)
                 Log.d("PassengerActiveRides", "✅ Found ${rides.size} active rides")
+                if (!approvalUpdated) {
+                    val requestRepo = RepositoryProvider.provideRideRequestRepository()
+                    val allRequests = requestRepo.getRequestsByPassenger(uid)
+
+                    val rideIdsInScreen = rides.map { it.rideId }.toSet()
+
+                    allRequests
+                        .filter { it.rideId in rideIdsInScreen && !it.passengerSawApprovedRequest }
+                        .forEach { request ->
+                            val updated = requestRepo.updatePassengerSawApprovedRequest(
+                                rideId = request.rideId,
+                                requestId = request.requestId,
+                                approved = true
+                            )
+                            if (!updated) {
+                                Log.w("ApprovalUpdate", "⚠ Failed to update approval for ${request.requestId}")
+                            }
+                        }
+                    approvalUpdated = true
+                }
             } catch (e: Exception) {
                 error = "❌ Failed to load active rides: ${e.message}"
                 Log.e("PassengerActiveRides", "❌ Error: ${e.message}", e)
@@ -66,14 +103,30 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController) {
                             Text("To: ${ride.destination.name}")
                             Text("Date: ${ride.date}")
 
-                            val rideRepo = RepositoryProvider.provideRideRepository()
-
                             if (ride.direction == RideDirection.TO_WORK) {
                                 Text("Arrival Time: ${ride.arrivalTime}")
-                                Text("Pickup Time: ${rideRepo.getPickupTimeForPassenger(ride, uid)}")
+                                Text("Pickup Time: ${rideRepository.getPickupTimeForPassenger(ride, uid)}")
                             } else {
                                 Text("Departure Time: ${ride.departureTime}")
-                                Text("Dropoff Time: ${rideRepo.getDropoffTimeForPassenger(ride, uid)}")
+                                Text("Dropoff Time: ${rideRepository.getDropoffTimeForPassenger(ride, uid)}")
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            rideRepository.removePassengerFromRide(ride.rideId, uid)
+                                            refreshRides()
+                                        }
+                                    }
+                                ) {
+                                    Text("Cancel Ride")
+                                }
                             }
                         }
                     }
@@ -85,9 +138,7 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController) {
 
         OutlinedButton(
             onClick = {
-                navController.navigate("passengerMenu/$uid") {
-                    popUpTo("passengerActiveRides/$uid") { inclusive = true }
-                }
+                navController.popBackStack()
             },
             modifier = Modifier.fillMaxWidth()
         ) {

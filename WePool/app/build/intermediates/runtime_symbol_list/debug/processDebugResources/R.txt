@@ -3828,7 +3828,6 @@ int string abc_searchview_description_voice 0x7f100017
 int string abc_shareactionprovider_share_with 0x7f100018
 int string abc_shareactionprovider_share_with_application 0x7f100019
 int string abc_toolbar_collapse_description 0x7f10001a
-int string accessibility_service_description 0x7f100116
 int string android_credentials_TYPE_PASSWORD_CREDENTIAL 0x7f10001c
 int string androidx_credentials_TYPE_PUBLIC_KEY_CREDENTIAL 0x7f10001d
 int string androidx_startup 0x7f10001e
@@ -7098,7 +7097,6 @@ int[] styleable ViewStubCompat { 0x010100d0, 0x010100f2, 0x010100f3 }
 int styleable ViewStubCompat_android_id 0
 int styleable ViewStubCompat_android_layout 1
 int styleable ViewStubCompat_android_inflatedId 2
-int xml accessibility_service_config 0x7f130000
 int xml backup_rules 0x7f130001
 int xml data_extraction_rules 0x7f130002
 int xml image_share_filepaths 0x7f130003

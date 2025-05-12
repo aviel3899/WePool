@@ -7,7 +7,6 @@
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="white">#FFFFFFFF</color>
-    <string name="accessibility_service_description">מעקב אחרי סגירת Google Maps</string>
     <string name="app_name">WePool</string>
     <string name="gcm_defaultSenderId" translatable="false">703918784800</string>
     <string name="google_api_key" translatable="false">AIzaSyDgto-lJncUbesPTvjCaQkNMo7fSJeJPv8</string>

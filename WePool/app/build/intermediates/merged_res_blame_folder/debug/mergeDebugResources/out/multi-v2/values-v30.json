@@ -4,7 +4,7 @@
             "outputFile": "com.wepool.app-mergeDebugResources-76:/values-v30/values-v30.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Administrator\\.gradle\\caches\\8.13\\transforms\\82d8bd37f053a50f18ba3132545b8433\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
+                    "source": "C:\\Users\\Administrator\\.gradle\\caches\\8.13\\transforms\\af9e13483adebca66f6ff8e98e7bdf8d\\transformed\\material3-release\\res\\values-v30\\values-v30.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

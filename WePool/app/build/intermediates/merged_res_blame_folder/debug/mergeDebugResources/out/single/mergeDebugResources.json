@@ -32,10 +32,6 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-80:\\xml\\data_extraction_rules.xml"
     },
     {
-        "merged": "com.wepool.app-debug-78:/xml_accessibility_service_config.xml.flat",
-        "source": "com.wepool.app-main-80:/xml/accessibility_service_config.xml"
-    },
-    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-78:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-80:\\mipmap-anydpi-v26\\ic_launcher.xml"
     },

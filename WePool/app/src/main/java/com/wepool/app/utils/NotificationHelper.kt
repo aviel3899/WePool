@@ -12,6 +12,7 @@ object NotificationHelper {
 
     private const val CHANNEL_ID = "ride_navigation_channel"
     private const val CHANNEL_NAME = "Ride Navigation"
+    private const val PASSENGER_NOTIFICATION_ID = 12345
 
     fun buildNavigationNotification(context: Context, contentText: String): Notification {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -21,10 +22,27 @@ object NotificationHelper {
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle("WePool 🚘")
             .setContentText(contentText)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // שנה לאייקון משלך אם צריך
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setOngoing(true)
             .build()
+    }
+
+    fun sendPassengerPickupNotification(context: Context, passengerName: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel(context)
+        }
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setContentTitle("🚗 הנהג בדרך אליך!")
+            .setContentText("הנהג התחיל בנסיעה לעברך, $passengerName")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(PASSENGER_NOTIFICATION_ID, notification)
     }
 
     private fun createNotificationChannel(context: Context) {

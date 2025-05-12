@@ -6,6 +6,7 @@ import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.remote.IGoogleMapsService
 import com.wepool.app.data.repository.interfaces.IRideRepository
+import com.wepool.app.data.repository.interfaces.IRideRequestRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalTime
@@ -34,11 +35,16 @@ class PassengerRideFinder(
         passengerDate: String,
         pickupPoint: PickupStop,
         rideRepository: IRideRepository,
+        rideRequestRepository: IRideRequestRepository
     ): List<RideCandidate> = withContext(Dispatchers.IO) {
+
+        val passengerPendingRequests = rideRequestRepository.getPendingRequestsByPassenger(pickupPoint.passengerId)
+        val pendingRideIds = passengerPendingRequests.map { it.rideId }.toSet()
 
         val allRides = rideRepository.getRidesByCompanyAndDirection(companyId, direction)
 
         val candidates = allRides.mapNotNull { ride ->
+            val alreadyRequested = ride.rideId in pendingRideIds
             val dateOK = ride.date == passengerDate
             val timeOK: Boolean
             if(direction == RideDirection.TO_WORK){
@@ -96,7 +102,7 @@ class PassengerRideFinder(
             val notHisOwnRide = ride.driverId != pickupPoint.passengerId
 
 
-            if (!dateOK || !timeOK || !seatOK || !notAlreadyJoined || !detourOK || !futureEnough || !notHisOwnRide) {
+            if (!dateOK || !timeOK || !seatOK || !notAlreadyJoined || !detourOK || !futureEnough || !notHisOwnRide || alreadyRequested) {
                 Log.d("RideFilter", """ ❌ נסיעה לא מתאימה:
         - תאריך תואם? $dateOK
         - זמן תואם? $timeOK
@@ -105,6 +111,7 @@ class PassengerRideFinder(
         - סטייה מותרת? $detourOK
         - זמן יציאה מספיק עתידי? $futureEnough
          - האם הנסיעה היא לא של עצמו? $notHisOwnRide
+         - האם כבר קיימת בקשה ממתינה? $alreadyRequested
         """.trimIndent()
                 )
                 return@mapNotNull null

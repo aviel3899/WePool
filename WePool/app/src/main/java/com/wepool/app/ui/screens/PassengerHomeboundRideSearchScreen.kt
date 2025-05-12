@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+
 @Composable
 fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String) {
     val context = LocalContext.current
@@ -86,7 +87,6 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Revised Autocomplete Destination Input
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = destination,
@@ -204,13 +204,14 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
                         )
 
                         val availableRides = passengerRideFinder.getAvailableRidesForPassenger(
-                            companyId = "company123", // TODO: replace with actual
+                            companyId = "company123",
                             direction = RideDirection.TO_HOME,
                             passengerArrivalTime = "",
                             passengerDepartureTime = selectedTime,
                             passengerDate = selectedDate,
                             pickupPoint = pickupStop,
-                            rideRepository = RepositoryProvider.provideRideRepository()
+                            rideRepository = RepositoryProvider.provideRideRepository(),
+                            rideRequestRepository = RepositoryProvider.provideRideRequestRepository()
                         )
 
                         rides = availableRides
@@ -237,51 +238,53 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (ridesFetched) {
-            if (rides.isEmpty()) {
-                Text(
-                    "❌ No available rides matching your request.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(16.dp)
-                )
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(rides) { rideCandidate ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("Start: ${rideCandidate.ride.startLocation.name}")
-                                Text("Destination: ${rideCandidate.ride.destination.name}")
-                                Text("Date: ${rideCandidate.ride.date}")
-                                Text("Arrival Time: ${rideCandidate.detourEvaluationResult.updatedReferenceTime}")
-                                Text("Dropoff Time: ${rideCandidate.detourEvaluationResult.pickupLocation?.dropoffTime ?: "לא ידוע"}")
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            val success = rideRequestRepository.sendRequest(
-                                                rideId = rideCandidate.ride.rideId,
-                                                passengerId = uid,
-                                                pickupLocation = pickupStop.location,
-                                                detourEvaluationResult = rideCandidate.detourEvaluationResult
-                                            )
-                                            if (success) {
-                                                Toast.makeText(context, "✅ Request sent", Toast.LENGTH_SHORT).show()
-                                            } else {
-                                                Toast.makeText(context, "❌ Failed to send request", Toast.LENGTH_SHORT).show()
+        Column(modifier = Modifier.weight(1f)) {
+            if (ridesFetched) {
+                if (rides.isEmpty()) {
+                    Text(
+                        "❌ No available rides matching your request.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(rides) { rideCandidate ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text("Start: ${rideCandidate.ride.startLocation.name}")
+                                    Text("Destination: ${rideCandidate.ride.destination.name}")
+                                    Text("Date: ${rideCandidate.ride.date}")
+                                    Text("Arrival Time: ${rideCandidate.detourEvaluationResult.updatedReferenceTime}")
+                                    Text("Dropoff Time: ${rideCandidate.detourEvaluationResult.pickupLocation?.dropoffTime ?: "לא ידוע"}")
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Button(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                val success = rideRequestRepository.sendRequest(
+                                                    rideId = rideCandidate.ride.rideId,
+                                                    passengerId = uid,
+                                                    pickupLocation = pickupStop.location,
+                                                    detourEvaluationResult = rideCandidate.detourEvaluationResult
+                                                )
+                                                Toast.makeText(
+                                                    context,
+                                                    if (success) "✅ Request sent" else "❌ Failed to send request",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
                                             }
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Send Request")
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Send Request")
+                                    }
                                 }
                             }
                         }
@@ -297,6 +300,6 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Back")
-            }
         }
+    }
 }

@@ -214,7 +214,7 @@ class RideRepository(
             }
 
             //  מחיקת הבקשה ע"י הפונקציה מ-RideRequestRepository
-            rideRequestRepository.deleteRequest(rideId, requestId)
+            //rideRequestRepository.deleteRequest(rideId, requestId)
 
             Log.d("RideRequest", "🗑 בקשה נדחתה ונמחקה בהצלחה (requestId=$requestId)")
             return@withContext true
@@ -241,7 +241,7 @@ class RideRepository(
                 return@withContext false
             }
 
-            rideRequestRepository.deleteRequest(rideId, requestId)
+            //rideRequestRepository.deleteRequest(rideId, requestId)
 
             Log.d("RideRequest", "🚫 הבקשה בוטלה ונמחקה בהצלחה (requestId=$requestId)")
             return@withContext true
@@ -417,7 +417,7 @@ class RideRepository(
     // מוחק נסיעה
     override suspend fun deleteRide(rideId: String) = withContext(Dispatchers.IO) {
         try {
-            val rideSnapshot = rideCollection.document(rideId).get().await()
+            val rideSnapshot = firestore.collection("rides").document(rideId).get().await()
             val ride = rideSnapshot.toObject(Ride::class.java)
 
             if (ride == null) {
@@ -430,7 +430,6 @@ class RideRepository(
 
                 for (passengerId in ride.passengers.toList()) {
                     try {
-                        // קריאה רגילה לפונקציה עם חישוב מסלול
                         removePassengerFromRide(rideId, passengerId)
                     } catch (e: Exception) {
                         Log.e("RideDelete", "❌ שגיאה בהסרת נוסע $passengerId: ${e.message}", e)
@@ -440,8 +439,12 @@ class RideRepository(
                 Log.d("RideDelete", "✅ כל הנוסעים הוסרו מהנסיעה (rideId=$rideId)")
             }
 
-            rideCollection.document(rideId).delete().await()
+            firestore.collection("rides").document(rideId).delete().await()
             Log.d("RideDelete", "🗑 הנסיעה נמחקה בהצלחה (rideId=$rideId)")
+
+            val driverId = ride.driverId
+            val driverRepository = RepositoryProvider.provideDriverRepository()
+            driverRepository.removeActiveRideFromDriver(driverId, rideId)
 
         } catch (e: Exception) {
             Log.e("RideDelete", "❌ שגיאה במחיקת נסיעה: ${e.message}", e)
@@ -449,7 +452,7 @@ class RideRepository(
     }
 
 
-    override suspend fun updateAvailableSeats(rideId: String, seats: Int) {
+override suspend fun updateAvailableSeats(rideId: String, seats: Int) {
         firestore.collection("rides")
             .document(rideId)
             .update("availableSeats", seats)
