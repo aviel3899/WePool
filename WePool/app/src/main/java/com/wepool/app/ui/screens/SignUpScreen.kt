@@ -1,6 +1,5 @@
 package com.wepool.app.ui.screens
 
-import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -10,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -18,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.wepool.app.data.repository.PhoneAuthManager
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
@@ -29,17 +26,13 @@ fun SignUpScreen(navController: NavController) {
     val authRepository = RepositoryProvider.provideAuthRepository()
     val userRepository = RepositoryProvider.provideUserRepository()
     val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
-    var normalizedPhone by remember { mutableStateOf("") }
     var companyCode by remember { mutableStateOf("") }
-    var smsCode by remember { mutableStateOf("") }
-    var isPhoneVerified by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isRegistering by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -112,42 +105,6 @@ fun SignUpScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
-            Button(onClick = {
-                coroutineScope.launch {
-                    try {
-                        val activity = context as Activity
-                        normalizedPhone = PhoneAuthManager.normalizePhoneNumber(phoneNumber)
-                        PhoneAuthManager.sendVerificationCode(normalizedPhone, activity)
-                        errorMessage = "📨 קוד נשלח בהצלחה"
-                    } catch (e: Exception) {
-                        errorMessage = "❌ ${e.message}"
-                    }
-                }
-            }, modifier = Modifier.fillMaxWidth()) {
-                Text("שלח קוד אימות")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(smsCode, { smsCode = it; errorMessage = null }, label = { Text("קוד SMS") }, modifier = Modifier.fillMaxWidth())
-
-            Button(onClick = {
-                coroutineScope.launch {
-                    try {
-                        val normalizedPhone = PhoneAuthManager.normalizePhoneNumber(phoneNumber)
-                        PhoneAuthManager.verifyCode(smsCode, normalizedPhone)
-                        isPhoneVerified = true
-                        errorMessage = "✅ מספר אומת בהצלחה"
-                    } catch (e: Exception) {
-                        errorMessage = "❌ אימות נכשל: ${e.message}"
-                    }
-                }
-            }, enabled = smsCode.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
-                Text("אמת מספר")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
             OutlinedTextField(companyCode, { companyCode = it; errorMessage = null }, label = { Text("Company Code") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -170,10 +127,6 @@ fun SignUpScreen(navController: NavController) {
                     errorMessage = "הסיסמאות לא תואמות"
                     return@Button
                 }
-                if (!isPhoneVerified) {
-                    errorMessage = "יש לאמת את מספר הטלפון"
-                    return@Button
-                }
                 val chosenRoles = selectedRoles.filterValues { it }.keys.map { it.name }
                 if (chosenRoles.isEmpty()) {
                     errorMessage = "בחר לפחות תפקיד אחד"
@@ -186,16 +139,16 @@ fun SignUpScreen(navController: NavController) {
                         uid = "",
                         name = name,
                         email = email,
-                        phoneNumber = normalizedPhone,
+                        phoneNumber = phoneNumber,
                         companyCode = companyCode,
                         isBanned = false,
                         roles = chosenRoles
                     )
-                    val result = authRepository.signUpWithPhoneVerification(
+                    val result = authRepository.signUpWithEmailAndPassword(
                         email = email,
                         password = password,
                         user = user,
-                        verificationCode = smsCode
+                        userRepository = userRepository
                     )
                     isRegistering = false
                     result.onSuccess {

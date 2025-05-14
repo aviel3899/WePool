@@ -10,6 +10,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.core.os.HandlerCompat
+import com.google.firebase.auth.FirebaseAuth
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.remote.RideNavigationStarter
 import com.wepool.app.infrastructure.RepositoryProvider
@@ -199,28 +200,22 @@ class RideNavigationForegroundService : Service() {
             return
         }
 
-        val data = mapOf("rideId" to rideId)
-        //val data = mapOf("data" to mapOf("rideId" to rideId))
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            Log.e("FCM", "❌ המשתמש אינו מחובר - לא ניתן לשלוח התראה")
+            return
+        }
+
         Log.d("FCM", "📤 שולח rideId: $rideId")
 
         Firebase.functions
-            .getHttpsCallable("sendNotificationToPhoneNumber")
+            .getHttpsCallable("sendNotificationToPassengers")
             .call(hashMapOf("rideId" to rideId))
             .addOnSuccessListener {
-                Log.d("FCM", "✅ נשלחו התראות לפי מספרי טלפון")
+                Log.d("FCM", "✅ נשלחו התראות")
             }
             .addOnFailureListener {
-                Log.e("FCM", "❌ שגיאה בשליחת התראות לפי טלפון", it)
+                Log.e("FCM", "❌ שגיאה בשליחת התראות", it)
             }
-
-            /*Firebase.functions
-            .getHttpsCallable("notifyPassengersRideStarted")
-            .call(data)
-            .addOnSuccessListener {
-                Log.d("FCM", "✅ נשלחה התראה לנוסעים")
-            }
-            .addOnFailureListener {
-                Log.e("FCM", "❌ שגיאה בשליחת התראה", it)
-            }*/
     }
 }

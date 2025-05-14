@@ -38,7 +38,7 @@ class AuthRepository(
             }
 
             userRepository.updateLastLoginTimestamp(uid, System.currentTimeMillis())
-            //userRepository.uploadFcmTokenForCurrentUser()
+            userRepository.uploadFcmTokenForCurrentUser()
 
             val tokenResult = auth.currentUser?.getIdToken(true)?.await()
             val token = tokenResult?.token ?: return Result.failure(Exception("טוקן לא התקבל"))
@@ -71,33 +71,6 @@ class AuthRepository(
 
         } catch (e: Exception) {
             Log.e("AuthRepository", "❌ שגיאה בהרשמה: ${e.message}", e)
-            Result.failure(e)
-        }
-    }
-
-    // הרשמה עם אימות SMS
-    suspend fun signUpWithPhoneVerification(
-        email: String,
-        password: String,
-        user: User,
-        verificationCode: String
-    ): Result<String> {
-        return try {
-            val credential: PhoneAuthCredential = PhoneAuthManager.verifyCode(verificationCode, user.phoneNumber)
-
-            val authResult = auth.createUserWithEmailAndPassword(email, password).await()
-            val uid = authResult.user?.uid ?: return Result.failure(Exception("UID לא נוצר"))
-
-            authResult.user?.linkWithCredential(credential)?.await()
-
-            val newUser = user.copy(uid = uid, email = email)
-            userRepository.createOrUpdateUser(newUser)
-
-            Log.d("AuthRepository", "🟢 הרשמה + אימות טלפון הצליחו | UID: $uid")
-            Result.success(uid)
-
-        } catch (e: Exception) {
-            Log.e("AuthRepository", "❌ שגיאה בהרשמה עם אימות טלפון: ${e.message}", e)
             Result.failure(e)
         }
     }
