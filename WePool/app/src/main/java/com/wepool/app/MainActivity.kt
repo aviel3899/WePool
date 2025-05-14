@@ -1,10 +1,9 @@
 package com.wepool.app
 
-import android.app.AppOpsManager
+import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -43,6 +42,7 @@ class MainActivity : ComponentActivity() {
                 } else {
                     null
                 }
+                val context = LocalContext.current
 
                 LaunchedEffect(Unit) {
                     RepositoryProvider.provideRideRepository().deactivateExpiredRides()
@@ -51,6 +51,11 @@ class MainActivity : ComponentActivity() {
                     ) {
                         notificationPermissionState.launchPermissionRequest()
                     }
+                    if (RepositoryProvider.isUserLoggedIn()) {
+                        RepositoryProvider.provideUserRepository().uploadFcmTokenForCurrentUser()
+                    }
+                    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    manager.cancelAll()
                 }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -127,11 +132,11 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("driverPendingRequests/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
-                            DriverPendingRequestsScreen(uid, navController)
+                            DriverRequestsScreen(uid, navController)
                         }
                         composable("passengerPendingRequests/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
-                            PassengerPendingRequestsScreen(uid, navController)
+                            PassengerRequestsScreen(uid, navController)
                         }
                     }
                 }

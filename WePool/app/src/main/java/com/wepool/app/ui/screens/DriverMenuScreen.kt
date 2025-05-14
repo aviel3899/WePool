@@ -43,7 +43,7 @@ fun DriverMenuScreen(navController: NavController, uid: String) {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Show Pending Requests")
+                Text("Requests")
             }
 
             Button(

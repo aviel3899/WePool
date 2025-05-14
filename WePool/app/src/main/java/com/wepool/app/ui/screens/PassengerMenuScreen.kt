@@ -41,7 +41,7 @@ fun PassengerMenuScreen(uid: String, navController: NavController) {
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
         ) {
-            Text("Show Pending Requests")
+            Text("Requests")
         }
 
         Button(

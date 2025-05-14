@@ -4,10 +4,14 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.messaging.FirebaseMessaging
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.model.users.User
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class UserRepository(
@@ -212,6 +216,38 @@ class UserRepository(
         } catch (e: Exception) {
             logException("removeRoleFromUser", e)
         }
+    }
+
+    override suspend fun updateUserToken(uid: String, token: String) {
+        try {
+            db.collection("users")
+                .document(uid)
+                .update("fcmToken", token)
+                .await()
+            Log.d("UserRepository", "✅ FCM token עודכן בהצלחה עבור UID: $uid")
+        } catch (e: Exception) {
+            Log.e("UserRepository", "❌ שגיאה בעדכון FCM token", e)
+        }
+    }
+
+    override fun uploadFcmTokenForCurrentUser() {
+        val user = auth.currentUser ?: return
+        val uid = user.uid
+
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                if (token.isNullOrBlank()) {
+                    Log.w("UserRepository", "⚠️ לא התקבל FCM Token")
+                    return@addOnSuccessListener
+                }
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    updateUserToken(uid, token)
+                }
+            }
+            .addOnFailureListener {
+                Log.e("UserRepository", "❌ שגיאה בקבלת טוקן", it)
+            }
     }
 
     private fun logException(func: String, e: Exception) {

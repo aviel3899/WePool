@@ -9,6 +9,8 @@ lifecycleRuntimeKtx = "2.9.0"
 activityCompose = "1.10.1"
 composeBom = "2025.05.00"
 firebase-bom = "33.13.0"
+firebase-messaging = "24.1.1"
+firebase-functions = "21.2.1"
 kotlinxSerializationJson = "1.8.1"
 kotlinSerializationPlugin = "2.1.20"
 google-services = "4.4.2"
@@ -50,6 +52,8 @@ androidx-material-icons-extended = { group = "androidx.compose.material", name =
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebase-messaging" }
+firebase-functions = { group = "com.google.firebase", name = "firebase-functions-ktx", version.ref = "firebase-functions" }
 
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }

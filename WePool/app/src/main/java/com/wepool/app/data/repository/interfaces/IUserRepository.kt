@@ -22,8 +22,11 @@ interface IUserRepository {
     suspend fun activateUser(uid: String)
     suspend fun unActivateUser(uid: String)
     suspend fun updateLastLoginTimestamp(uid: String, timestamp: Long)
-   // suspend fun updatePreviousLoginTimestamp(uid: String, timestamp: Long)
 
     suspend fun addRoleToUser(uid: String, role: String)
     suspend fun removeRoleFromUser(uid: String, role: String)
+
+    suspend fun updateUserToken(uid: String, token: String)
+    fun uploadFcmTokenForCurrentUser()
+
 }

@@ -79,4 +79,9 @@ object RepositoryProvider {
     fun provideRideChatRepository(): IRideChatRepository {
         return RideChatRepository(firestore = firestore)
     }
+
+    fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
 }

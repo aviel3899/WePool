@@ -1,5 +1,6 @@
 package com.wepool.app.ui.screens
 
+import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.wepool.app.data.repository.PhoneAuthManager
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
@@ -25,16 +29,19 @@ fun SignUpScreen(navController: NavController) {
     val authRepository = RepositoryProvider.provideAuthRepository()
     val userRepository = RepositoryProvider.provideUserRepository()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
+    var normalizedPhone by remember { mutableStateOf("") }
     var companyCode by remember { mutableStateOf("") }
+    var smsCode by remember { mutableStateOf("") }
+    var isPhoneVerified by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isRegistering by remember { mutableStateOf(false) }
-
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
@@ -54,200 +61,164 @@ fun SignUpScreen(navController: NavController) {
                 companyCode.isNotBlank()
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp)
-    ) {
+    Box(modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp)) {
+
+        val scrollState = rememberScrollState()
+
         Column(
-            modifier = Modifier.align(Alignment.TopCenter),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .verticalScroll(scrollState)
+                .padding(vertical = 16.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(32.dp))
-
             Text("Create an Account", style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedTextField(
-                value = name,
-                onValueChange = {
-                    name = it
-                    errorMessage = null
-                },
-                label = { Text("Name") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
+            OutlinedTextField(name, { name = it; errorMessage = null }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = email,
-                onValueChange = {
-                    email = it
-                    errorMessage = null
-                },
-                label = { Text("Email") },
+            OutlinedTextField(email, { email = it; errorMessage = null }, label = { Text("Email") },
                 keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth()
-            )
-
+                modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = password,
-                onValueChange = {
-                    password = it
-                    errorMessage = null
-                },
-                label = { Text("Password") },
+            OutlinedTextField(password, { password = it; errorMessage = null }, label = { Text("Password") },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
                 trailingIcon = {
                     val icon = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(imageVector = icon, contentDescription = null)
+                        Icon(icon, contentDescription = null)
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-
+                }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = {
-                    confirmPassword = it
-                    errorMessage = null
-                },
-                label = { Text("Confirm Password") },
+            OutlinedTextField(confirmPassword, { confirmPassword = it; errorMessage = null }, label = { Text("Confirm Password") },
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
                 trailingIcon = {
                     val icon = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                        Icon(imageVector = icon, contentDescription = null)
+                        Icon(icon, contentDescription = null)
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-
+                }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = phoneNumber,
-                onValueChange = {
-                    phoneNumber = it
-                    errorMessage = null
-                },
-                label = { Text("Phone Number") },
+            OutlinedTextField(phoneNumber, { phoneNumber = it; errorMessage = null }, label = { Text("Phone Number") },
                 keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth()
-            )
+                modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(onClick = {
+                coroutineScope.launch {
+                    try {
+                        val activity = context as Activity
+                        normalizedPhone = PhoneAuthManager.normalizePhoneNumber(phoneNumber)
+                        PhoneAuthManager.sendVerificationCode(normalizedPhone, activity)
+                        errorMessage = "📨 קוד נשלח בהצלחה"
+                    } catch (e: Exception) {
+                        errorMessage = "❌ ${e.message}"
+                    }
+                }
+            }, modifier = Modifier.fillMaxWidth()) {
+                Text("שלח קוד אימות")
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = companyCode,
-                onValueChange = {
-                    companyCode = it
-                    errorMessage = null
-                },
-                label = { Text("Company Code") },
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
-                modifier = Modifier.fillMaxWidth()
-            )
+            OutlinedTextField(smsCode, { smsCode = it; errorMessage = null }, label = { Text("קוד SMS") }, modifier = Modifier.fillMaxWidth())
 
+            Button(onClick = {
+                coroutineScope.launch {
+                    try {
+                        val normalizedPhone = PhoneAuthManager.normalizePhoneNumber(phoneNumber)
+                        PhoneAuthManager.verifyCode(smsCode, normalizedPhone)
+                        isPhoneVerified = true
+                        errorMessage = "✅ מספר אומת בהצלחה"
+                    } catch (e: Exception) {
+                        errorMessage = "❌ אימות נכשל: ${e.message}"
+                    }
+                }
+            }, enabled = smsCode.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+                Text("אמת מספר")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(companyCode, { companyCode = it; errorMessage = null }, label = { Text("Company Code") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
             Text("Select Your Role(s)", style = MaterialTheme.typography.titleMedium)
             availableRoles.forEach { role ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Checkbox(
-                        checked = selectedRoles[role] ?: false,
-                        onCheckedChange = { isChecked -> selectedRoles[role] = isChecked }
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Checkbox(checked = selectedRoles[role] ?: false,
+                        onCheckedChange = { selectedRoles[role] = it })
                     Text(role.name)
                 }
             }
-
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = {
-                    if (!isInputValid()) {
-                        errorMessage = "Please fill all fields. Password must be at least 6 characters."
-                        return@Button
-                    }
+            Button(onClick = {
+                if (!isInputValid()) {
+                    errorMessage = "אנא מלא את כל השדות"
+                    return@Button
+                }
+                if (password != confirmPassword) {
+                    errorMessage = "הסיסמאות לא תואמות"
+                    return@Button
+                }
+                if (!isPhoneVerified) {
+                    errorMessage = "יש לאמת את מספר הטלפון"
+                    return@Button
+                }
+                val chosenRoles = selectedRoles.filterValues { it }.keys.map { it.name }
+                if (chosenRoles.isEmpty()) {
+                    errorMessage = "בחר לפחות תפקיד אחד"
+                    return@Button
+                }
 
-                    if (password != confirmPassword) {
-                        errorMessage = "Passwords do not match"
-                        return@Button
+                coroutineScope.launch {
+                    isRegistering = true
+                    val user = User(
+                        uid = "",
+                        name = name,
+                        email = email,
+                        phoneNumber = normalizedPhone,
+                        companyCode = companyCode,
+                        isBanned = false,
+                        roles = chosenRoles
+                    )
+                    val result = authRepository.signUpWithPhoneVerification(
+                        email = email,
+                        password = password,
+                        user = user,
+                        verificationCode = smsCode
+                    )
+                    isRegistering = false
+                    result.onSuccess {
+                        navController.navigate("login") { popUpTo("signUp") { inclusive = true } }
+                    }.onFailure {
+                        errorMessage = it.message
                     }
-
-                    val chosenRoles = selectedRoles.filterValues { it }.keys.map { it.name }
-                    if (chosenRoles.isEmpty()) {
-                        errorMessage = "Please select at least one role."
-                        return@Button
-                    }
-
-                    coroutineScope.launch {
-                        isRegistering = true
-                        val newUser = User(
-                            uid = "",
-                            name = name,
-                            email = email,
-                            phoneNumber = phoneNumber,
-                            companyCode = companyCode,
-                            isBanned = false,
-                            roles = chosenRoles
-                        )
-                        val result = authRepository.signUpWithEmailAndPassword(email, password, newUser, userRepository)
-                        isRegistering = false
-                        result.onSuccess { uid ->
-                           /* navController.navigate("roleSelection/$uid") {
-                                popUpTo("login") { inclusive = true }
-                            }*/
-                            navController.navigate("login") {
-                                popUpTo("signUp") { inclusive = true }
-                            }
-                        }.onFailure {
-                            errorMessage = it.message
-                        }
-                    }
-                },
-                enabled = !isRegistering,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+                }
+            }, enabled = !isRegistering, modifier = Modifier.fillMaxWidth()) {
                 Text("Register")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            TextButton(
-                onClick = { navController.popBackStack() },
-                enabled = !isRegistering,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            TextButton(onClick = { navController.popBackStack() }, modifier = Modifier.fillMaxWidth()) {
                 Text("Cancel", color = MaterialTheme.colorScheme.error)
             }
         }
     }
 
-    // 🔔 Error dialog if needed
     if (errorMessage != null) {
-        AlertDialog(
-            onDismissRequest = { errorMessage = null },
-            confirmButton = {
-                TextButton(onClick = { errorMessage = null }) {
-                    Text("OK")
-                }
-            },
-            title = { Text("Error") },
-            text = { Text(errorMessage ?: "") }
-        )
+        AlertDialog(onDismissRequest = { errorMessage = null }, confirmButton = {
+            TextButton(onClick = { errorMessage = null }) { Text("OK") }
+        }, title = { Text("Error") }, text = { Text(errorMessage ?: "") })
     }
 }

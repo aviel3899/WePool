@@ -1,19 +1,19 @@
 package com.wepool.app.data.repository
 
 import android.util.Log
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.AuthResult
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.PhoneAuthCredential
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.repository.interfaces.IUserRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
-
 
 class AuthRepository(
     private val auth: FirebaseAuth,
     private val userRepository: IUserRepository
-){
+) {
 
     // התחברות עם מייל וסיסמה
     suspend fun loginWithEmailAndPassword(
@@ -38,6 +38,7 @@ class AuthRepository(
             }
 
             userRepository.updateLastLoginTimestamp(uid, System.currentTimeMillis())
+            //userRepository.uploadFcmTokenForCurrentUser()
 
             val tokenResult = auth.currentUser?.getIdToken(true)?.await()
             val token = tokenResult?.token ?: return Result.failure(Exception("טוקן לא התקבל"))
@@ -74,10 +75,37 @@ class AuthRepository(
         }
     }
 
+    // הרשמה עם אימות SMS
+    suspend fun signUpWithPhoneVerification(
+        email: String,
+        password: String,
+        user: User,
+        verificationCode: String
+    ): Result<String> {
+        return try {
+            val credential: PhoneAuthCredential = PhoneAuthManager.verifyCode(verificationCode, user.phoneNumber)
+
+            val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+            val uid = authResult.user?.uid ?: return Result.failure(Exception("UID לא נוצר"))
+
+            authResult.user?.linkWithCredential(credential)?.await()
+
+            val newUser = user.copy(uid = uid, email = email)
+            userRepository.createOrUpdateUser(newUser)
+
+            Log.d("AuthRepository", "🟢 הרשמה + אימות טלפון הצליחו | UID: $uid")
+            Result.success(uid)
+
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "❌ שגיאה בהרשמה עם אימות טלפון: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
     // איפוס סיסמה באמצעות מייל
     suspend fun resetPassword(email: String): Boolean = withContext(Dispatchers.IO) {
         return@withContext try {
-            FirebaseAuth.getInstance().sendPasswordResetEmail(email).await()
+            auth.sendPasswordResetEmail(email).await()
             Log.d("AuthRepository", "✅ מייל איפוס סיסמה נשלח לכתובת: $email")
             true
         } catch (e: Exception) {

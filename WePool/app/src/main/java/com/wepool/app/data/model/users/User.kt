@@ -10,4 +10,5 @@ data class User(
     val isActive: Boolean = true,
     val roles: List<String> = emptyList(),
     val lastLoginTimestamp: Long? = null,
+    val fcmToken: String? = null
 )

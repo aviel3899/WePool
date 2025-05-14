@@ -47,4 +47,13 @@ class RideNavigationManager(
         val waypoints = stops.subList(1, stops.size - 1)
         return Triple(origin, waypoints, destination)
     }
+
+    fun isCurrentStopPickup(): Boolean {
+        return pickupStops.getOrNull(currentIndex - 1)?.pickupTime != null &&
+                pickupStops.getOrNull(currentIndex - 1)?.dropoffTime == null
+    }
+
+    fun isCurrentStopDropoff(): Boolean {
+        return pickupStops.getOrNull(currentIndex - 1)?.dropoffTime != null
+    }
 }
