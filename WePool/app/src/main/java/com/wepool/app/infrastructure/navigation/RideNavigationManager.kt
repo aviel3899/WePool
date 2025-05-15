@@ -56,4 +56,6 @@ class RideNavigationManager(
     fun isCurrentStopDropoff(): Boolean {
         return pickupStops.getOrNull(currentIndex - 1)?.dropoffTime != null
     }
+
+    fun getRideId(): String = rideId
 }

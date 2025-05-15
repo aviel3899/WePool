@@ -126,11 +126,16 @@ class RideNavigationForegroundService : Service() {
                         passenger?.user?.name?.let { name ->
                             when {
                                 manager.isCurrentStopPickup() -> {
-                                    NotificationHelper.sendPassengerPickupNotification(this@RideNavigationForegroundService, name)
+                                    sendNotificationToPassenger(
+                                        passengerId = passengerId,
+                                        title = "🚗 הנהג בדרך אליך!",
+                                        body = "הנהג התחיל בנסיעה לעברך, $name",
+                                        rideId = manager.getRideId()
+                                    )
                                 }
-                                manager.isCurrentStopDropoff() -> {
+                                /*manager.isCurrentStopDropoff() -> {
                                     NotificationHelper.sendPassengerDropoffNotification(this@RideNavigationForegroundService, name)
-                                }
+                                }*/
                                 else -> {
                                     Log.w("RideNavService", "⚠️ לא ניתן לזהות סוג תחנה עבור ${name}")
                                 }
@@ -218,4 +223,30 @@ class RideNavigationForegroundService : Service() {
                 Log.e("FCM", "❌ שגיאה בשליחת התראות", it)
             }
     }
+
+    private suspend fun sendNotificationToPassenger(passengerId: String, title: String, body: String, rideId: String?) {
+        try {
+            val functions = Firebase.functions
+            val data = hashMapOf(
+                "passengerId" to passengerId,
+                "title" to title,
+                "body" to body,
+                "rideId" to (rideId ?: "")
+            )
+
+            functions
+                .getHttpsCallable("sendNotificationToPassenger")
+                .call(data)
+                .addOnSuccessListener {
+                    Log.d("RideNavService", "✅ שליחת התראה לנוסע הצליחה")
+                }
+                .addOnFailureListener {
+                    Log.e("RideNavService", "❌ שגיאה בשליחת התראה לנוסע", it)
+                }
+
+        } catch (e: Exception) {
+            Log.e("RideNavService", "❌ שגיאה בשליחת FCM לנוסע", e)
+        }
+    }
+
 }

@@ -147,8 +147,8 @@
 79-->C:\Users\Administrator\Afeka\Afeka_Year_C\WePool\WePool\app\src\main\AndroidManifest.xml:48:13-53
 80        <service
 80-->C:\Users\Administrator\Afeka\Afeka_Year_C\WePool\WePool\app\src\main\AndroidManifest.xml:50:9-56:19
-81            android:name="com.wepool.app.notifications.FirebaseMessagingService"
-81-->C:\Users\Administrator\Afeka\Afeka_Year_C\WePool\WePool\app\src\main\AndroidManifest.xml:51:13-67
+81            android:name="com.wepool.app.notifications.MyFirebaseMessagingService"
+81-->C:\Users\Administrator\Afeka\Afeka_Year_C\WePool\WePool\app\src\main\AndroidManifest.xml:51:13-69
 82            android:exported="false" >
 82-->C:\Users\Administrator\Afeka\Afeka_Year_C\WePool\WePool\app\src\main\AndroidManifest.xml:52:13-37
 83            <intent-filter>

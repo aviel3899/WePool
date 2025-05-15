@@ -78,7 +78,7 @@
             android:exported="false"
             android:foregroundServiceType="location" />
         <service
-            android:name="com.wepool.app.notifications.FirebaseMessagingService"
+            android:name="com.wepool.app.notifications.MyFirebaseMessagingService"
             android:exported="false" >
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

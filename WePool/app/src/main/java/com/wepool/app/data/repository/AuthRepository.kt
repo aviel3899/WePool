@@ -3,7 +3,6 @@ package com.wepool.app.data.repository
 import android.util.Log
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.PhoneAuthCredential
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import kotlinx.coroutines.Dispatchers

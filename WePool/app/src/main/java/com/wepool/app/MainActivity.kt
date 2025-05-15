@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.firebase.messaging.FirebaseMessaging
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.*
 import com.wepool.app.ui.theme.WePoolTheme
@@ -51,9 +52,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         notificationPermissionState.launchPermissionRequest()
                     }
-                    if (RepositoryProvider.isUserLoggedIn()) {
-                        RepositoryProvider.provideUserRepository().uploadFcmTokenForCurrentUser()
-                    }
+
                     val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                     manager.cancelAll()
                 }

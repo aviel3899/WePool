@@ -218,13 +218,19 @@ class UserRepository(
         }
     }
 
-    override suspend fun updateUserToken(uid: String, token: String) {
+    override suspend fun updateUserToken(uid: String, newToken: String) {
         try {
-            db.collection("users")
-                .document(uid)
-                .update("fcmToken", token)
-                .await()
-            Log.d("UserRepository", "✅ FCM token עודכן בהצלחה עבור UID: $uid")
+            val userDoc = db.collection("users").document(uid).get().await()
+            val existingToken = userDoc.getString("fcmToken")
+
+            if (existingToken != newToken) {
+                db.collection("users").document(uid)
+                    .update("fcmToken", newToken)
+                    .await()
+                Log.d("UserRepository", "✅ FCM token עודכן עבור UID: $uid")
+            } else {
+                Log.d("UserRepository", "ℹ️ FCM token לא השתנה עבור UID: $uid")
+            }
         } catch (e: Exception) {
             Log.e("UserRepository", "❌ שגיאה בעדכון FCM token", e)
         }
@@ -234,20 +240,24 @@ class UserRepository(
         val user = auth.currentUser ?: return
         val uid = user.uid
 
-        FirebaseMessaging.getInstance().token
-            .addOnSuccessListener { token ->
-                if (token.isNullOrBlank()) {
-                    Log.w("UserRepository", "⚠️ לא התקבל FCM Token")
-                    return@addOnSuccessListener
-                }
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    updateUserToken(uid, token)
-                }
+        FirebaseMessaging.getInstance().deleteToken().addOnCompleteListener { deleteTask ->
+            if (deleteTask.isSuccessful) {
+                FirebaseMessaging.getInstance().token
+                    .addOnSuccessListener { token ->
+                        Log.d("FCM", "📲 Token חדש: $token")
+                        if (!token.isNullOrBlank()) {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                updateUserToken(uid, token)
+                            }
+                        }
+                    }
+                    .addOnFailureListener {
+                        Log.e("UserRepository", "❌ שגיאה בקבלת token חדש", it)
+                    }
+            } else {
+                Log.e("UserRepository", "❌ שגיאה במחיקת token קודם", deleteTask.exception)
             }
-            .addOnFailureListener {
-                Log.e("UserRepository", "❌ שגיאה בקבלת טוקן", it)
-            }
+        }
     }
 
     private fun logException(func: String, e: Exception) {
