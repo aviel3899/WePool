@@ -95,6 +95,23 @@ class RideRequestRepository(
         }
     }
 
+    override suspend fun updatePassengerSawDeclinedRequest(rideId: String, requestId: String, declined: Boolean): Boolean = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val docRef = FirebaseFirestore.getInstance()
+                .collection("rides")
+                .document(rideId)
+                .collection("requests")
+                .document(requestId)
+
+            docRef.update("passengerSawDeclinedRequest", declined).await()
+            Log.d("RideRequest", "✅ passengerSawDeclinedRequest עודכן ל-$declined (requestId: $requestId)")
+            true
+        } catch (e: Exception) {
+            Log.e("RideRequest", "❌ שגיאה בעדכון passengerSawDeclinedRequest: ${e.message}", e)
+            false
+        }
+    }
+
     override suspend fun getRequestsForRide(rideId: String): List<RideRequest> = withContext(Dispatchers.IO) {
         return@withContext try {
             firestore.collection("rides").document(rideId)
@@ -232,18 +249,22 @@ class RideRequestRepository(
             val acceptedAsPassenger = getRequestsByPassenger(uid)
                 .filter { it.status == RequestStatus.ACCEPTED && !it.passengerSawApprovedRequest }
 
-            val newRequests = (pendingAsDriver + acceptedAsPassenger)
+            val declinedAsPassenger = getRequestsByPassenger(uid)
+                .filter { it.status == RequestStatus.DECLINED && !it.passengerSawDeclinedRequest }
+
+            val newRequests = (pendingAsDriver + acceptedAsPassenger + declinedAsPassenger)
                 .distinctBy { it.requestId }
 
             RideRequestUpdateResult(
                 hasUpdates = newRequests.isNotEmpty(),
                 newPendingRequestForDriver = pendingAsDriver,
                 newAcceptedRequestsAsPassenger = acceptedAsPassenger,
+                newDeclinedRequestsAsPassenger = declinedAsPassenger,
                 totallRequests = newRequests
             )
         } catch (e: Exception) {
             Log.e("RideRequestUpdate", "❌ שגיאה בבדיקת בקשות חדשות עבור $uid: ${e.message}", e)
-            RideRequestUpdateResult(false, emptyList(), emptyList(), emptyList())
+            RideRequestUpdateResult(false, emptyList(), emptyList(), emptyList(), emptyList())
         }
     }
 }

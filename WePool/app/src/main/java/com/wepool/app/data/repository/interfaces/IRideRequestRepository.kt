@@ -15,6 +15,7 @@ interface IRideRequestRepository {
     ): Boolean
     suspend fun updateRequestStatus(rideId: String, requestId: String, newStatus: RequestStatus): Boolean
     suspend fun updatePassengerSawApprovedRequest(rideId: String, requestId: String, approved: Boolean): Boolean
+    suspend fun updatePassengerSawDeclinedRequest(rideId: String, requestId: String, declined: Boolean): Boolean
     suspend fun getRequestsForRide(rideId: String): List<RideRequest>
     suspend fun getRequestsByPassenger(passengerId: String): List<RideRequest>
     suspend fun getRequestsByDriver(driverId: String): List<RideRequest>

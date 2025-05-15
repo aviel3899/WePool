@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.wepool.app.data.model.enums.RequestStatus
 import com.wepool.app.data.model.ride.RideRequest
 import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
@@ -86,14 +87,71 @@ fun PassengerRequestsScreen(uid: String, navController: NavController) {
                             error = null
                             try {
                                 val allRequests = requestRepo.getRequestsByPassenger(uid)
-                                results = if (selectedStatus == "All") {
+
+                                val filtered = if (selectedStatus == "All") {
                                     allRequests
                                 } else {
                                     allRequests.filter {
                                         it.status.name.equals(selectedStatus, ignoreCase = true)
                                     }
                                 }
+
+                                // 🚨 עדכון השדות לפי הסטטוס שנבחר
+                                when (selectedStatus) {
+                                    "All" -> {
+                                        filtered
+                                            .filter {
+                                                (!it.passengerSawApprovedRequest && it.status == RequestStatus.ACCEPTED) ||
+                                                        (!it.passengerSawDeclinedRequest && it.status == RequestStatus.DECLINED)
+                                            }
+                                            .forEach { request ->
+                                                requestRepo.updatePassengerSawApprovedRequest(
+                                                    rideId = request.rideId,
+                                                    requestId = request.requestId,
+                                                    approved = request.status == RequestStatus.ACCEPTED
+                                                )
+                                                if (request.status == RequestStatus.DECLINED) {
+                                                    requestRepo.updatePassengerSawDeclinedRequest(
+                                                        rideId = request.rideId,
+                                                        requestId = request.requestId,
+                                                        declined = true
+                                                    )
+                                                }
+                                            }
+                                    }
+
+                                    "Accepted" -> {
+                                        filtered
+                                            .filter {
+                                                it.status == RequestStatus.ACCEPTED && !it.passengerSawApprovedRequest
+                                            }
+                                            .forEach { request ->
+                                                requestRepo.updatePassengerSawApprovedRequest(
+                                                    rideId = request.rideId,
+                                                    requestId = request.requestId,
+                                                    approved = true
+                                                )
+                                            }
+                                    }
+
+                                    "Declined" -> {
+                                        filtered
+                                            .filter {
+                                                it.status == RequestStatus.DECLINED && !it.passengerSawDeclinedRequest
+                                            }
+                                            .forEach { request ->
+                                                requestRepo.updatePassengerSawDeclinedRequest(
+                                                    rideId = request.rideId,
+                                                    requestId = request.requestId,
+                                                    declined = true
+                                                )
+                                            }
+                                    }
+                                }
+
+                                results = filtered
                                 Log.d("PassengerRequests", "✅ Loaded ${results.size} requests with status: $selectedStatus")
+
                             } catch (e: Exception) {
                                 error = "❌ Failed to fetch requests: ${e.message}"
                                 Log.e("PassengerRequests", "❌ Error: ${e.message}", e)

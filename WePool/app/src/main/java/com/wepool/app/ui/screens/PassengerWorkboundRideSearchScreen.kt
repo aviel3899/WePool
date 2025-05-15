@@ -273,6 +273,10 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
                                                     if (success) "✅ Request sent" else "❌ Failed to send request",
                                                     Toast.LENGTH_SHORT
                                                 ).show()
+
+                                                if (success) {
+                                                    rides = rides.filterNot { it.ride.rideId == ride.ride.rideId }
+                                                }
                                             }
                                         },
                                         modifier = Modifier.fillMaxWidth()

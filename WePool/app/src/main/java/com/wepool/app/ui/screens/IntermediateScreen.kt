@@ -43,12 +43,32 @@ fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin
 
                     val x = result.newPendingRequestForDriver.size
                     val y = result.newAcceptedRequestsAsPassenger.size
+                    val z = result.newDeclinedRequestsAsPassenger.size
 
                     dialogMessage = when {
-                        x == 0 && y == 0 -> "Hello ${user.name}!\nSince your last login you have no notifications."
-                        x == 0 -> "Hello ${user.name}!\nYou have unseen $y new ride approvals"
-                        y == 0 -> "Hello ${user.name}!\nYou have $x ride requests waiting to be approved"
-                        else -> "Hello ${user.name}!\nSince your last login you have:\n$x new ride requests\n$y new ride approvals"
+                        x == 0 && y == 0 && z == 0 ->
+                            "Hello ${user.name}!\nSince your last login, you have no notifications."
+
+                        x > 0 && y == 0 && z == 0 ->
+                            "Hello ${user.name}!\nYou have $x ride requests waiting for your approval."
+
+                        x == 0 && y > 0 && z == 0 ->
+                            "Hello ${user.name}!\nYou have $y new ride approvals."
+
+                        x == 0 && y == 0 && z > 0 ->
+                            "Hello ${user.name}!\nYou have $z declined ride requests."
+
+                        x > 0 && y > 0 && z == 0 ->
+                            "Hello ${user.name}!\nSince your last login:\n$x ride requests need your approval\n$y new ride approvals."
+
+                        x > 0 && y == 0 && z > 0 ->
+                            "Hello ${user.name}!\nSince your last login:\n$x ride requests need your approval\n$z declined ride requests."
+
+                        x == 0 && y > 0 && z > 0 ->
+                            "Hello ${user.name}!\nSince your last login:\n$y new ride approvals\n$z declined ride requests."
+
+                        else -> // כל השלושה > 0
+                            "Hello ${user.name}!\nSince your last login:\n$x ride requests need your approval\n$y new ride approvals\n$z declined ride requests."
                     }
                 }
             }
@@ -143,6 +163,19 @@ fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin
                                             rideId = request.rideId,
                                             requestId = request.requestId,
                                             approved = true
+                                        )
+                                        if (!updated) {
+                                            Log.w("ApprovalUpdate", "⚠ Failed to update approval for ${request.requestId}")
+                                        }
+                                    }
+                                }
+
+                                updateResult?.newDeclinedRequestsAsPassenger?.forEach { request ->
+                                    if (!request.passengerSawDeclinedRequest) {
+                                        val updated = requestRepo.updatePassengerSawDeclinedRequest(
+                                            rideId = request.rideId,
+                                            requestId = request.requestId,
+                                            declined = true
                                         )
                                         if (!updated) {
                                             Log.w("ApprovalUpdate", "⚠ Failed to update approval for ${request.requestId}")

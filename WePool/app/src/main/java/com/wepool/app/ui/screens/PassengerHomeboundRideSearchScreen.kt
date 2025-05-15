@@ -279,6 +279,11 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
                                                     if (success) "✅ Request sent" else "❌ Failed to send request",
                                                     Toast.LENGTH_SHORT
                                                 ).show()
+
+                                                if (success) {
+                                                    // Remove this rideCandidate from the list
+                                                    rides = rides.filterNot { it.ride.rideId == rideCandidate.ride.rideId }
+                                                }
                                             }
                                         },
                                         modifier = Modifier.fillMaxWidth()

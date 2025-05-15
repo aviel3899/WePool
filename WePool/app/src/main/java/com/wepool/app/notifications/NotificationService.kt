@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.functions.FirebaseFunctions
+import com.wepool.app.data.model.ride.Ride
 import kotlinx.coroutines.tasks.await
 
 object NotificationService {
@@ -85,6 +86,43 @@ object NotificationService {
         } catch (e: Exception) {
             Log.e(TAG, "❌ שגיאה כללית בשליחת FCM לנוסע $passengerId", e)
         }
+    }
+
+    fun notifyRideUpdated(rideId: String) {
+        val firestore = FirebaseFirestore.getInstance()
+
+        firestore.collection("rides").document(rideId).get()
+            .addOnSuccessListener { rideDoc ->
+                if (!rideDoc.exists()) {
+                    Log.e("NotificationService", "❌ Ride $rideId לא נמצאה")
+                    return@addOnSuccessListener
+                }
+
+                val ride = rideDoc.toObject(Ride::class.java)
+                if (ride == null) {
+                    Log.e("NotificationService", "❌ שגיאה בהמרת המסמך ל-Ride")
+                    return@addOnSuccessListener
+                }
+
+                val allRecipients = ride.passengers + ride.driverId
+                if (allRecipients.isEmpty()) {
+                    Log.w("NotificationService", "⚠️ אין נמענים לשליחת ההתראה")
+                    return@addOnSuccessListener
+                }
+
+                val title = "📢 עדכון בנסיעה"
+                val body = "פרטי הנסיעה עודכנו לאחר שינויים בהרכב הנוסעים."
+
+                fetchTokensAndSendNotifications(
+                    passengerIds = allRecipients,
+                    rideId = rideId,
+                    title = title,
+                    body = body
+                )
+            }
+            .addOnFailureListener {
+                Log.e("NotificationService", "❌ שגיאה בשליפת rideId", it)
+            }
     }
 
     private fun fetchTokensAndSendNotifications(

@@ -189,15 +189,6 @@ class UserRepository(
         }
     }
 
-    /*override suspend fun updatePreviousLoginTimestamp(uid: String, timestamp: Long) {
-        try {
-            usersCollection.document(uid).update("previousLoginTimeStamp", timestamp).await()
-            Log.d("UserRepository", "🕒 זמן התחברות עודכן עבור המשתמש $uid")
-        } catch (e: Exception) {
-            logException("updatePreviousLoginTimestamp", e)
-        }
-    }*/
-
     override suspend fun addRoleToUser(uid: String, role: String) {
         try {
             usersCollection.document(uid)
@@ -240,24 +231,24 @@ class UserRepository(
         val user = auth.currentUser ?: return
         val uid = user.uid
 
-        FirebaseMessaging.getInstance().deleteToken().addOnCompleteListener { deleteTask ->
-            if (deleteTask.isSuccessful) {
-                FirebaseMessaging.getInstance().token
-                    .addOnSuccessListener { token ->
-                        Log.d("FCM", "📲 Token חדש: $token")
-                        if (!token.isNullOrBlank()) {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                updateUserToken(uid, token)
-                            }
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                Log.d("FCM", "📲 Token קיים/חדש: $token")
+                if (!token.isNullOrBlank()) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            updateUserToken(uid, token)
+                        } catch (e: Exception) {
+                            Log.e("UserRepository", "❌ שגיאה בעדכון FCM token", e)
                         }
                     }
-                    .addOnFailureListener {
-                        Log.e("UserRepository", "❌ שגיאה בקבלת token חדש", it)
-                    }
-            } else {
-                Log.e("UserRepository", "❌ שגיאה במחיקת token קודם", deleteTask.exception)
+                } else {
+                    Log.w("UserRepository", "⚠️ Token ריק או null, לא בוצע עדכון")
+                }
             }
-        }
+            .addOnFailureListener { exception ->
+                Log.e("UserRepository", "❌ שגיאה בקבלת token", exception)
+            }
     }
 
     private fun logException(func: String, e: Exception) {

@@ -16,6 +16,7 @@ import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
 import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.notifications.NotificationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -148,13 +149,15 @@ class RideRepository(
 
                 val pickupLocation = request.pickupLocation
 
+                val detourEvaluationResult = request.detourEvaluationResult
+
                 val pickupStop = PickupStop(
                     location = pickupLocation,
                     passengerId = passengerId,
                     pickupTime = if (ride.direction == RideDirection.TO_WORK)
-                        detour.updatedReferenceTime else null,
+                        detourEvaluationResult.pickupLocation?.pickupTime else null,
                     dropoffTime = if (ride.direction == RideDirection.TO_HOME)
-                        detour.updatedReferenceTime else null
+                        detourEvaluationResult.pickupLocation?.dropoffTime else null
                 )
 
                 val updatedRide = currentRide.copy(
@@ -276,12 +279,15 @@ class RideRepository(
             val updatedRide = buildRideAfterPassengerRemoved(originalRide, passengerId)
             rideCollection.document(rideId).set(updatedRide).await()
 
-            deletePassengerRequestsForRide(rideId, passengerId)
+            //deletePassengerRequestsForRide(rideId, passengerId)
 
             RepositoryProvider.providePassengerRepository()
                 .removeActiveRideFromPassenger(passengerId, rideId) // מחיקה של הנסיעה מרשימת הנסיעות הפעילות של הנוסע
 
             Log.d("RideLeave", "✅ הנוסע $passengerId הוסר והמסלול עודכן (rideId=$rideId)")
+
+            NotificationService.notifyRideUpdated(rideId)
+
         } catch (e: Exception) {
             Log.e("RideLeave", "❌ שגיאה בהסרת נוסע: ${e.message}", e)
         }
