@@ -28,40 +28,6 @@ object NotificationHelper {
             .build()
     }
 
-    fun sendPassengerPickupNotification(context: Context, passengerName: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel(context)
-        }
-
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("🚗 הנהג בדרך אליך!")
-            .setContentText("הנהג התחיל בנסיעה לעברך, $passengerName")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
-
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(PASSENGER_NOTIFICATION_ID, notification)
-    }
-
-    fun sendPassengerDropoffNotification(context: Context, passengerName: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel(context)
-        }
-
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("🛬 הורדת נוסע")
-            .setContentText("הגעת לנקודת ההורדה של $passengerName")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
-
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(System.currentTimeMillis().toInt(), notification)
-    }
-
     private fun createNotificationChannel(context: Context) {
         val channel = NotificationChannel(
             CHANNEL_ID,

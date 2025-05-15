@@ -11,6 +11,8 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.os.HandlerCompat
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.FirebaseFirestore
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.remote.RideNavigationStarter
 import com.wepool.app.infrastructure.RepositoryProvider
@@ -18,6 +20,7 @@ import com.wepool.app.notifications.NotificationHelper
 import kotlinx.coroutines.*
 import com.google.firebase.functions.ktx.functions
 import com.google.firebase.ktx.Firebase
+import com.wepool.app.notifications.NotificationService
 
 class RideNavigationForegroundService : Service() {
 
@@ -51,7 +54,7 @@ class RideNavigationForegroundService : Service() {
                     if (initialized) {
                         navigationManager = manager
 
-                        notifyPassengersRideStarted(rideId)
+                        NotificationService.notifyPassengersRideStarted(rideId)
 
                         val (origin, waypoints, destination) = manager.getAllStops()
                         RideNavigationStarter.startNavigationWithWaypoints(
@@ -126,10 +129,9 @@ class RideNavigationForegroundService : Service() {
                         passenger?.user?.name?.let { name ->
                             when {
                                 manager.isCurrentStopPickup() -> {
-                                    sendNotificationToPassenger(
+                                    NotificationService.sendNotificationToPassenger(
                                         passengerId = passengerId,
-                                        title = "🚗 הנהג בדרך אליך!",
-                                        body = "הנהג התחיל בנסיעה לעברך, $name",
+                                        isPickup = true,
                                         rideId = manager.getRideId()
                                     )
                                 }
@@ -198,55 +200,4 @@ class RideNavigationForegroundService : Service() {
         }
         sendBroadcast(intent)
     }
-
-    fun notifyPassengersRideStarted(rideId: String) {
-        if (rideId.isBlank()) {
-            Log.e("FCM", "❌ rideId ריק או לא חוקי - לא נשלחה התראה")
-            return
-        }
-
-        val user = FirebaseAuth.getInstance().currentUser
-        if (user == null) {
-            Log.e("FCM", "❌ המשתמש אינו מחובר - לא ניתן לשלוח התראה")
-            return
-        }
-
-        Log.d("FCM", "📤 שולח rideId: $rideId")
-
-        Firebase.functions
-            .getHttpsCallable("sendNotificationToPassengers")
-            .call(hashMapOf("rideId" to rideId))
-            .addOnSuccessListener {
-                Log.d("FCM", "✅ נשלחו התראות")
-            }
-            .addOnFailureListener {
-                Log.e("FCM", "❌ שגיאה בשליחת התראות", it)
-            }
-    }
-
-    private suspend fun sendNotificationToPassenger(passengerId: String, title: String, body: String, rideId: String?) {
-        try {
-            val functions = Firebase.functions
-            val data = hashMapOf(
-                "passengerId" to passengerId,
-                "title" to title,
-                "body" to body,
-                "rideId" to (rideId ?: "")
-            )
-
-            functions
-                .getHttpsCallable("sendNotificationToPassenger")
-                .call(data)
-                .addOnSuccessListener {
-                    Log.d("RideNavService", "✅ שליחת התראה לנוסע הצליחה")
-                }
-                .addOnFailureListener {
-                    Log.e("RideNavService", "❌ שגיאה בשליחת התראה לנוסע", it)
-                }
-
-        } catch (e: Exception) {
-            Log.e("RideNavService", "❌ שגיאה בשליחת FCM לנוסע", e)
-        }
-    }
-
 }

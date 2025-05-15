@@ -95,147 +95,95 @@ exports.getRouteData = functions.https.onCall(async (data, context) => {
   }
 });
 
-
-exports.sendNotificationToPassengers = functions.https.onCall(async (data, context) => {
+exports.sendNotificationToTokens = functions.https.onCall(async (data, context) => {
   try {
     console.log("📥 Received data keys:", Object.keys(data));
-    const rideId = data?.data?.rideId;
-    console.log("🔎 rideId extracted:", rideId);
 
-    if (!rideId) {
-      console.error("❌ Missing rideId in request payload");
-      throw new functions.https.HttpsError("invalid-argument", "Missing rideId");
-    }
+    const tokens = data?.data?.tokens;
+    const title = data?.data?.title;
+    const body = data?.data?.body;
+    const rideId = data?.data?.rideId || "";
 
-    const rideDoc = await admin.firestore().collection("rides").doc(rideId).get();
-    if (!rideDoc.exists) {
-      console.error(`❌ Ride not found in Firestore: ${rideId}`);
-      throw new functions.https.HttpsError("not-found", `Ride not found: ${rideId}`);
-    }
+    console.log("📥 tokens =", tokens);
+    console.log("📥 typeof tokens =", typeof tokens);
+    console.log("📥 isArray =", Array.isArray(tokens));
 
-    const rideData = rideDoc.data();
-    const pickupStops = Array.isArray(rideData.pickupStops) ? rideData.pickupStops : [];
+   if (!Array.isArray(tokens)) {
+     console.error("❌ tokens is not an array or missing:", tokens);
+     throw new functions.https.HttpsError("invalid-argument", "tokens must be a non-empty array");
+   }
 
-    const passengerIds = pickupStops
-      .map(stop => stop.passengerId)
-      .filter(uid => typeof uid === "string" && uid.length > 0);
+   if (tokens.length === 0) {
+     console.error("❌ tokens array is empty");
+     throw new functions.https.HttpsError("invalid-argument", "tokens array cannot be empty");
+   }
 
-    const tokenList = [];
+   if (!title || typeof title !== "string" || title.trim() === "") {
+     console.error("❌ title is missing or invalid:", title);
+     throw new functions.https.HttpsError("invalid-argument", "title must be a non-empty string");
+   }
 
-    await Promise.all(passengerIds.map(async (uid) => {
-      const userDoc = await admin.firestore().collection("users").doc(uid).get();
-      if (!userDoc.exists) return;
+   if (!body || typeof body !== "string" || body.trim() === "") {
+     console.error("❌ body is missing or invalid:", body);
+     throw new functions.https.HttpsError("invalid-argument", "body must be a non-empty string");
+   }
 
-      const userData = userDoc.data();
-      const token = userData?.fcmToken;
-
-      console.log(`🔎 token for UID ${uid}:`, token);
-
-      if (token) {
-        tokenList.push({ uid, token });
-      }
-    }));
-
-    if (tokenList.length === 0) {
-      console.warn("⚠️ No valid tokens found for passengers");
-      return { success: false, message: "No tokens found" };
-    }
-
-    const tokens = tokenList.map(entry => entry.token);
+    console.log(`🔢 Tokens received: ${tokens.length}`);
+    console.log(`📝 Title: ${title}`);
+    console.log(`📝 Body: ${body}`);
+    console.log(`🆔 Ride ID: ${rideId}`);
 
     const message = {
       notification: {
-        title: "WePool",
-        body: "🚗 הנהג התחיל את הנסיעה",
+        title: title,
+        body: body
       },
       android: {
-          notification: {
-            icon: "ic_launcher_foreground"
-          }
-        },
+        notification: {
+          icon: "ic_launcher_foreground"
+        }
+      },
       data: {
-        type: "ride_start",
-        rideId: rideId,
+        type: "passenger_notification",
+        rideId: rideId
       },
       tokens: tokens
     };
 
     const response = await admin.messaging().sendEachForMulticast(message);
-    console.log("📬 Multicast response summary:", response.successCount, "sent,", response.failureCount, "failed");
+    console.log("📬 Multicast summary:", response.successCount, "sent,", response.failureCount, "failed");
 
     const results = await Promise.all(response.responses.map(async (res, index) => {
-      const { uid } = tokenList[index];
+      const token = tokens[index];
 
       if (res.success) {
-        console.log(`✅ Notification sent to UID: ${uid}`);
-        return { uid, success: true };
+        console.log(`✅ Notification sent to token: ${token}`);
+        return { token, success: true };
       } else {
         const error = res.error;
-        console.error(`❌ Failed to send to UID: ${uid}`, error);
+        console.error(`❌ Failed to send to token: ${token}`, error);
 
+        // Optionally remove invalid tokens from DB (if needed)
         if (
           error.code === 'messaging/registration-token-not-registered' ||
           error.code === 'messaging/invalid-argument'
         ) {
           try {
-            await admin.firestore().collection("users").doc(uid).update({
-              fcmToken: admin.firestore.FieldValue.delete()
-            });
-            console.warn(`🧹 טוקן לא תקף נמחק עבור UID: ${uid}`);
+            // You can optionally delete token from wherever you store it
+            console.warn(`🧹 Token invalid: ${token} — remove manually if needed.`);
           } catch (deletionError) {
-            console.error(`❌ שגיאה במחיקת fcmToken עבור UID: ${uid}`, deletionError);
+            console.error(`❌ Error removing token: ${token}`, deletionError);
           }
         }
 
-        return { uid, success: false, error: error.message };
+        return { token, success: false, error: error.message };
       }
     }));
 
     return { success: true, results };
-  } catch (err) {
-    console.error("❌ Unexpected error in sendNotificationToPassengers:", err);
-    throw new functions.https.HttpsError("internal", err.message || "Unknown error");
-  }
-});
-
-
-exports.sendNotificationToPassenger = functions.https.onCall(async (data, context) => {
-  try {
-    const { passengerId, title, body, rideId } = data || {};
-    if (!passengerId || !title || !body) {
-      throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
-    }
-
-    const userDoc = await admin.firestore().collection("users").doc(passengerId).get();
-    if (!userDoc.exists) {
-      throw new functions.https.HttpsError("not-found", `User not found: ${passengerId}`);
-    }
-
-    const userData = userDoc.data();
-    const token = userData?.fcmToken;
-
-    if (!token) {
-      throw new functions.https.HttpsError("not-found", `No FCM token for user: ${passengerId}`);
-    }
-
-    const message = {
-      notification: {
-        title,
-        body
-      },
-      data: {
-        type: "passenger_notification",
-        rideId: rideId || ""
-      },
-      token
-    };
-
-    const response = await admin.messaging().send(message);
-    console.log(`📬 Notification sent to ${passengerId}:`, response);
-    return { success: true };
 
   } catch (err) {
-    console.error("❌ Failed to send passenger notification:", err);
+    console.error("❌ Unexpected error in sendNotificationToTokens:", err);
     throw new functions.https.HttpsError("internal", err.message || "Unknown error");
   }
 });
