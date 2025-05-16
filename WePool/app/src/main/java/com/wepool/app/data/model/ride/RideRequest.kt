@@ -12,5 +12,6 @@ data class RideRequest(
     val pickupLocation: LocationData = LocationData(),
     val detourEvaluationResult: DetourEvaluationResult = DetourEvaluationResult(),
     val passengerSawApprovedRequest: Boolean = false,
-    val passengerSawDeclinedRequest: Boolean = false
+    val passengerSawDeclinedRequest: Boolean = false,
+    val notes: String = ""
 )

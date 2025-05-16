@@ -72,6 +72,9 @@ fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin
                     }
                 }
             }
+
+            userRepo.updateLastLoginTimestamp(uid, System.currentTimeMillis())
+
         } catch (e: Exception) {
             Log.e("IntermediateScreen", "❌ Error loading welcome data: ${e.message}", e)
         }

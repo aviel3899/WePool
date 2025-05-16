@@ -47,7 +47,7 @@ object NotificationService {
                 }
 
                 fetchTokensAndSendNotifications(
-                    passengerIds = passengerIds,
+                    userIds = passengerIds,
                     rideId = rideId,
                     title = "🚗 הנהג בדרך",
                     body = "הנסיעה שלך מתחילה עכשיו!"
@@ -77,7 +77,7 @@ object NotificationService {
             val body = if (isPickup) "הנהג התחיל בנסיעה לעברך, $name" else "הגעת לנקודת ההורדה של $name"
 
             fetchTokensAndSendNotifications(
-                passengerIds = listOf(passengerId),
+                userIds = listOf(passengerId),
                 rideId = rideId,
                 title = title,
                 body = body
@@ -114,7 +114,7 @@ object NotificationService {
                 val body = "פרטי הנסיעה עודכנו לאחר שינויים בהרכב הנוסעים."
 
                 fetchTokensAndSendNotifications(
-                    passengerIds = allRecipients,
+                    userIds = allRecipients,
                     rideId = rideId,
                     title = title,
                     body = body
@@ -126,7 +126,7 @@ object NotificationService {
     }
 
     private fun fetchTokensAndSendNotifications(
-        passengerIds: List<String>,
+        userIds: List<String>,
         rideId: String,
         title: String,
         body: String
@@ -134,7 +134,7 @@ object NotificationService {
         val firestore = FirebaseFirestore.getInstance()
 
         firestore.collection("users")
-            .whereIn(FieldPath.documentId(), passengerIds)
+            .whereIn(FieldPath.documentId(), userIds)
             .get()
             .addOnSuccessListener { snapshot ->
                 val validTokens = snapshot.documents
@@ -153,6 +153,44 @@ object NotificationService {
                 Log.e(TAG, "❌ שגיאה בשליפת מסמכי נוסעים", error)
             }
     }
+
+    fun notifyRideCancelled(rideId: String) {
+        val firestore = FirebaseFirestore.getInstance()
+
+        firestore.collection("rides").document(rideId).get()
+            .addOnSuccessListener { rideDoc ->
+                if (!rideDoc.exists()) {
+                    Log.e(TAG, "❌ Ride $rideId לא נמצאה")
+                    return@addOnSuccessListener
+                }
+
+                val ride = rideDoc.toObject(Ride::class.java)
+                if (ride == null) {
+                    Log.e(TAG, "❌ שגיאה בהמרת המסמך ל-Ride")
+                    return@addOnSuccessListener
+                }
+
+                val passengerIds = ride.passengers
+                if (passengerIds.isEmpty()) {
+                    Log.w(TAG, "⚠️ אין נוסעים לשלוח להם התראה על ביטול")
+                    return@addOnSuccessListener
+                }
+
+                val title = "🚫 הנסיעה בוטלה"
+                val body = "הנסיעה שתוכננה בוטלה. מצטערים על חוסר הנוחות."
+
+                fetchTokensAndSendNotifications(
+                    userIds = passengerIds,
+                    rideId = rideId,
+                    title = title,
+                    body = body
+                )
+            }
+            .addOnFailureListener {
+                Log.e(TAG, "❌ שגיאה בשליפת מסמך נסיעה $rideId", it)
+            }
+    }
+
 
     private fun sendNotificationToTokens(
         tokens: List<String>,

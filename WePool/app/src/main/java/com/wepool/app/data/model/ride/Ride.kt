@@ -20,6 +20,6 @@ data class Ride(
     val maxDetourMinutes: Int = 10,
     val currentDetourMinutes: Int = 0,
     val encodedPolyline: String = "",
-    val isActive: Boolean = false,
+    val isActive: Boolean = true,
     val notes: String?=null
 )

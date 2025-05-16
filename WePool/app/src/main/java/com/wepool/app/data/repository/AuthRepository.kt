@@ -36,7 +36,6 @@ class AuthRepository(
                 return Result.failure(Exception("המשתמש אינו פעיל במערכת"))
             }
 
-            userRepository.updateLastLoginTimestamp(uid, System.currentTimeMillis())
             userRepository.uploadFcmTokenForCurrentUser()
 
             val tokenResult = auth.currentUser?.getIdToken(true)?.await()
