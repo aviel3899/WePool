@@ -70,7 +70,6 @@ object RouteMatcher {
      */
     suspend fun evaluatePickupDetour(
         encodedPolyline: String,
-        //pickupPoint: LatLng,
         pickupPoint: PickupStop,
         maxAllowedDetourMinutes: Int,
         currentDetourMinutes: Int,
@@ -80,7 +79,6 @@ object RouteMatcher {
         mapsService: IGoogleMapsService,
         startLocation: GeoPoint,
         destination: GeoPoint,
-        //currentPickupStops: List<GeoPoint>,
         currentPickupStops: List<PickupStop>,
         rideRepository: IRideRepository,
         rideDirection: RideDirection,
@@ -131,7 +129,7 @@ object RouteMatcher {
                         ),
                         encodedPolyline = routeAfter.encodedPolyline,
                         addedDetourMinutes = addedDetour,
-                        updatedReferenceTime = updatedReferenceTime
+                        updatedReferenceTime = updatedReferenceTime,
                     )
                 }
             }

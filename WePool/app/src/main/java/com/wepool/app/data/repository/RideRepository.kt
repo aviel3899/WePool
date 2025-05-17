@@ -11,6 +11,7 @@ import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideRequest
 import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.logic.DetourEvaluationResult
 import com.wepool.app.data.remote.IGoogleMapsService
 import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
@@ -157,11 +158,18 @@ class RideRepository(
             val rideWithNewPassenger = ride.copy(
                 passengers = ride.passengers + passengerId,
                 occupiedSeats = ride.occupiedSeats + 1,
-                currentDetourMinutes = ride.currentDetourMinutes + detour.addedDetourMinutes,
                 encodedPolyline = detour.encodedPolyline ?: ride.encodedPolyline,
             )
 
-            val updatedRide = rebuildRideWithNewStops(rideWithNewPassenger, pickupStopsIncludingNew)
+            val originalDuration = calculateTimeDifferenceInMinutes(ride.originalRoute.departureTime, ride.originalRoute.arrivalTime)
+
+            val updatedRide = rebuildRideWithNewStops(
+                ride = rideWithNewPassenger,
+                pickupStops = pickupStopsIncludingNew,
+                originalDuration = originalDuration,
+                originalDetour = ride.currentDetourMinutes,
+                addingPassenger = true
+            )
 
             val success = firestore.runTransaction { tx ->
                 tx.set(rideRef, updatedRide)
@@ -178,6 +186,8 @@ class RideRepository(
 
                 RepositoryProvider.providePassengerRepository()
                     .addActiveRideToPassenger(passengerId, ride.rideId)
+
+                updatePendingRequestsTimesFromRide(updatedRide)
             }
 
             NotificationService.notifyRideUpdated(ride.rideId)
@@ -190,12 +200,83 @@ class RideRepository(
         }
     }
 
+    private suspend fun updatePendingRequestsTimesFromRide(updatedRide: Ride) {
+        val pendingRequests = rideRequestRepository.getRequestsForRide(updatedRide.rideId)
+            .filter { it.status == RequestStatus.PENDING }
+
+        for (request in pendingRequests) {
+            try {
+                val simulatedStops = updatedRide.pickupStops + PickupStop(
+                    location = request.pickupLocation,
+                    passengerId = request.passengerId
+                )
+
+                val route = mapsService.getDurationAndRouteWithWaypoints(
+                    origin = updatedRide.startLocation.geoPoint,
+                    waypoints = simulatedStops,
+                    destination = updatedRide.destination.geoPoint,
+                    timeReference = updatedRide.arrivalTime ?: updatedRide.departureTime!!,
+                    date = updatedRide.date,
+                    direction = updatedRide.direction!!,
+                    passengerStop = null
+                )
+
+                val stop = route.orderedStops.find { it.passengerId == request.passengerId }
+
+                if (stop != null) {
+                    val pickupTime = route.pickupTimes[request.passengerId]
+                    val dropoffTime = route.dropoffTimes[request.passengerId]
+
+                    val currentDuration = calculateTimeDifferenceInMinutes(
+                        startTime = updatedRide.departureTime!!,
+                        endTime = updatedRide.arrivalTime!!
+                    )
+
+                    val addedDetour = route.durationMinutes - currentDuration
+
+                    val adjustedReferenceTime = adjustTimeAccordingToDirection(
+                        time = if (updatedRide.direction == RideDirection.TO_WORK)
+                            updatedRide.arrivalTime
+                        else
+                            updatedRide.departureTime,
+                        minutes = route.durationMinutes,
+                        direction = updatedRide.direction
+                    )
+
+                    val detourEvaluationResult = DetourEvaluationResult(
+                        isAllowed = true,
+                        pickupLocation = stop.copy(
+                            pickupTime = pickupTime,
+                            dropoffTime = dropoffTime
+                        ),
+                        encodedPolyline = route.encodedPolyline,
+                        addedDetourMinutes = addedDetour,
+                        updatedReferenceTime = adjustedReferenceTime
+                    )
+
+                    rideRequestRepository.updateDetourEvaluationResult(
+                        rideId = updatedRide.rideId,
+                        requestId = request.requestId,
+                        newDetour = detourEvaluationResult
+                    )
+
+                    Log.d("RequestUpdate", "📍 הבקשה ${request.requestId} עודכנה עם זמן מסלול חדש")
+
+                } else {
+                    Log.w("RequestUpdate", "⚠ לא נמצא stop תואם לבקשה ${request.requestId}")
+                }
+            } catch (e: Exception) {
+                Log.e("RequestUpdate", "❌ שגיאה בעדכון הבקשה ${request.requestId}: ${e.message}", e)
+            }
+        }
+    }
+
+
     private fun updatePickupStopTimesFromRouteResult(
         ride: Ride,
-        pickupStops: List<PickupStop>,
         route: DurationAndRoute
     ): List<PickupStop> {
-        return pickupStops.map { stop ->
+        return route.orderedStops.map { stop ->
             stop.copy(
                 pickupTime = if (ride.direction == RideDirection.TO_WORK)
                     route.pickupTimes[stop.passengerId] else stop.pickupTime,
@@ -208,6 +289,7 @@ class RideRepository(
     private suspend fun rebuildRideWithNewStops(
         ride: Ride,
         pickupStops: List<PickupStop>,
+        addingPassenger: Boolean,
         originalDuration: Int = 0,
         originalDetour: Int = 0
     ): Ride {
@@ -251,7 +333,7 @@ class RideRepository(
             passengerStop = null
         )
 
-        val updatedStopsWithTimes = updatePickupStopTimesFromRouteResult(ride, pickupStops, route)
+        val updatedStopsWithTimes = updatePickupStopTimesFromRouteResult(ride, route)
 
         val updatedTimeReference = adjustTimeAccordingToDirection(
             time = ride.arrivalTime ?: ride.departureTime!!,
@@ -259,20 +341,21 @@ class RideRepository(
             direction = ride.direction
         )
 
+        val orderedPassengerIds = updatedStopsWithTimes.map { it.passengerId }
+
         val baseUpdatedRide = ride.copy(
             pickupStops = updatedStopsWithTimes,
-            //currentDetourMinutes = ride.currentDetourMinutes,
+            passengers = orderedPassengerIds,
             encodedPolyline = route.encodedPolyline
         )
 
-        val finalRide = if (originalDuration != 0) {
-            val newDetour = originalDuration - route.durationMinutes
-            Log.d("RideUpdate", "📏 סטייה חדשה מחושבת: originalDuration ($originalDuration) - routeDuration (${route.durationMinutes}) = newDetour ($newDetour)")
-            val detour = originalDetour - newDetour
-            Log.d("RideUpdate", "🔁 סטייה מעודכנת: originalDetour ($originalDetour) - newDetour ($newDetour) = detour ($detour)")
-            baseUpdatedRide.copy(currentDetourMinutes = detour)
+        val finalRide = if (addingPassenger) {
+            val newDetour = route.durationMinutes - originalDuration
+            baseUpdatedRide.copy(currentDetourMinutes = newDetour)
         } else {
-            baseUpdatedRide.copy(currentDetourMinutes = ride.currentDetourMinutes)
+            val newDetour = originalDuration - route.durationMinutes
+            val detour = originalDetour - newDetour
+            baseUpdatedRide.copy(currentDetourMinutes = detour)
         }
 
         return if (ride.direction == RideDirection.TO_WORK) {
@@ -327,6 +410,11 @@ class RideRepository(
                 return@withContext false
             }
 
+            val updatedRide = getRide(rideId)
+            if (updatedRide != null) {
+                updatePendingRequestsTimesFromRide(updatedRide)
+            }
+
             //rideRequestRepository.deleteRequest(rideId, requestId)
 
             Log.d("RideRequest", "🚫 הבקשה בוטלה ונמחקה בהצלחה (requestId=$requestId)")
@@ -373,9 +461,11 @@ class RideRepository(
             Log.d("RideUpdate", "🕒 משך נסיעה כולל (arrival - departure): $duration דקות")
 
 
-            val updatedRide = rebuildRideWithNewStops(rideWithoutPassenger, updatedPickupStops, duration, originalRide.currentDetourMinutes)
+            val updatedRide = rebuildRideWithNewStops(rideWithoutPassenger, updatedPickupStops, false, duration, originalRide.currentDetourMinutes)
 
             rideCollection.document(rideId).set(updatedRide).await()
+
+            updatePendingRequestsTimesFromRide(updatedRide)
 
             RepositoryProvider.providePassengerRepository()
                 .removeActiveRideFromPassenger(passengerId, rideId)
@@ -630,7 +720,8 @@ override suspend fun updateAvailableSeats(rideId: String, seats: Int) {
         val finalizedRide = baseRide.copy(
             arrivalTime = result.arrivalTime,
             departureTime = result.departureTime,
-            encodedPolyline = result.encodedPolyline
+            encodedPolyline = result.encodedPolyline,
+            originalRoute = result
         )
 
         createRide(finalizedRide)

@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,7 +39,55 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
     var selectedRequest by remember { mutableStateOf<RideRequest?>(null) }
     var selectedRideDirection by remember { mutableStateOf<RideDirection?>(null) }
     var showDialog by remember { mutableStateOf(false) }
-    var selectedTime by remember { mutableStateOf<String?>(null) }
+
+    fun refresh() {
+        coroutineScope.launch {
+            loading = true
+            error = null
+            try {
+                val allRequests = requestRepo.getRequestsByDriver(uid)
+                val filteredRequests = if (selectedStatus == "All") {
+                    allRequests
+                } else {
+                    allRequests.filter {
+                        it.status.name.equals(selectedStatus, ignoreCase = true)
+                    }
+                }
+                results = filteredRequests
+                val namesMap = mutableMapOf<String, String>()
+                val seenIds = mutableSetOf<String>()
+
+                filteredRequests.forEach { request ->
+                    try {
+                        if (seenIds.add(request.passengerId)) {
+                            userRepo.getUser(request.passengerId)?.let { user ->
+                                namesMap[request.passengerId] = user.name
+                            }
+                        }
+                        val ride = rideRepo.getRide(request.rideId)
+                        ride?.passengers?.forEach { passengerId ->
+                            if (seenIds.add(passengerId)) {
+                                userRepo.getUser(passengerId)?.let { user ->
+                                    namesMap[passengerId] = user.name
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("DriverRequests", "❌ Error while processing request: ${e.message}")
+                    }
+                }
+
+                passengerNames = namesMap
+                Log.d("DriverRequests", "✅ Refreshed ${results.size} requests")
+
+            } catch (e: Exception) {
+                error = "❌ Failed to refresh: ${e.message}"
+                Log.e("DriverRequests", "❌ Refresh error: ${e.message}", e)
+            } finally {
+                loading = false
+            }
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -85,58 +135,7 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            loading = true
-                            error = null
-                            try {
-                                val allRequests = requestRepo.getRequestsByDriver(uid)
-                                val filteredRequests = if (selectedStatus == "All") {
-                                    allRequests
-                                } else {
-                                    allRequests.filter {
-                                        it.status.name.equals(selectedStatus, ignoreCase = true)
-                                    }
-                                }
-                                results = filteredRequests
-                                val namesMap = mutableMapOf<String, String>()
-                                val seenIds = mutableSetOf<String>()
-
-                                filteredRequests.forEach { request ->
-                                    try {
-                                        if (seenIds.add(request.passengerId)) {
-                                            val user = userRepo.getUser(request.passengerId)
-                                            if (user != null) {
-                                                namesMap[request.passengerId] = user.name
-                                            }
-                                        }
-                                        val ride = rideRepo.getRide(request.rideId)
-                                        ride?.passengers?.forEach { passengerId ->
-                                            if (seenIds.add(passengerId)) {
-                                                try {
-                                                    val user = userRepo.getUser(passengerId)
-                                                    if (user != null) {
-                                                        namesMap[passengerId] = user.name
-                                                    }
-                                                } catch (e: Exception) {
-                                                    Log.e("DriverRequests", "❌ Failed to fetch passenger name for $passengerId: ${e.message}")
-                                                }
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("DriverRequests", "❌ Error while processing request ${request.requestId}: ${e.message}")
-                                    }
-                                }
-                                passengerNames = namesMap
-                                Log.d("DriverRequests", "✅ Loaded ${results.size} requests with status: $selectedStatus")
-                            } catch (e: Exception) {
-                                error = "❌ Failed to fetch requests: ${e.message}"
-                                Log.e("DriverRequests", "❌ Error: ${e.message}", e)
-                            } finally {
-                                loading = false
-                            }
-                        }
-                    },
+                    onClick = { refresh() },
                     modifier = Modifier.fillMaxWidth(0.75f).height(56.dp)
                 ) {
                     Text("Search", fontSize = 18.sp)
@@ -188,10 +187,6 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
                                         onClick = {
                                             selectedRequest = request
                                             selectedRideDirection = ride.value?.direction
-                                            selectedTime = if (ride.value?.direction == RideDirection.TO_WORK)
-                                                request.detourEvaluationResult.pickupLocation?.pickupTime
-                                            else
-                                                request.detourEvaluationResult.pickupLocation?.dropoffTime
                                             showDialog = true
                                         },
                                         modifier = Modifier.fillMaxWidth(),
@@ -230,22 +225,18 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
 
         if (showDialog && selectedRequest != null) {
             val isToWork = selectedRideDirection == RideDirection.TO_WORK
-            val timeLabel = if (isToWork) "Pickup Time" else "Dropoff Time"
-            val updatedTimeLabel = if (isToWork) "New Departure Time" else "New Arrival Time"
-            val pickupOrDropoff = if (isToWork)
-                selectedRequest!!.detourEvaluationResult.pickupLocation?.pickupTime
-            else
-                selectedRequest!!.detourEvaluationResult.pickupLocation?.dropoffTime
-            val updatedTime = selectedRequest!!.detourEvaluationResult.updatedReferenceTime
+            val pickupTime = selectedRequest!!.detourEvaluationResult.pickupLocation?.pickupTime
+            val dropoffTime = selectedRequest!!.detourEvaluationResult.pickupLocation?.dropoffTime
+            val updatedRefTime = selectedRequest!!.detourEvaluationResult.updatedReferenceTime
 
             AlertDialog(
                 onDismissRequest = { showDialog = false },
                 title = { Text("Request Details") },
                 text = {
                     Column {
-                        Text("$timeLabel: ${pickupOrDropoff ?: "Unknown"}")
+                        Text(if (isToWork) "Pickup Time: $pickupTime" else "Dropoff Time: $dropoffTime")
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("$updatedTimeLabel: ${updatedTime ?: "Unknown"}")
+                        Text(if (isToWork) "New Departure Time: $updatedRefTime" else "New Arrival Time: $updatedRefTime")
                     }
                 },
                 confirmButton = {
@@ -274,9 +265,7 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
 
                                         if (success) {
                                             Log.d("RideApproval", "✅ Approved request ${selectedRequest!!.requestId}")
-                                            results = results.filterNot {
-                                                it.requestId == selectedRequest!!.requestId
-                                            }
+                                            refresh()
                                         } else {
                                             Log.w("RideApproval", "⚠ Approval failed for ${selectedRequest!!.requestId}")
                                         }
@@ -302,14 +291,12 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
                                             rideId = selectedRequest!!.rideId,
                                             requestId = selectedRequest!!.requestId
                                         )
-
                                         if (success) {
                                             Log.d("RideDecline", "✅ Declined and removed request ${selectedRequest!!.requestId}")
-                                            results = results.filterNot { it.requestId == selectedRequest!!.requestId }
+                                            refresh()
                                         } else {
                                             Log.w("RideDecline", "⚠ Failed to decline request ${selectedRequest!!.requestId}")
                                         }
-
                                     } catch (e: Exception) {
                                         Log.e("RideDecline", "❌ Error during decline: ${e.message}", e)
                                     } finally {
@@ -321,6 +308,35 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
                         ) {
                             Text("Decline")
                         }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        OutlinedButton(
+                            onClick = {
+                                navController.navigate("intermediate/$uid?fromLogin=false") {
+                                    popUpTo("intermediate/$uid?fromLogin=false") {
+                                        inclusive = false
+                                    }
+                                    launchSingleTop = true
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant, // soft neutral
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant // high contrast
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = "Home",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Back to Home", style = MaterialTheme.typography.labelLarge)
+                        }
+
                     }
                 }
             )

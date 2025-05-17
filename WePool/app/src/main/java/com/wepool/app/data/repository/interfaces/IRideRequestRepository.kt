@@ -14,9 +14,15 @@ interface IRideRequestRepository {
         detourEvaluationResult: DetourEvaluationResult
     ): Boolean
     suspend fun updateRequestStatus(rideId: String, requestId: String, newStatus: RequestStatus): Boolean
+    suspend fun updateDetourEvaluationResult(
+        rideId: String,
+        requestId: String,
+        newDetour: DetourEvaluationResult
+    )
     suspend fun updatePassengerSawApprovedRequest(rideId: String, requestId: String, approved: Boolean): Boolean
     suspend fun updatePassengerSawDeclinedRequest(rideId: String, requestId: String, declined: Boolean): Boolean
     suspend fun getRequestsForRide(rideId: String): List<RideRequest>
+    suspend fun getPendingRequestsByRide(rideId: String): List<RideRequest>
     suspend fun getRequestsByPassenger(passengerId: String): List<RideRequest>
     suspend fun getRequestsByDriver(driverId: String): List<RideRequest>
     suspend fun getPendingRequestsByDriver(driverId: String): List<RideRequest>

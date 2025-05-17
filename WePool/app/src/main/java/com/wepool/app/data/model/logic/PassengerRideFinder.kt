@@ -53,7 +53,8 @@ class PassengerRideFinder(
             else{
                 timeOK = isRideTimeValid(ride.departureTime!!, ride.maxDetourMinutes, passengerDepartureTime, direction)
             }
-            val seatOK = ride.occupiedSeats < ride.availableSeats
+            //val seatOK = ride.occupiedSeats < ride.availableSeats
+            //val seatOK = ride.potentialOccupiedSeats < ride.availableSeats
             val notAlreadyJoined = !ride.passengers.contains(pickupPoint.passengerId)
 
             val currentRouteTimeMinutes = try {
@@ -72,6 +73,20 @@ class PassengerRideFinder(
                 ride.departureTime!!
             }
 
+            val pendingRequestsForRide = rideRequestRepository.getPendingRequestsByRide(ride.rideId)
+
+            val expectedStops = ride.pickupStops.toMutableList()
+            pendingRequestsForRide.forEach { req ->
+                expectedStops.add(
+                    PickupStop(
+                        location = req.pickupLocation,
+                        passengerId = req.passengerId
+                    )
+                )
+            }
+
+            val seatOK = (ride.passengers.size + pendingRequestsForRide.size) < ride.availableSeats
+
             val evaluation = routeMatcher.evaluatePickupDetour(
                 encodedPolyline = ride.encodedPolyline,
                 pickupPoint = pickupPoint,
@@ -89,6 +104,9 @@ class PassengerRideFinder(
             )
 
             val detourOK = evaluation.isAllowed
+
+            //val detourOK = evaluation.isAllowed &&
+                    //(ride.potentialDetourInMinutes + (evaluation.addedDetourMinutes)) <= ride.maxDetourMinutes
 
             val now = LocalDateTime.now()
             val rideDate = LocalDate.parse(ride.date, dateFormatter)

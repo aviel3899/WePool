@@ -8,6 +8,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -306,5 +308,34 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
         ) {
             Text("Back")
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedButton(
+            onClick = {
+                navController.navigate("intermediate/$uid?fromLogin=false") {
+                    popUpTo("intermediate/$uid?fromLogin=false") {
+                        inclusive = false
+                    }
+                    launchSingleTop = true
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant, // soft neutral
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant // high contrast
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Default.Home,
+                contentDescription = "Home",
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Back to Home", style = MaterialTheme.typography.labelLarge)
+        }
+
     }
 }

@@ -2,6 +2,7 @@ package com.wepool.app.data.model.ride
 
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.logic.DepartureCalculationResult
 
 data class Ride(
     val rideId: String = "",
@@ -20,6 +21,7 @@ data class Ride(
     val maxDetourMinutes: Int = 10,
     val currentDetourMinutes: Int = 0,
     val encodedPolyline: String = "",
+    val originalRoute: DepartureCalculationResult = DepartureCalculationResult(),
     val isActive: Boolean = true,
     val notes: String?=null
 )

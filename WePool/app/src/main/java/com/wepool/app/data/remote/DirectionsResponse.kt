@@ -10,10 +10,18 @@ data class DirectionsResponse(
     val routes: List<Route>
 )
 
+//@Serializable
+/*data class Route(
+    val overview_polyline: OverviewPolyline,
+    val legs: List<Leg>
+)*/
+
 @Serializable
 data class Route(
     val overview_polyline: OverviewPolyline,
-    val legs: List<Leg>
+    val legs: List<Leg>,
+    @SerialName("waypoint_order")
+    val waypointOrder: List<Int>? = null
 )
 
 @Serializable

@@ -80,6 +80,12 @@ class GoogleMapsService(
         val response = fetchDirections(url)
         val route = extractRoute(response)
 
+        val waypointOrder = route.waypointOrder ?: (waypoints.indices.toList())
+
+        val reorderedStops = waypointOrder.mapNotNull { index ->
+            waypoints.getOrNull(index)
+        }
+
         val legs = route.legs
 
         val formatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -97,7 +103,7 @@ class GoogleMapsService(
         val dropoffTimes = mutableMapOf<String, String>()
 
         for ((index, leg) in legs.withIndex()) {
-            val pickupStop = waypoints.getOrNull(index)
+            val pickupStop = reorderedStops.getOrNull(index)
             val legDurationSeconds = leg.duration.value.toLong()
 
             accumulatedSeconds += legDurationSeconds
@@ -132,7 +138,8 @@ class GoogleMapsService(
             durationMinutes = durationSeconds / 60,
             encodedPolyline = route.overview_polyline.points,
             pickupTimes = pickupTimes,
-            dropoffTimes = dropoffTimes
+            dropoffTimes = dropoffTimes,
+            orderedStops = reorderedStops
         )
     }
 
@@ -240,7 +247,7 @@ class GoogleMapsService(
         }
 
         if (!waypoints.isNullOrEmpty()) {
-            val waypointStr = waypoints.joinToString("|") { "${it.latitude},${it.longitude}" }
+            val waypointStr = "optimize:true|" + waypoints.joinToString("|") { "${it.latitude},${it.longitude}" }
             params["waypoints"] = waypointStr
         }
 

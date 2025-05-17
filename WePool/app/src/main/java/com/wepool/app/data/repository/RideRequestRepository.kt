@@ -23,20 +23,20 @@ class RideRequestRepository(
         detourEvaluationResult: DetourEvaluationResult
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val rideDoc = firestore.collection("rides").document(rideId).get().await()
-            if (!rideDoc.exists()) {
+            val rideRef = firestore.collection("rides").document(rideId)
+            val rideSnapshot = rideRef.get().await()
+            if (!rideSnapshot.exists()) {
                 Log.e("RideRequest", "❌ לא נמצאה נסיעה עם מזהה: $rideId")
                 return@withContext false
             }
 
-            val passengerDoc = firestore.collection("users").document(passengerId).get().await()
-            if (!passengerDoc.exists()) {
+            val passengerSnapshot = firestore.collection("users").document(passengerId).get().await()
+            if (!passengerSnapshot.exists()) {
                 Log.e("RideRequest", "❌ לא נמצא משתמש נוסע עם מזהה: $passengerId")
                 return@withContext false
             }
 
-            val requestId = firestore.collection("rides").document(rideId)
-                .collection("requests").document().id
+            val requestId = rideRef.collection("requests").document().id
 
             val request = RideRequest(
                 requestId = requestId,
@@ -47,19 +47,15 @@ class RideRequestRepository(
                 status = RequestStatus.PENDING
             )
 
-            firestore.collection("rides").document(rideId)
-                .collection("requests").document(requestId)
-                .set(request)
-                .await()
+            rideRef.collection("requests").document(requestId).set(request).await()
 
-            Log.d("RideRequest", "✅ בקשה נשלחה (requestId: $requestId)")
+            Log.d("RideRequest", "✅ בקשה נשלחה + עדכון תחזיות (requestId: $requestId)")
             true
         } catch (e: Exception) {
             Log.e("RideRequest", "❌ שגיאה בשליחת בקשה: ${e.message}", e)
             false
         }
     }
-
 
     override suspend fun updateRequestStatus(rideId: String, requestId: String, newStatus: RequestStatus): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -75,6 +71,25 @@ class RideRequestRepository(
         } catch (e: Exception) {
             Log.e("RideRequest", "❌ שגיאה בעדכון סטטוס: ${e.message}", e)
             return@withContext false
+        }
+    }
+
+    override suspend fun updateDetourEvaluationResult(
+        rideId: String,
+        requestId: String,
+        newDetour: DetourEvaluationResult
+    ): Unit = withContext(Dispatchers.IO) {
+        try {
+            firestore.collection("rides")
+                .document(rideId)
+                .collection("requests")
+                .document(requestId)
+                .update("detourEvaluationResult", newDetour)
+                .await()
+
+            Log.d("RideRequestUpdate", "✅ detourEvaluationResult עודכן בהצלחה (requestId=$requestId)")
+        } catch (e: Exception) {
+            Log.e("RideRequestUpdate", "❌ שגיאה בעדכון detourEvaluationResult: ${e.message}", e)
         }
     }
 
@@ -123,6 +138,20 @@ class RideRequestRepository(
             emptyList()
         }
     }
+
+    override suspend fun getPendingRequestsByRide(rideId: String): List<RideRequest> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            firestore.collection("rides").document(rideId)
+                .collection("requests")
+                .whereEqualTo("status", RequestStatus.PENDING.name) // 🔍 רק ממתינות
+                .get().await()
+                .toObjects(RideRequest::class.java)
+        } catch (e: Exception) {
+            Log.e("RideRequest", "❌ שגיאה בשליפת בקשות ממתינות ל-rideId: ${e.message}", e)
+            emptyList()
+        }
+    }
+
 
     override suspend fun getRequestsByPassenger(passengerId: String): List<RideRequest> = withContext(Dispatchers.IO) {
         return@withContext try {

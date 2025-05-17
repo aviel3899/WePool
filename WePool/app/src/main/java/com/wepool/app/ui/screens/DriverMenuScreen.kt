@@ -5,6 +5,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -63,6 +67,35 @@ fun DriverMenuScreen(navController: NavController, uid: String) {
             ) {
                 Text("Back")
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedButton(
+                onClick = {
+                    navController.navigate("intermediate/$uid?fromLogin=false") {
+                        popUpTo("intermediate/$uid?fromLogin=false") {
+                            inclusive = false
+                        }
+                        launchSingleTop = true
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant, // soft neutral
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant // high contrast
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Home,
+                    contentDescription = "Home",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Back to Home", style = MaterialTheme.typography.labelLarge)
+            }
+
         }
     }
 }
