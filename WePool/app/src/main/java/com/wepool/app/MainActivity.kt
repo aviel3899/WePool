@@ -21,8 +21,6 @@
     import com.google.accompanist.permissions.isGranted
     import com.google.accompanist.permissions.rememberPermissionState
     import com.google.firebase.auth.FirebaseAuth
-    import com.google.firebase.messaging.FirebaseMessaging
-    import com.wepool.app.data.model.ride.Ride
     import com.wepool.app.infrastructure.RepositoryProvider
     import com.wepool.app.notifications.NotificationHelper
     import com.wepool.app.ui.screens.*

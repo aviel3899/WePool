@@ -178,7 +178,7 @@ fun LoginScreen(navController: NavController) {
                 Text(if (isLoading) "Logging in..." else "Log In")
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             OutlinedButton(
                 onClick = { navController.navigate("signup") },
@@ -189,7 +189,7 @@ fun LoginScreen(navController: NavController) {
                 Text("Sign Up")
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            /*Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(
                 onClick = { activity?.finishAffinity() },
@@ -197,7 +197,7 @@ fun LoginScreen(navController: NavController) {
                 enabled = !isLoading
             ) {
                 Text("Exit", color = MaterialTheme.colorScheme.error)
-            }
+            }*/
 
             errorMessage?.let {
                 Spacer(modifier = Modifier.height(16.dp))

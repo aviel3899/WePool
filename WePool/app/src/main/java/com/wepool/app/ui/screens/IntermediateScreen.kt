@@ -130,7 +130,7 @@ fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Cancel", color = MaterialTheme.colorScheme.error)
+                Text("Logout", color = MaterialTheme.colorScheme.error)
             }
         }
 
