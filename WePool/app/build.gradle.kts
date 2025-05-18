@@ -97,4 +97,5 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.accompanist.permissions)
     implementation(libs.ui)
+    implementation(libs.coil.compose)
 }

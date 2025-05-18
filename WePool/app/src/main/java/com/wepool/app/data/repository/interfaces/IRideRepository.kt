@@ -35,11 +35,11 @@ interface IRideRepository {
         requestId: String,
         passengerId: String
     ): Boolean
-    suspend fun declineAndDeleteRideRequest(
+    suspend fun declineRideRequest(
         rideId: String,
         requestId: String
     ): Boolean
-    suspend fun cancelAndDeleteRideRequest(
+    suspend fun cancelRideRequest(
         rideId: String,
         requestId: String,
     ): Boolean
@@ -67,4 +67,5 @@ interface IRideRepository {
         notes: String
     ): Boolean
     suspend fun adjustTimeAccordingToDirection(time: String, minutes: Int, direction: RideDirection):String
+    suspend fun calculateTimeDifferenceInMinutes(startTime: String, endTime: String): Int
 }

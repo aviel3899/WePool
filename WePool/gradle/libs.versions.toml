@@ -29,6 +29,7 @@ compose-foundation = "1.7.8"
 accompanistPermissions = "0.34.0"
 lifecycleProcess = "2.9.0"
 kotlinxCoroutinesAndroid = "1.8.1"
+coil = "2.4.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -73,6 +74,8 @@ navigation-compose = { module = "androidx.navigation:navigation-compose", versio
 
 accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycleProcess" }
+
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

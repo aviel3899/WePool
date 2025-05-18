@@ -10,16 +10,11 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.core.os.HandlerCompat
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldPath
-import com.google.firebase.firestore.FirebaseFirestore
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.remote.RideNavigationStarter
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.notifications.NotificationHelper
 import kotlinx.coroutines.*
-import com.google.firebase.functions.ktx.functions
-import com.google.firebase.ktx.Firebase
 import com.wepool.app.notifications.NotificationService
 
 class RideNavigationForegroundService : Service() {
@@ -67,11 +62,12 @@ class RideNavigationForegroundService : Service() {
                         startForeground(
                             NOTIF_ID,
                             NotificationHelper.buildNavigationNotification(
-                                this@RideNavigationForegroundService,
-                                "🚗 ניווט התחיל"
+                                context = this@RideNavigationForegroundService,
+                                contentText = "🚗 ניווט התחיל",
+                                rideId = rideId,
+                                screen = "rideStarted"
                             )
                         )
-
                         handler.post(checkRunnable)
                     } else {
                         Log.e("RideNavService", "❌ נכשל בטעינת מסלול, השירות נעצר")
@@ -129,7 +125,7 @@ class RideNavigationForegroundService : Service() {
                         passenger?.user?.name?.let { name ->
                             when {
                                 manager.isCurrentStopPickup() -> {
-                                    NotificationService.sendNotificationToPassenger(
+                                    NotificationService.sendNotificationToPassengerWhenDriverArriving(
                                         passengerId = passengerId,
                                         isPickup = true,
                                         rideId = manager.getRideId()
@@ -139,13 +135,24 @@ class RideNavigationForegroundService : Service() {
                                     NotificationHelper.sendPassengerDropoffNotification(this@RideNavigationForegroundService, name)
                                 }*/
                                 else -> {
-                                    Log.w("RideNavService", "⚠️ לא ניתן לזהות סוג תחנה עבור ${name}")
+                                    Log.w("RideNavService", "⚠️ לא ניתן לזהות סוג תחנה עבור $name")
                                 }
                             }
                         }
                     }
 
                     manager.moveToNextStop()
+
+                    // 🆕 שליחת התראה לנוסע הבא בתור (אם יש)
+                    val nextPassengerId = manager.getCurrentPassengerId()
+                    if (nextPassengerId != null) {
+                        Log.i("RideNavService", "🔔 שולח התראה לנוסע הבא בתור: $nextPassengerId")
+                        NotificationService.sendNotificationToPassengerWhenDriverArriving(
+                            passengerId = nextPassengerId,
+                            isPickup = true,
+                            rideId = manager.getRideId()
+                        )
+                    }
 
                     if (manager.hasReachedFinalDestination()) {
                         Log.i("RideNavService", "🏁 הגעת ליעד הסופי, עצירת השירות")
@@ -159,6 +166,7 @@ class RideNavigationForegroundService : Service() {
             }
         }
     }
+
 
     override fun onDestroy() {
         handler.removeCallbacks(checkRunnable)

@@ -17,7 +17,6 @@ interface IGoogleMapsService {
     ): DurationAndRoute
     suspend fun getDurationAndRouteWithWaypoints(
         origin: GeoPoint,
-        //waypoints: List<GeoPoint>,
         waypoints: List<PickupStop>,
         destination: GeoPoint,
         timeReference: String,
@@ -27,4 +26,10 @@ interface IGoogleMapsService {
     ): DurationAndRoute
     suspend fun getCoordinatesFromAddress(address: String): LocationData?
     suspend fun getAddressSuggestions(input: String):List<String>
+    fun getStaticMapUrlWithPolylineAndMarkers(
+        encodedPolyline: String,
+        start: GeoPoint,
+        end: GeoPoint,
+        pickupStops: List<PickupStop>
+    ): String
 }

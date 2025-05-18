@@ -103,6 +103,7 @@ exports.sendNotificationToTokens = functions.https.onCall(async (data, context) 
     const title = data?.data?.title;
     const body = data?.data?.body;
     const rideId = data?.data?.rideId || "";
+    const screen = data?.data?.screen || "";
 
     console.log("📥 tokens =", tokens);
     console.log("📥 typeof tokens =", typeof tokens);
@@ -128,10 +129,16 @@ exports.sendNotificationToTokens = functions.https.onCall(async (data, context) 
      throw new functions.https.HttpsError("invalid-argument", "body must be a non-empty string");
    }
 
+   if (typeof screen !== "string" || screen.trim() === "") {
+     console.error("❌ screen is missing or invalid:", screen);
+     throw new functions.https.HttpsError("invalid-argument", "screen must be a non-empty string");
+   }
+
     console.log(`🔢 Tokens received: ${tokens.length}`);
     console.log(`📝 Title: ${title}`);
     console.log(`📝 Body: ${body}`);
     console.log(`🆔 Ride ID: ${rideId}`);
+    console.log(`🎯 Screen Target: ${screen}`);
 
     const message = {
       notification: {
@@ -145,7 +152,8 @@ exports.sendNotificationToTokens = functions.https.onCall(async (data, context) 
       },
       data: {
         type: "passenger_notification",
-        rideId: rideId
+        rideId: rideId,
+        screen: screen
       },
       tokens: tokens
     };

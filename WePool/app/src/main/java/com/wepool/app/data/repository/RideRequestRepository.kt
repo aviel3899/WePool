@@ -6,8 +6,10 @@ import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.ride.RideRequest
 import com.wepool.app.data.model.enums.RequestStatus
 import com.wepool.app.data.model.logic.DetourEvaluationResult
+import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideRequestUpdateResult
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
+import com.wepool.app.notifications.NotificationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -29,6 +31,7 @@ class RideRequestRepository(
                 Log.e("RideRequest", "❌ לא נמצאה נסיעה עם מזהה: $rideId")
                 return@withContext false
             }
+            val ride = rideSnapshot.toObject(Ride::class.java)
 
             val passengerSnapshot = firestore.collection("users").document(passengerId).get().await()
             if (!passengerSnapshot.exists()) {
@@ -50,6 +53,14 @@ class RideRequestRepository(
             rideRef.collection("requests").document(requestId).set(request).await()
 
             Log.d("RideRequest", "✅ בקשה נשלחה + עדכון תחזיות (requestId: $requestId)")
+
+            NotificationService.notifyDriver(
+                driverId = ride!!.driverId,
+                rideId = rideId,
+                title = "📥 בקשה חדשה להצטרפות",
+                body = "נוסע ביקש להצטרף לנסיעה שלך",
+                screen = "pendingRequests"
+            )
             true
         } catch (e: Exception) {
             Log.e("RideRequest", "❌ שגיאה בשליחת בקשה: ${e.message}", e)

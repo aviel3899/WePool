@@ -30,8 +30,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val title = message.notification?.title ?: "WePool"
         val body = message.notification?.body ?: "יש לך הודעה חדשה"
+        val screen = message.data["screen"]
+        val rideId = message.data["rideId"]
 
-        NotificationHelper.showSimpleNotification(this, title, body)
         Log.d("FCM", "📩 הודעה התקבלה: $title - $body")
+        Log.d("FCM", "📦 screen = $screen | rideId = $rideId")
+
+        NotificationHelper.showSimpleNotification(
+            context = this,
+            title = title,
+            message = body, // ← כאן העברת נכונה לפי השם של הפרמטר
+            rideId = rideId,
+            screen = screen
+        )
     }
 }

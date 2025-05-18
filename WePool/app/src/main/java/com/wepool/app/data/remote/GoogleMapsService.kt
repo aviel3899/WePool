@@ -198,6 +198,28 @@ class GoogleMapsService(
         }
     }
 
+    override fun getStaticMapUrlWithPolylineAndMarkers(
+        encodedPolyline: String,
+        start: GeoPoint,
+        end: GeoPoint,
+        pickupStops: List<PickupStop>
+    ): String {
+        val sizeParam = "size=640x400"
+        val pathParam = "path=enc:$encodedPolyline"
+
+        val startMarker = "markers=color:green|label:S|${start.latitude},${start.longitude}"
+        val endMarker = "markers=color:red|label:D|${end.latitude},${end.longitude}"
+
+        val pickupMarkers = pickupStops.joinToString("&") { stop ->
+            val lat = stop.location.geoPoint.latitude
+            val lng = stop.location.geoPoint.longitude
+            "markers=color:blue|label:P|$lat,$lng"
+        }
+
+        return "https://maps.googleapis.com/maps/api/staticmap?" +
+                "$sizeParam&$pathParam&$startMarker&$endMarker&$pickupMarkers&key=$apiKey"
+    }
+
     // מבצע בקשת HTTP ומחזיר את התוצאה כ־JSONObject.
     private suspend fun getJsonFromUrl(url: String): JSONObject? = withContext(Dispatchers.IO) {
         return@withContext try {

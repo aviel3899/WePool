@@ -16,16 +16,21 @@ import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @Composable
-fun PassengerActiveRidesScreen(uid: String, navController: NavController) {
+fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId: String? = null) {
     val passengerRepository = RepositoryProvider.providePassengerRepository()
     val rideRepository = RepositoryProvider.provideRideRepository()
+    val requestRepository = RepositoryProvider.provideRideRequestRepository()
     var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     var approvalUpdated by remember { mutableStateOf(false) }
+    var showTooLateDialog by remember { mutableStateOf(false) }
+    var tardiness by remember { mutableStateOf(0) }
 
     fun refreshRides() {
         scope.launch {
@@ -48,15 +53,12 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController) {
                 rides = passengerRepository.getActiveRidesForPassenger(uid)
                 Log.d("PassengerActiveRides", "✅ Found ${rides.size} active rides")
                 if (!approvalUpdated) {
-                    val requestRepo = RepositoryProvider.provideRideRequestRepository()
-                    val allRequests = requestRepo.getRequestsByPassenger(uid)
-
+                    val allRequests = requestRepository.getRequestsByPassenger(uid)
                     val rideIdsInScreen = rides.map { it.rideId }.toSet()
-
                     allRequests
                         .filter { it.rideId in rideIdsInScreen && !it.passengerSawApprovedRequest }
                         .forEach { request ->
-                            val updated = requestRepo.updatePassengerSawApprovedRequest(
+                            val updated = requestRepository.updatePassengerSawApprovedRequest(
                                 rideId = request.rideId,
                                 requestId = request.requestId,
                                 approved = true
@@ -90,44 +92,81 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController) {
             CircularProgressIndicator()
         } else if (error != null) {
             Text(error ?: "Unknown error", color = MaterialTheme.colorScheme.error)
-        } else if (rides.isEmpty()) {
-            Text("You have no active rides at the moment.")
         } else {
-            LazyColumn {
-                items(rides) { ride ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("From: ${ride.startLocation.name}")
-                            Text("To: ${ride.destination.name}")
-                            Text("Date: ${ride.date}")
+            val filteredRides = if (!rideId.isNullOrEmpty()) {
+                rides.filter { it.rideId == rideId }
+            } else rides
 
-                            if (ride.direction == RideDirection.TO_WORK) {
-                                Text("Arrival Time: ${ride.arrivalTime}")
-                                Text("Pickup Time: ${rideRepository.getPickupTimeForPassenger(ride, uid)}")
-                            } else {
-                                Text("Departure Time: ${ride.departureTime}")
-                                Text("Dropoff Time: ${rideRepository.getDropoffTimeForPassenger(ride, uid)}")
-                            }
+            if (filteredRides.isEmpty()) {
+                Text("You have no active rides at the moment.")
+            } else {
+                LazyColumn {
+                    items(filteredRides) { ride ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("From: ${ride.startLocation.name}")
+                                Text("To: ${ride.destination.name}")
+                                Text("Date: ${ride.date}")
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                                if (ride.direction == RideDirection.TO_WORK) {
+                                    Text("Arrival Time: ${ride.arrivalTime}")
+                                    Text("Pickup Time: ${rideRepository.getPickupTimeForPassenger(ride, uid)}")
+                                } else {
+                                    Text("Departure Time: ${ride.departureTime}")
+                                    Text("Dropoff Time: ${rideRepository.getDropoffTimeForPassenger(ride, uid)}")
+                                }
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                OutlinedButton(
-                                    onClick = {
-                                        scope.launch {
-                                            rideRepository.removePassengerFromRide(ride.rideId, uid)
-                                            refreshRides()
-                                        }
-                                    }
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
                                 ) {
-                                    Text("Cancel Ride")
+                                    OutlinedButton(
+                                        onClick = {
+                                            scope.launch {
+                                                try {
+                                                    val now = LocalTime.now()
+                                                    val formatter = DateTimeFormatter.ofPattern("HH:mm")
+                                                    val nowFormatted = now.format(formatter)
+
+                                                    val diffMinutes = rideRepository.calculateTimeDifferenceInMinutes(
+                                                        nowFormatted,
+                                                        ride.departureTime!!
+                                                    )
+
+                                                    val minAllowedMinutes = if (ride.direction == RideDirection.TO_WORK) 60 else 5
+
+                                                    if (diffMinutes < minAllowedMinutes) {
+                                                        tardiness = minAllowedMinutes
+                                                        showTooLateDialog = true
+                                                        return@launch
+                                                    }
+
+                                                    rideRepository.removePassengerFromRide(ride.rideId, uid, false)
+
+                                                    val request = requestRepository.getRequestsByPassenger(uid).firstOrNull {
+                                                        it.rideId == ride.rideId && it.status.name == "ACCEPTED"
+                                                    }
+                                                    val success = request?.let {
+                                                        rideRepository.cancelRideRequest(ride.rideId, it.requestId)
+                                                    } ?: false
+
+                                                    if (success) {
+                                                        refreshRides()
+                                                    }
+                                                } catch (e: Exception) {
+                                                    Log.e("CancelRide", "❌ Error canceling ride: ${e.message}", e)
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Text("Cancel Ride")
+                                    }
                                 }
                             }
                         }
@@ -162,8 +201,8 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController) {
                 .fillMaxWidth()
                 .height(48.dp),
             colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant, // soft neutral
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant // high contrast
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         ) {
             Icon(
@@ -174,6 +213,18 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController) {
             Spacer(modifier = Modifier.width(8.dp))
             Text("Back to Home", style = MaterialTheme.typography.labelLarge)
         }
+    }
 
+    if (showTooLateDialog) {
+        AlertDialog(
+            onDismissRequest = { showTooLateDialog = false },
+            title = { Text("Too Late") },
+            text = { Text("You cannot cancel a ride less than $tardiness minutes before it starts") },
+            confirmButton = {
+                Button(onClick = { showTooLateDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }

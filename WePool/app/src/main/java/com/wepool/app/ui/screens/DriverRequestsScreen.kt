@@ -22,10 +22,10 @@ import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
 
 @Composable
-fun DriverRequestsScreen(uid: String, navController: NavController) {
+fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId: String? = null) {
     val requestStatuses = listOf("All", "Pending", "Accepted", "Declined")
     var expanded by remember { mutableStateOf(false) }
-    var selectedStatus by remember { mutableStateOf(requestStatuses[0]) }
+    var selectedStatus by remember { mutableStateOf("Pending") } // default to Pending
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var results by remember { mutableStateOf<List<RideRequest>>(emptyList()) }
@@ -46,13 +46,11 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
             error = null
             try {
                 val allRequests = requestRepo.getRequestsByDriver(uid)
-                val filteredRequests = if (selectedStatus == "All") {
-                    allRequests
-                } else {
-                    allRequests.filter {
-                        it.status.name.equals(selectedStatus, ignoreCase = true)
-                    }
-                }
+                val filteredRequests = allRequests.filter {
+                    (selectedStatus == "All" || it.status.name.equals(selectedStatus, ignoreCase = true)) &&
+                            (filterRideId == null || it.rideId == filterRideId)
+                }.filterNot { it.status == RequestStatus.CANCELLED }
+
                 results = filteredRequests
                 val namesMap = mutableMapOf<String, String>()
                 val seenIds = mutableSetOf<String>()
@@ -73,20 +71,24 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
                             }
                         }
                     } catch (e: Exception) {
-                        Log.e("DriverRequests", "❌ Error while processing request: ${e.message}")
+                        Log.e("DriverRequests", "\u274C Error while processing request: ${e.message}")
                     }
                 }
 
                 passengerNames = namesMap
-                Log.d("DriverRequests", "✅ Refreshed ${results.size} requests")
+                Log.d("DriverRequests", "\u2705 Refreshed ${results.size} requests")
 
             } catch (e: Exception) {
-                error = "❌ Failed to refresh: ${e.message}"
-                Log.e("DriverRequests", "❌ Refresh error: ${e.message}", e)
+                error = "\u274C Failed to refresh: ${e.message}"
+                Log.e("DriverRequests", "\u274C Refresh error: ${e.message}", e)
             } finally {
                 loading = false
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        refresh()
     }
 
     Column(
@@ -126,6 +128,7 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
                                 onClick = {
                                     selectedStatus = status
                                     expanded = false
+                                    refresh()
                                 }
                             )
                         }
@@ -149,7 +152,7 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
             loading -> CircularProgressIndicator()
             error != null -> Text(error ?: "Unknown error", color = MaterialTheme.colorScheme.error)
             results.isEmpty() -> Text("No matching requests found.")
-            else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+            else -> LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 items(results) { request ->
                     val ride = remember { mutableStateOf<com.wepool.app.data.model.ride.Ride?>(null) }
 
@@ -211,135 +214,132 @@ fun DriverRequestsScreen(uid: String, navController: NavController) {
                         }
                     }
                 }
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Back")
-                    }
-                }
             }
         }
 
-        if (showDialog && selectedRequest != null) {
-            val isToWork = selectedRideDirection == RideDirection.TO_WORK
-            val pickupTime = selectedRequest!!.detourEvaluationResult.pickupLocation?.pickupTime
-            val dropoffTime = selectedRequest!!.detourEvaluationResult.pickupLocation?.dropoffTime
-            val updatedRefTime = selectedRequest!!.detourEvaluationResult.updatedReferenceTime
+        Spacer(modifier = Modifier.height(16.dp))
 
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("Request Details") },
-                text = {
-                    Column {
-                        Text(if (isToWork) "Pickup Time: $pickupTime" else "Dropoff Time: $dropoffTime")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(if (isToWork) "New Departure Time: $updatedRefTime" else "New Arrival Time: $updatedRefTime")
+        OutlinedButton(
+            onClick = { navController.popBackStack() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Back")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedButton(
+            onClick = {
+                navController.navigate("intermediate/$uid?fromLogin=false") {
+                    popUpTo("intermediate/$uid?fromLogin=false") {
+                        inclusive = false
                     }
-                },
-                confirmButton = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    try {
-                                        val ride = rideRepo.getRide(selectedRequest!!.rideId)
-                                        if (ride == null) {
-                                            Log.w("RideApproval", "⚠ Ride not found: ${selectedRequest!!.rideId}")
-                                            showDialog = false
-                                            return@launch
-                                        }
+                    launchSingleTop = true
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Default.Home,
+                contentDescription = "Home",
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Back to Home", style = MaterialTheme.typography.labelLarge)
+        }
+    }
 
-                                        val candidate = RideCandidate(
-                                            ride = ride,
-                                            detourEvaluationResult = selectedRequest!!.detourEvaluationResult
-                                        )
+    if (showDialog && selectedRequest != null) {
+        val isToWork = selectedRideDirection == RideDirection.TO_WORK
+        val pickupTime = selectedRequest!!.detourEvaluationResult.pickupLocation?.pickupTime
+        val dropoffTime = selectedRequest!!.detourEvaluationResult.pickupLocation?.dropoffTime
+        val updatedRefTime = selectedRequest!!.detourEvaluationResult.updatedReferenceTime
 
-                                        val success = rideRepo.approvePassengerRequest(
-                                            candidate = candidate,
-                                            requestId = selectedRequest!!.requestId,
-                                            passengerId = selectedRequest!!.passengerId
-                                        )
-
-                                        if (success) {
-                                            Log.d("RideApproval", "✅ Approved request ${selectedRequest!!.requestId}")
-                                            refresh()
-                                        } else {
-                                            Log.w("RideApproval", "⚠ Approval failed for ${selectedRequest!!.requestId}")
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("RideApproval", "❌ Error during approval: ${e.message}", e)
-                                    } finally {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Request Details") },
+            text = {
+                Column {
+                    Text(if (isToWork) "Pickup Time: $pickupTime" else "Dropoff Time: $dropoffTime")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(if (isToWork) "New Departure Time: $updatedRefTime" else "New Arrival Time: $updatedRefTime")
+                }
+            },
+            confirmButton = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    val ride = rideRepo.getRide(selectedRequest!!.rideId)
+                                    if (ride == null) {
+                                        Log.w("RideApproval", "\u26a0 Ride not found: ${selectedRequest!!.rideId}")
                                         showDialog = false
+                                        return@launch
                                     }
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                        ) {
-                            Text("Approve")
-                        }
 
-                        Spacer(modifier = Modifier.width(16.dp))
+                                    val candidate = RideCandidate(
+                                        ride = ride,
+                                        detourEvaluationResult = selectedRequest!!.detourEvaluationResult
+                                    )
 
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    try {
-                                        val success = rideRepo.declineAndDeleteRideRequest(
-                                            rideId = selectedRequest!!.rideId,
-                                            requestId = selectedRequest!!.requestId
-                                        )
-                                        if (success) {
-                                            Log.d("RideDecline", "✅ Declined and removed request ${selectedRequest!!.requestId}")
-                                            refresh()
-                                        } else {
-                                            Log.w("RideDecline", "⚠ Failed to decline request ${selectedRequest!!.requestId}")
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("RideDecline", "❌ Error during decline: ${e.message}", e)
-                                    } finally {
-                                        showDialog = false
+                                    val success = rideRepo.approvePassengerRequest(
+                                        candidate = candidate,
+                                        requestId = selectedRequest!!.requestId,
+                                        passengerId = selectedRequest!!.passengerId
+                                    )
+
+                                    if (success) {
+                                        Log.d("RideApproval", "\u2705 Approved request ${selectedRequest!!.requestId}")
+                                        refresh()
+                                    } else {
+                                        Log.w("RideApproval", "\u26a0 Approval failed for ${selectedRequest!!.requestId}")
                                     }
+                                } catch (e: Exception) {
+                                    Log.e("RideApproval", "\u274C Error during approval: ${e.message}", e)
+                                } finally {
+                                    showDialog = false
                                 }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
-                        ) {
-                            Text("Decline")
-                        }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) {
+                        Text("Approve")
+                    }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
 
-                        OutlinedButton(
-                            onClick = {
-                                navController.navigate("intermediate/$uid?fromLogin=false") {
-                                    popUpTo("intermediate/$uid?fromLogin=false") {
-                                        inclusive = false
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    val success = rideRepo.declineRideRequest(
+                                        rideId = selectedRequest!!.rideId,
+                                        requestId = selectedRequest!!.requestId
+                                    )
+                                    if (success) {
+                                        Log.d("RideDecline", "\u2705 Declined and removed request ${selectedRequest!!.requestId}")
+                                        refresh()
+                                    } else {
+                                        Log.w("RideDecline", "\u26a0 Failed to decline request ${selectedRequest!!.requestId}")
                                     }
-                                    launchSingleTop = true
+                                } catch (e: Exception) {
+                                    Log.e("RideDecline", "\u274C Error during decline: ${e.message}", e)
+                                } finally {
+                                    showDialog = false
                                 }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant, // soft neutral
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant // high contrast
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = "Home",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Back to Home", style = MaterialTheme.typography.labelLarge)
-                        }
-
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
+                    ) {
+                        Text("Decline")
                     }
                 }
-            )
-        }
+            }
+        )
     }
 }

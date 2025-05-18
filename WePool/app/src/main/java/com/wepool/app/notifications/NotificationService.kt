@@ -12,15 +12,88 @@ object NotificationService {
 
     private const val TAG = "NotificationService"
 
-    fun notifyPassengersRideStarted(rideId: String) {
-        if (rideId.isBlank()) {
-            Log.e(TAG, "❌ rideId ריק או לא חוקי - לא נשלחה התראה")
+    fun notifyDriver(
+        driverId: String,
+        rideId: String,
+        title: String,
+        body: String,
+        screen: String
+    ) {
+        if (driverId.isBlank()) {
+            Log.e(TAG, "❌ driverId ריק או לא חוקי - לא נשלחה התראה")
             return
         }
 
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        if (currentUser == null) {
-            Log.e(TAG, "❌ המשתמש אינו מחובר - לא ניתן לשלוח התראה")
+        val firestore = FirebaseFirestore.getInstance()
+
+        firestore.collection("users").document(driverId).get()
+            .addOnSuccessListener { snapshot ->
+                val token = snapshot.getString("fcmToken")
+                if (token.isNullOrBlank()) {
+                    Log.w(TAG, "⚠️ לא נמצא FCM token לנהג $driverId")
+                    return@addOnSuccessListener
+                }
+
+                Log.d(TAG, "📦 שולח התראה לנהג $driverId עם token: $token")
+
+                sendNotificationToTokens(
+                    tokens = listOf(token),
+                    rideId = rideId,
+                    title = title,
+                    body = body,
+                    screen = screen
+                )
+            }
+            .addOnFailureListener {
+                Log.e(TAG, "❌ שגיאה בשליפת הנהג $driverId", it)
+            }
+    }
+
+    fun notifyPassengers(
+        passengerIds: List<String>,
+        rideId: String,
+        title: String,
+        body: String,
+        screen: String
+    ) {
+        if (passengerIds.isEmpty()) {
+            Log.w(TAG, "⚠️ רשימת נוסעים ריקה - לא נשלחה התראה")
+            return
+        }
+
+        val firestore = FirebaseFirestore.getInstance()
+
+        firestore.collection("users")
+            .whereIn(FieldPath.documentId(), passengerIds)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val tokens = snapshot.documents.mapNotNull { doc ->
+                    doc.getString("fcmToken")
+                }
+
+                if (tokens.isEmpty()) {
+                    Log.w(TAG, "⚠️ לא נמצאו טוקנים תקפים לנוסעים")
+                    return@addOnSuccessListener
+                }
+
+                Log.d(TAG, "📦 שולח התראה ל-${tokens.size} נוסעים: $tokens")
+
+                sendNotificationToTokens(
+                    tokens = tokens,
+                    rideId = rideId,
+                    title = title,
+                    body = body,
+                    screen = screen
+                )
+            }
+            .addOnFailureListener {
+                Log.e(TAG, "❌ שגיאה בשליפת מסמכי נוסעים", it)
+            }
+    }
+
+    fun notifyPassengersRideStarted(rideId: String) {
+        if (rideId.isBlank()) {
+            Log.e(TAG, "❌ rideId ריק או לא חוקי - לא נשלחה התראה")
             return
         }
 
@@ -39,6 +112,7 @@ object NotificationService {
                 } else {
                     emptyList()
                 }
+
                 val passengerIds = pickupStops.mapNotNull { it["passengerId"] as? String }
 
                 if (passengerIds.isEmpty()) {
@@ -46,20 +120,20 @@ object NotificationService {
                     return@addOnSuccessListener
                 }
 
-                fetchTokensAndSendNotifications(
-                    userIds = passengerIds,
+                notifyPassengers(
+                    passengerIds = passengerIds,
                     rideId = rideId,
                     title = "🚗 הנהג בדרך",
-                    body = "הנסיעה שלך מתחילה עכשיו!"
+                    body = "הנסיעה שלך מתחילה עכשיו!",
+                    screen = "rideStarted"
                 )
-
             }
             .addOnFailureListener {
                 Log.e(TAG, "❌ שגיאה בשליפת rideId", it)
             }
     }
 
-    suspend fun sendNotificationToPassenger(
+    suspend fun sendNotificationToPassengerWhenDriverArriving(
         passengerId: String,
         isPickup: Boolean,
         rideId: String
@@ -76,11 +150,14 @@ object NotificationService {
             val title = if (isPickup) "🚗 הנהג בדרך אליך!" else "🛬 הורדת נוסע"
             val body = if (isPickup) "הנהג התחיל בנסיעה לעברך, $name" else "הגעת לנקודת ההורדה של $name"
 
+            val screen = if (isPickup) "pickup" else "dropoff"
+
             fetchTokensAndSendNotifications(
                 userIds = listOf(passengerId),
                 rideId = rideId,
                 title = title,
-                body = body
+                body = body,
+                screen = screen
             )
 
         } catch (e: Exception) {
@@ -113,44 +190,18 @@ object NotificationService {
                 val title = "📢 עדכון בנסיעה"
                 val body = "פרטי הנסיעה עודכנו לאחר שינויים בהרכב הנוסעים."
 
+                val screen = "rideUpdated"
+
                 fetchTokensAndSendNotifications(
                     userIds = allRecipients,
                     rideId = rideId,
                     title = title,
-                    body = body
+                    body = body,
+                    screen = screen
                 )
             }
             .addOnFailureListener {
                 Log.e("NotificationService", "❌ שגיאה בשליפת rideId", it)
-            }
-    }
-
-    private fun fetchTokensAndSendNotifications(
-        userIds: List<String>,
-        rideId: String,
-        title: String,
-        body: String
-    ) {
-        val firestore = FirebaseFirestore.getInstance()
-
-        firestore.collection("users")
-            .whereIn(FieldPath.documentId(), userIds)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val validTokens = snapshot.documents
-                    .mapNotNull { document -> document.getString("fcmToken") }
-
-                if (validTokens.isEmpty()) {
-                    Log.w(TAG, "⚠️ לא נמצאו FCM tokens תקפים לנוסעים")
-                    return@addOnSuccessListener
-                }
-
-                Log.d(TAG, "📦 נמצאו ${validTokens.size} tokens: $validTokens")
-
-                sendNotificationToTokens(validTokens, rideId, title, body)
-            }
-            .addOnFailureListener { error ->
-                Log.e(TAG, "❌ שגיאה בשליפת מסמכי נוסעים", error)
             }
     }
 
@@ -179,11 +230,14 @@ object NotificationService {
                 val title = "🚫 הנסיעה בוטלה"
                 val body = "הנסיעה שתוכננה בוטלה. מצטערים על חוסר הנוחות."
 
+                val screen = "rideCancelled"
+
                 fetchTokensAndSendNotifications(
                     userIds = passengerIds,
                     rideId = rideId,
                     title = title,
-                    body = body
+                    body = body,
+                    screen = screen
                 )
             }
             .addOnFailureListener {
@@ -191,12 +245,42 @@ object NotificationService {
             }
     }
 
+    private fun fetchTokensAndSendNotifications(
+        userIds: List<String>,
+        rideId: String,
+        title: String,
+        body: String,
+        screen: String
+    ) {
+        val firestore = FirebaseFirestore.getInstance()
+
+        firestore.collection("users")
+            .whereIn(FieldPath.documentId(), userIds)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val validTokens = snapshot.documents
+                    .mapNotNull { document -> document.getString("fcmToken") }
+
+                if (validTokens.isEmpty()) {
+                    Log.w(TAG, "⚠️ לא נמצאו FCM tokens תקפים לנוסעים")
+                    return@addOnSuccessListener
+                }
+
+                Log.d(TAG, "📦 נמצאו ${validTokens.size} tokens: $validTokens")
+
+                sendNotificationToTokens(validTokens, rideId, title, body, screen)
+            }
+            .addOnFailureListener { error ->
+                Log.e(TAG, "❌ שגיאה בשליפת מסמכי נוסעים", error)
+            }
+    }
 
     private fun sendNotificationToTokens(
         tokens: List<String>,
         rideId: String,
         title: String,
-        body: String
+        body: String,
+        screen: String
     ) {
         val functions = FirebaseFunctions.getInstance()
 
@@ -204,7 +288,8 @@ object NotificationService {
             "tokens" to ArrayList(tokens),
             "title" to title,
             "body" to body,
-            "rideId" to rideId
+            "rideId" to rideId,
+            "screen" to screen
         )
         Log.d(TAG, "📤 Payload: $payload")
 

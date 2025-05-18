@@ -38,24 +38,18 @@ class PassengerRideFinder(
         rideRequestRepository: IRideRequestRepository
     ): List<RideCandidate> = withContext(Dispatchers.IO) {
 
-        val passengerPendingRequests = rideRequestRepository.getPendingRequestsByPassenger(pickupPoint.passengerId)
-        val pendingRideIds = passengerPendingRequests.map { it.rideId }.toSet()
-
         val allRides = rideRepository.getRidesByCompanyAndDirection(companyId, direction)
 
         val candidates = allRides.mapNotNull { ride ->
-            val alreadyRequested = ride.rideId in pendingRideIds
             val dateOK = ride.date == passengerDate
-            val timeOK: Boolean
-            if(direction == RideDirection.TO_WORK){
-                timeOK = isRideTimeValid(ride.arrivalTime!!, ride.maxDetourMinutes, passengerArrivalTime, direction)
+            val timeOK: Boolean = if (direction == RideDirection.TO_WORK) {
+                isRideTimeValid(ride.arrivalTime!!, ride.maxDetourMinutes, passengerArrivalTime, direction)
+            } else {
+                isRideTimeValid(ride.departureTime!!, ride.maxDetourMinutes, passengerDepartureTime, direction)
             }
-            else{
-                timeOK = isRideTimeValid(ride.departureTime!!, ride.maxDetourMinutes, passengerDepartureTime, direction)
-            }
-            //val seatOK = ride.occupiedSeats < ride.availableSeats
-            //val seatOK = ride.potentialOccupiedSeats < ride.availableSeats
+
             val notAlreadyJoined = !ride.passengers.contains(pickupPoint.passengerId)
+            val seatOK = ride.passengers.size < ride.availableSeats
 
             val currentRouteTimeMinutes = try {
                 val departure = LocalTime.parse(ride.departureTime, timeFormatter)
@@ -72,20 +66,6 @@ class PassengerRideFinder(
             else{
                 ride.departureTime!!
             }
-
-            val pendingRequestsForRide = rideRequestRepository.getPendingRequestsByRide(ride.rideId)
-
-            val expectedStops = ride.pickupStops.toMutableList()
-            pendingRequestsForRide.forEach { req ->
-                expectedStops.add(
-                    PickupStop(
-                        location = req.pickupLocation,
-                        passengerId = req.passengerId
-                    )
-                )
-            }
-
-            val seatOK = (ride.passengers.size + pendingRequestsForRide.size) < ride.availableSeats
 
             val evaluation = routeMatcher.evaluatePickupDetour(
                 encodedPolyline = ride.encodedPolyline,
@@ -105,9 +85,6 @@ class PassengerRideFinder(
 
             val detourOK = evaluation.isAllowed
 
-            //val detourOK = evaluation.isAllowed &&
-                    //(ride.potentialDetourInMinutes + (evaluation.addedDetourMinutes)) <= ride.maxDetourMinutes
-
             val now = LocalDateTime.now()
             val rideDate = LocalDate.parse(ride.date, dateFormatter)
             val rideTime = LocalTime.parse(ride.departureTime?.trim(), timeFormatter)
@@ -119,19 +96,16 @@ class PassengerRideFinder(
 
             val notHisOwnRide = ride.driverId != pickupPoint.passengerId
 
-
-            if (!dateOK || !timeOK || !seatOK || !notAlreadyJoined || !detourOK || !futureEnough || !notHisOwnRide || alreadyRequested) {
+            if (!dateOK || !timeOK || !seatOK || !notAlreadyJoined || !detourOK || !futureEnough || !notHisOwnRide) {
                 Log.d("RideFilter", """ ❌ נסיעה לא מתאימה:
-        - תאריך תואם? $dateOK
-        - זמן תואם? $timeOK
-        - יש מקומות פנויים? $seatOK
-        - נוסע עדיין לא הצטרף? $notAlreadyJoined
-        - סטייה מותרת? $detourOK
-        - זמן יציאה מספיק עתידי? $futureEnough
-         - האם הנסיעה היא לא של עצמו? $notHisOwnRide
-         - האם כבר קיימת בקשה ממתינה? $alreadyRequested
-        """.trimIndent()
-                )
+    - תאריך תואם? $dateOK
+    - זמן תואם? $timeOK
+    - יש מקומות פנויים? $seatOK
+    - נוסע עדיין לא הצטרף? $notAlreadyJoined
+    - סטייה מותרת? $detourOK
+    - זמן יציאה מספיק עתידי? $futureEnough
+    - האם הנסיעה היא לא של עצמו? $notHisOwnRide
+    """.trimIndent())
                 return@mapNotNull null
             }
 

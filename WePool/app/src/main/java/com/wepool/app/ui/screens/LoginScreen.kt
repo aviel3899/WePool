@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.notifications.NotificationHelper
 import kotlinx.coroutines.launch
 
 @Composable
@@ -130,8 +131,40 @@ fun LoginScreen(navController: NavController) {
                         val result = authRepository.loginWithEmailAndPassword(email, password)
                         isLoading = false
                         result.onSuccess { uid ->
-                            navController.navigate("intermediate/$uid?fromLogin=true") {
-                                popUpTo("login") { inclusive = true }
+                            val (screen, rideId) = NotificationHelper.getStoredNotificationNavigationData(context)
+                            NotificationHelper.clearNotificationNavigationData(context)
+
+                            if (!screen.isNullOrEmpty()) {
+                                val user = RepositoryProvider.provideUserRepository().getUser(uid)
+                                val isDriver = user?.roles?.contains("DRIVER") == true
+                                val isPassenger = user?.roles?.contains("PASSENGER") == true
+
+                                when (screen) {
+                                    "rideStarted", "pickup", "dropoff", "rideUpdated" -> {
+                                        if (isPassenger) navController.navigate("passengerActiveRides/$uid?rideId=$rideId")
+                                        else if (isDriver) navController.navigate("driverActiveRides/$uid?rideId=$rideId")
+                                    }
+                                    "rideCancelled" -> {
+                                        if (isPassenger) navController.navigate("passengerActiveRides/$uid?rideId=$rideId")
+                                        else if (isDriver) navController.navigate("driverActiveRides/$uid?rideId=$rideId")
+                                    }
+                                    "pendingRequests" -> {
+                                        if (isPassenger) {
+                                            navController.navigate("passengerPendingRequests/$uid")
+                                        } else if (isDriver) {
+                                            navController.navigate("driverPendingRequests/$uid?rideId=$rideId")
+                                        }
+                                    }
+                                    else -> {
+                                        if (isPassenger) navController.navigate("passengerMenu/$uid")
+                                        else if (isDriver) navController.navigate("driverMenu/$uid")
+                                    }
+                                }
+                            } else {
+                                // ניווט רגיל במקרה שאין מידע מהתראה
+                                navController.navigate("intermediate/$uid?fromLogin=true") {
+                                    popUpTo("login") { inclusive = true }
+                                }
                             }
                         }.onFailure {
                             errorMessage = it.message
