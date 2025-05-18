@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId: String? = null) {
     val requestStatuses = listOf("All", "Pending", "Accepted", "Declined")
     var expanded by remember { mutableStateOf(false) }
-    var selectedStatus by remember { mutableStateOf("Pending") } // default to Pending
+    var selectedStatus by remember { mutableStateOf(requestStatuses[0]) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var results by remember { mutableStateOf<List<RideRequest>>(emptyList()) }
