@@ -1,7 +1,7 @@
 package com.wepool.app.ui.screens
 
 import android.app.Activity
-import android.os.Build
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.notifications.NotificationHelper
+import com.wepool.app.data.repository.LoginSessionManager
 import kotlinx.coroutines.launch
 
 @Composable
@@ -54,7 +55,6 @@ fun LoginScreen(navController: NavController) {
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Content of the screen
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -109,7 +109,6 @@ fun LoginScreen(navController: NavController) {
                 shape = RoundedCornerShape(12.dp)
             )
 
-            // Small "Forgot?" button
             TextButton(
                 onClick = { showResetDialog = true },
                 contentPadding = PaddingValues(vertical = 4.dp),
@@ -127,41 +126,16 @@ fun LoginScreen(navController: NavController) {
                             errorMessage = "Email and password must not be empty."
                             return@launch
                         }
+
                         isLoading = true
                         val result = authRepository.loginWithEmailAndPassword(email, password)
                         isLoading = false
+
                         result.onSuccess { uid ->
-                            val (screen, rideId) = NotificationHelper.getStoredNotificationNavigationData(context)
-                            NotificationHelper.clearNotificationNavigationData(context)
+                            LoginSessionManager.setDidLoginManually(context, true)
 
-                            if (!screen.isNullOrEmpty()) {
-                                val user = RepositoryProvider.provideUserRepository().getUser(uid)
-                                val isDriver = user?.roles?.contains("DRIVER") == true
-                                val isPassenger = user?.roles?.contains("PASSENGER") == true
-
-                                when (screen) {
-                                    "rideStarted", "pickup", "dropoff", "rideUpdated" -> {
-                                        if (isPassenger) navController.navigate("passengerActiveRides/$uid?rideId=$rideId")
-                                        else if (isDriver) navController.navigate("driverActiveRides/$uid?rideId=$rideId")
-                                    }
-                                    "rideCancelled" -> {
-                                        if (isPassenger) navController.navigate("passengerActiveRides/$uid?rideId=$rideId")
-                                        else if (isDriver) navController.navigate("driverActiveRides/$uid?rideId=$rideId")
-                                    }
-                                    "pendingRequests" -> {
-                                        if (isPassenger) {
-                                            navController.navigate("passengerPendingRequests/$uid")
-                                        } else if (isDriver) {
-                                            navController.navigate("driverPendingRequests/$uid?rideId=$rideId")
-                                        }
-                                    }
-                                    else -> {
-                                        if (isPassenger) navController.navigate("passengerMenu/$uid")
-                                        else if (isDriver) navController.navigate("driverMenu/$uid")
-                                    }
-                                }
-                            } else {
-                                // ניווט רגיל במקרה שאין מידע מהתראה
+                            val navigated = handleNotificationNavigation(uid, context, navController)
+                            if (!navigated) {
                                 navController.navigate("intermediate/$uid?fromLogin=true") {
                                     popUpTo("login") { inclusive = true }
                                 }
@@ -189,33 +163,21 @@ fun LoginScreen(navController: NavController) {
                 Text("Sign Up")
             }
 
-            /*Spacer(modifier = Modifier.height(8.dp))
-
-            TextButton(
-                onClick = { activity?.finishAffinity() },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading
-            ) {
-                Text("Exit", color = MaterialTheme.colorScheme.error)
-            }*/
-
             errorMessage?.let {
                 Spacer(modifier = Modifier.height(16.dp))
-                val isSuccess = it.startsWith("📧")
+                val isSuccess = it.startsWith("\uD83D\uDCE7")
                 Text(
                     text = it,
-                    color = if (isSuccess) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error // green or red
+                    color = if (isSuccess) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
                 )
             }
         }
 
-        // Blur dialog only when shown
         if (showResetDialog) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                // Background blur behind the dialog
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -223,7 +185,6 @@ fun LoginScreen(navController: NavController) {
                         .background(Color.Black.copy(alpha = 0.3f))
                 )
 
-                // Foreground sharp dialog
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
@@ -260,10 +221,10 @@ fun LoginScreen(navController: NavController) {
                                 coroutineScope.launch {
                                     val success = authRepository.resetPassword(resetEmail)
                                     showResetDialog = false
-                                    if (success) {
-                                        errorMessage = "📧 Reset email sent. Check your inbox."
+                                    errorMessage = if (success) {
+                                        "\uD83D\uDCE7 Reset email sent. Check your inbox."
                                     } else {
-                                        errorMessage = "❌ Failed to send reset email."
+                                        "\u274C Failed to send reset email."
                                     }
                                 }
                             },
@@ -276,4 +237,48 @@ fun LoginScreen(navController: NavController) {
             }
         }
     }
+}
+
+private suspend fun handleNotificationNavigation(
+    uid: String,
+    context: Context,
+    navController: NavController
+): Boolean {
+    val (screen, rideId) = NotificationHelper.getStoredNotificationData(context)
+    if (screen.isNullOrEmpty() || rideId.isNullOrEmpty()) return false
+
+    NotificationHelper.clearNotificationData(context)
+
+    val user = RepositoryProvider.provideUserRepository().getUser(uid)
+    val ride = RepositoryProvider.provideRideRepository().getRide(rideId)
+
+    val isDriver = ride?.driverId == uid
+    val isPassenger = ride?.passengers?.contains(uid) == true
+
+    val route = when (screen) {
+        "rideStarted", "pickup", "dropoff", "rideUpdated", "rideCancelled" ->
+            when {
+                isPassenger -> "passengerActiveRides/$uid?rideId=$rideId"
+                isDriver -> "driverActiveRides/$uid?rideId=$rideId"
+                user?.roles?.contains("DRIVER") == true -> "driverMenu/$uid"
+                else -> "passengerMenu/$uid"
+            }
+
+        "pendingRequests" ->
+            if (user?.roles?.contains("DRIVER") == true)
+                "driverPendingRequests/$uid?rideId=$rideId"
+            else
+                "passengerPendingRequests/$uid"
+
+        else ->
+            if (user?.roles?.contains("DRIVER") == true)
+                "driverMenu/$uid"
+            else
+                "passengerMenu/$uid"
+    }
+
+    navController.navigate(route) {
+        popUpTo("login") { inclusive = true }
+    }
+    return true
 }

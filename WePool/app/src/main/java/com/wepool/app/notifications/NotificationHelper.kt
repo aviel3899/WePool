@@ -3,9 +3,13 @@ package com.wepool.app.notifications
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.wepool.app.MainActivity
 import com.wepool.app.R
 
 object NotificationHelper {
@@ -21,32 +25,52 @@ object NotificationHelper {
         screen: String? = "rideStarted" // ברירת מחדל
     ): Notification {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel(context)
+            createSilentNotificationChannel(context)
         }
 
-        val intent = android.content.Intent(context, com.wepool.app.MainActivity::class.java).apply {
-            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("rideId", rideId)
             putExtra("screen", screen)
             putExtra("fromNotification", true)
         }
 
-        val pendingIntent = android.app.PendingIntent.getActivity(
+        val pendingIntent = PendingIntent.getActivity(
             context,
             0,
             intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("WePool 🚘")
-            .setContentText(contentText)
+            .setContentTitle("")
+            .setContentText("")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .setOngoing(true)
+            .setSilent(true)
             //.setContentIntent(pendingIntent) // כדי שלא יהיה לחיץ אז זה בהערות
             .build()
     }
+
+    private fun createSilentNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_MIN // הכי שקט
+            ).apply {
+                description = "ערוץ שקט לניווט ברקע"
+                setSound(null, null)
+                enableLights(false)
+                enableVibration(false)
+            }
+
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+
 
     private fun createNotificationChannel(context: Context) {
         val channel = NotificationChannel(
@@ -72,18 +96,20 @@ object NotificationHelper {
             createNotificationChannel(context)
         }
 
-        val intent = android.content.Intent(context, com.wepool.app.MainActivity::class.java).apply {
-            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("rideId", rideId)
             putExtra("screen", screen)
             putExtra("fromNotification", true)
         }
 
-        val pendingIntent = android.app.PendingIntent.getActivity(
+        Log.d("NotificationHelper", "🔔 intent built with rideId=$rideId, screen=$screen, fromNotification=true")
+
+        val pendingIntent = PendingIntent.getActivity(
             context,
-            0,
+            System.currentTimeMillis().toInt(),
             intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -99,7 +125,7 @@ object NotificationHelper {
         manager.notify(System.currentTimeMillis().toInt(), notification)
     }
 
-    fun storeNotificationNavigationData(context: Context, screen: String?, rideId: String?) {
+    fun storeNotificationData(context: Context, screen: String?, rideId: String?) {
         val prefs = context.getSharedPreferences("notification_data", Context.MODE_PRIVATE)
         prefs.edit().apply {
             putString("screen", screen)
@@ -108,14 +134,14 @@ object NotificationHelper {
         }
     }
 
-    fun getStoredNotificationNavigationData(context: Context): Pair<String?, String?> {
+    fun getStoredNotificationData(context: Context): Pair<String?, String?> {
         val prefs = context.getSharedPreferences("notification_data", Context.MODE_PRIVATE)
         val screen = prefs.getString("screen", null)
         val rideId = prefs.getString("rideId", null)
         return Pair(screen, rideId)
     }
 
-    fun clearNotificationNavigationData(context: Context) {
+    fun clearNotificationData(context: Context) {
         context.getSharedPreferences("notification_data", Context.MODE_PRIVATE)
             .edit().clear().apply()
     }

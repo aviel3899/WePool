@@ -474,7 +474,24 @@ class RideRepository(
             Log.d("RideLeave", "✅ הנוסע $passengerId הוסר והמסלול עודכן (rideId=$rideId)")
 
             if(!rideCanceled) {
-                NotificationService.notifyRideUpdated(rideId)
+                NotificationService.notifyPassengers(
+                    passengerIds = listOf(passengerId),
+                    rideId = ride.rideId,
+                    title = "🚫 הנסיעה בוטלה",
+                    body = "הצטרפותך לנסיעה בוטלה",
+                    screen = "rideUpdated"
+                )
+
+                val otherPassengers = updatedRide.passengers.filterNot { it == passengerId }
+                if (otherPassengers.isNotEmpty()) {
+                    NotificationService.notifyPassengers(
+                        passengerIds = otherPassengers,
+                        rideId = ride.rideId,
+                        title = "📢 בוצעו שינויים בנסיעה",
+                        body = "פרטי הנסיעה עודכנו בעקבות ביטול נוסע.",
+                        screen = "rideUpdated"
+                    )
+                }
             }
 
             //deletePassengerRequestsForRide(rideId, passengerId)

@@ -165,46 +165,6 @@ object NotificationService {
         }
     }
 
-    fun notifyRideUpdated(rideId: String) {
-        val firestore = FirebaseFirestore.getInstance()
-
-        firestore.collection("rides").document(rideId).get()
-            .addOnSuccessListener { rideDoc ->
-                if (!rideDoc.exists()) {
-                    Log.e("NotificationService", "❌ Ride $rideId לא נמצאה")
-                    return@addOnSuccessListener
-                }
-
-                val ride = rideDoc.toObject(Ride::class.java)
-                if (ride == null) {
-                    Log.e("NotificationService", "❌ שגיאה בהמרת המסמך ל-Ride")
-                    return@addOnSuccessListener
-                }
-
-                val allRecipients = ride.passengers + ride.driverId
-                if (allRecipients.isEmpty()) {
-                    Log.w("NotificationService", "⚠️ אין נמענים לשליחת ההתראה")
-                    return@addOnSuccessListener
-                }
-
-                val title = "📢 עדכון בנסיעה"
-                val body = "פרטי הנסיעה עודכנו לאחר שינויים בהרכב הנוסעים."
-
-                val screen = "rideUpdated"
-
-                fetchTokensAndSendNotifications(
-                    userIds = allRecipients,
-                    rideId = rideId,
-                    title = title,
-                    body = body,
-                    screen = screen
-                )
-            }
-            .addOnFailureListener {
-                Log.e("NotificationService", "❌ שגיאה בשליפת rideId", it)
-            }
-    }
-
     fun notifyRideCancelled(rideId: String) {
         val firestore = FirebaseFirestore.getInstance()
 

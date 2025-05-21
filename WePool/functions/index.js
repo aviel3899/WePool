@@ -143,17 +143,18 @@ exports.sendNotificationToTokens = functions.https.onCall(async (data, context) 
     const message = {
       notification: {
         title: title,
-        body: body
+        body: body,
       },
       android: {
         notification: {
-          icon: "ic_launcher_foreground"
+          icon: "ic_launcher_foreground",
         }
       },
       data: {
-        type: "passenger_notification",
+        //type: "passenger_notification",
         rideId: rideId,
-        screen: screen
+        screen: screen,
+        fromNotification: "true"
       },
       tokens: tokens
     };
