@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.notifications.NotificationHelper
+import com.wepool.app.infrastructure.navigation.handleNotificationNavigation
 import com.wepool.app.data.repository.LoginSessionManager
 import kotlinx.coroutines.launch
 
@@ -134,7 +135,7 @@ fun LoginScreen(navController: NavController) {
                         result.onSuccess { uid ->
                             LoginSessionManager.setDidLoginManually(context, true)
 
-                            val navigated = handleNotificationNavigation(uid, context, navController)
+                            val navigated = handleNotificationNavigation(context, navController)
                             if (!navigated) {
                                 navController.navigate("intermediate/$uid?fromLogin=true") {
                                     popUpTo("login") { inclusive = true }
@@ -237,48 +238,4 @@ fun LoginScreen(navController: NavController) {
             }
         }
     }
-}
-
-private suspend fun handleNotificationNavigation(
-    uid: String,
-    context: Context,
-    navController: NavController
-): Boolean {
-    val (screen, rideId) = NotificationHelper.getStoredNotificationData(context)
-    if (screen.isNullOrEmpty() || rideId.isNullOrEmpty()) return false
-
-    NotificationHelper.clearNotificationData(context)
-
-    val user = RepositoryProvider.provideUserRepository().getUser(uid)
-    val ride = RepositoryProvider.provideRideRepository().getRide(rideId)
-
-    val isDriver = ride?.driverId == uid
-    val isPassenger = ride?.passengers?.contains(uid) == true
-
-    val route = when (screen) {
-        "rideStarted", "pickup", "dropoff", "rideUpdated", "rideCancelled" ->
-            when {
-                isPassenger -> "passengerActiveRides/$uid?rideId=$rideId"
-                isDriver -> "driverActiveRides/$uid?rideId=$rideId"
-                user?.roles?.contains("DRIVER") == true -> "driverMenu/$uid"
-                else -> "passengerMenu/$uid"
-            }
-
-        "pendingRequests" ->
-            if (user?.roles?.contains("DRIVER") == true)
-                "driverPendingRequests/$uid?rideId=$rideId"
-            else
-                "passengerPendingRequests/$uid"
-
-        else ->
-            if (user?.roles?.contains("DRIVER") == true)
-                "driverMenu/$uid"
-            else
-                "passengerMenu/$uid"
-    }
-
-    navController.navigate(route) {
-        popUpTo("login") { inclusive = true }
-    }
-    return true
 }

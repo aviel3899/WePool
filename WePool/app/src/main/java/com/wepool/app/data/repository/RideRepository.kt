@@ -477,12 +477,12 @@ class RideRepository(
                 NotificationService.notifyPassengers(
                     passengerIds = listOf(passengerId),
                     rideId = ride.rideId,
-                    title = "🚫 הנסיעה בוטלה",
-                    body = "הצטרפותך לנסיעה בוטלה",
-                    screen = "rideUpdated"
+                    title = "🚫 הצטרפותך לנסיעה בוטלה",
+                    body = "נהג הנסיעה הסיר אותך ממנה",
+                    screen = "rideCancelled"
                 )
 
-                val otherPassengers = updatedRide.passengers.filterNot { it == passengerId }
+                val otherPassengers = updatedRide.passengers
                 if (otherPassengers.isNotEmpty()) {
                     NotificationService.notifyPassengers(
                         passengerIds = otherPassengers,
@@ -571,7 +571,7 @@ class RideRepository(
 
                 for (passengerId in ride.passengers.toList()) {
                     try {
-                        removePassengerFromRide(rideId, passengerId, true)
+                        removePassengerFromRide(rideId, passengerId)
                         deletePassengerRequestsForRide(rideId, passengerId)
                     } catch (e: Exception) {
                         Log.e("RideDelete", "❌ שגיאה בהסרת נוסע $passengerId: ${e.message}", e)

@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,16 +23,18 @@ import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
 
 @Composable
-fun PassengerRequestsScreen(uid: String, navController: NavController) {
+fun PassengerRequestsScreen(uid: String, navController: NavController, filterRideId: String? = null) {
     val requestStatuses = listOf("All", "Pending", "Accepted", "Declined", "Cancelled")
     var expanded by remember { mutableStateOf(false) }
-    var selectedStatus by remember { mutableStateOf(requestStatuses[0]) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var results by remember { mutableStateOf<List<RideRequest>>(emptyList()) }
     var rides by remember { mutableStateOf<Map<String, Ride>>(emptyMap()) }
     var selectedRequest by remember { mutableStateOf<RideRequest?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+
+    val defaultTab = if (filterRideId != null) "Declined" else "All"
+    var selectedStatus by rememberSaveable { mutableStateOf(defaultTab) }
 
     val requestRepo = RepositoryProvider.provideRideRequestRepository()
     val rideRepo = RepositoryProvider.provideRideRepository()
@@ -43,12 +46,18 @@ fun PassengerRequestsScreen(uid: String, navController: NavController) {
             error = null
             try {
                 val allRequests = requestRepo.getRequestsByPassenger(uid)
-                val filtered = if (selectedStatus == "All") {
+                val baseFiltered = if (selectedStatus == "All") {
                     allRequests
                 } else {
                     allRequests.filter {
                         it.status.name.equals(selectedStatus, ignoreCase = true)
                     }
+                }
+
+                val filtered = if (!filterRideId.isNullOrEmpty()) {
+                    baseFiltered.filter { it.rideId == filterRideId }
+                } else {
+                    baseFiltered
                 }
 
                 when (selectedStatus) {
@@ -86,6 +95,10 @@ fun PassengerRequestsScreen(uid: String, navController: NavController) {
                 loading = false
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        refresh()
     }
 
     Column(

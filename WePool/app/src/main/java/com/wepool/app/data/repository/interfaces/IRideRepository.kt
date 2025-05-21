@@ -43,7 +43,7 @@ interface IRideRepository {
         rideId: String,
         requestId: String,
     ): Boolean
-    suspend fun removePassengerFromRide(rideId: String, passengerId: String, rideCanceled: Boolean = false)
+    suspend fun removePassengerFromRide(rideId: String, passengerId: String, rideCanceled: Boolean = true)
 
     suspend fun calculateRideDepartureTime(
         ride: Ride,
