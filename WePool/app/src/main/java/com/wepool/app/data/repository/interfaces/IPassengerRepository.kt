@@ -8,8 +8,6 @@ interface IPassengerRepository {
 
     suspend fun getPassenger(uid: String): Passenger?
     suspend fun savePassengerData(uid: String, passenger: Passenger)
-    suspend fun addFavoriteLocation(uid: String, location: LocationData)
-    suspend fun removeFavoriteLocation(uid: String, placeId: String)
     suspend fun deletePassenger(uid:String)
     suspend fun addActiveRideToPassenger(passengerId: String, rideId: String)
     suspend fun removeActiveRideFromPassenger(passengerId: String, rideId: String)

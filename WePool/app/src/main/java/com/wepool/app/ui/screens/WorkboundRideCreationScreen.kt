@@ -30,13 +30,11 @@ import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.*
 
 @Composable
 fun WorkboundRideCreationScreen(navController: NavController, uid: String) {
     val context = LocalContext.current
 
-    //var startLocation by remember { mutableStateOf("") }
     var startLocation by remember { mutableStateOf(LocationData()) }
     val destination by remember { mutableStateOf(LocationData(name = "מכללת אפקה")) }
     var seatsAvailable by remember { mutableStateOf(1) }
@@ -55,253 +53,272 @@ fun WorkboundRideCreationScreen(navController: NavController, uid: String) {
             selectedDate.isNotBlank() &&
             selectedTime.isNotBlank()
 
-    // Autocomplete state
     var startLocationSuggestions by remember { mutableStateOf(emptyList<String>()) }
     var autoExpanded by remember { mutableStateOf(false) }
     var textFieldSize by remember { mutableStateOf(IntSize.Zero) }
     val focusRequester = remember { FocusRequester() }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(32.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        Text("Create Workbound Ride", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(24.dp))
+        item {
+            Text("Create Workbound Ride", style = MaterialTheme.typography.headlineSmall)
+            Spacer(modifier = Modifier.height(24.dp))
+        }
 
-        // Autocomplete for Start Location
-        Box(modifier = Modifier.fillMaxWidth()) {
+        item {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = startLocation.name,
+                    onValueChange = {
+                        startLocation = startLocation.copy(name = it)
+                        coroutineScope.launch {
+                            startLocationSuggestions =
+                                RepositoryProvider.mapsService.getAddressSuggestions(it)
+                            autoExpanded = startLocationSuggestions.isNotEmpty()
+                        }
+                    },
+                    label = { Text("Start Location") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { coordinates ->
+                            textFieldSize = coordinates.size
+                        }
+                        .focusRequester(focusRequester),
+                    singleLine = true,
+                    interactionSource = remember { MutableInteractionSource() }
+                )
+
+                if (autoExpanded && startLocationSuggestions.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
+                            .padding(top = with(LocalDensity.current) { textFieldSize.height.toDp() })
+                            .heightIn(max = 200.dp)
+                    ) {
+                        LazyColumn {
+                            items(startLocationSuggestions) { suggestion ->
+                                ListItem(
+                                    headlineContent = { Text(suggestion) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            startLocation.name = suggestion
+                                            autoExpanded = false
+                                            coroutineScope.launch {
+                                                focusRequester.requestFocus()
+                                            }
+                                        }
+                                        .padding(8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        item {
             OutlinedTextField(
-                value = startLocation.name,
-                onValueChange = {
-                    startLocation = startLocation.copy(name = it)
-                    coroutineScope.launch {
-                        startLocationSuggestions =
-                            RepositoryProvider.mapsService.getAddressSuggestions(it)
-                        autoExpanded = startLocationSuggestions.isNotEmpty()
-                    }
-                },
-                label = { Text("Start Location") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onGloballyPositioned { coordinates ->
-                        textFieldSize = coordinates.size
-                    }
-                    .focusRequester(focusRequester),
-                singleLine = true,
-                interactionSource = remember { MutableInteractionSource() }
+                value = destination.name,
+                onValueChange = {},
+                label = { Text("Destination") },
+                enabled = false,
+                modifier = Modifier.fillMaxWidth()
             )
 
-            if (autoExpanded && startLocationSuggestions.isNotEmpty()) {
-                Card(
-                    modifier = Modifier
-                        .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
-                        .padding(top = with(LocalDensity.current) { textFieldSize.height.toDp() })
-                        .heightIn(max = 200.dp)
-                ) {
-                    LazyColumn {
-                        items(startLocationSuggestions) { suggestion ->
-                            ListItem(
-                                headlineContent = { Text(suggestion) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        startLocation.name = suggestion
-                                        autoExpanded = false
-                                        coroutineScope.launch {
-                                            focusRequester.requestFocus()
-                                        }
-                                    }
-                                    .padding(8.dp)
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        item {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = seatsAvailable.toString(),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Seats Available") },
+                    trailingIcon = {
+                        IconButton(onClick = { expanded = true }) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Expand Seats Dropdown"
                             )
                         }
-                    }
-                }
-            }
-        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = destination.name,
-            onValueChange = {},
-            label = { Text("Destination") },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = seatsAvailable.toString(),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Seats Available") },
-                trailingIcon = {
-                    IconButton(onClick = { expanded = true }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "Expand Seats Dropdown"
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    seatOptions.forEach { seat ->
+                        DropdownMenuItem(
+                            text = { Text(seat.toString()) },
+                            onClick = {
+                                seatsAvailable = seat
+                                expanded = false
+                            }
                         )
                     }
-                },
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        item {
+            OutlinedTextField(
+                value = maxDetour,
+                onValueChange = { maxDetour = it },
+                label = { Text("Max Detour (minutes)") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        item {
+            Button(onClick = {
+                val calendar = Calendar.getInstance()
+                val datePicker = DatePickerDialog(
+                    context,
+                    { _, year, month, day ->
+                        val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                        calendar.set(year, month, day)
+                        selectedDate = sdf.format(calendar.time)
+                    },
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH),
+                    calendar.get(Calendar.DAY_OF_MONTH)
+                )
+                datePicker.datePicker.minDate = calendar.timeInMillis
+                datePicker.show()
+            }) {
+                Text(if (selectedDate.isNotBlank()) "Selected Date: $selectedDate" else "Pick a Date")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        item {
+            Button(onClick = {
+                val now = Calendar.getInstance()
+                val toast = Toast.makeText(context, "", Toast.LENGTH_SHORT)
+
+                TimePickerDialog(
+                    context,
+                    { _, hour, minute ->
+                        val selectedCalendar = Calendar.getInstance()
+                        selectedCalendar.set(Calendar.HOUR_OF_DAY, hour)
+                        selectedCalendar.set(Calendar.MINUTE, minute)
+                        selectedCalendar.set(Calendar.SECOND, 0)
+
+                        val todayStr = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(now.time)
+                        if (selectedDate == todayStr && selectedCalendar.before(now)) {
+                            toast.setText("❌ Please select a future time.")
+                            toast.show()
+                        } else {
+                            selectedTime = String.format("%02d:%02d", hour, minute)
+                        }
+                    },
+                    now.get(Calendar.HOUR_OF_DAY),
+                    now.get(Calendar.MINUTE),
+                    true
+                ).show()
+            }) {
+                Text(if (selectedTime.isNotBlank()) "Selected Time: $selectedTime" else "Pick an arrival Time")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        item {
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        val startLocationData = mapsService.getCoordinatesFromAddress(startLocation.name)!!
+                        val destinationData = mapsService.getCoordinatesFromAddress(destination.name)!!
+
+                        val success = rideRepository.planRideFromUserInput(
+                            driverId = uid,
+                            companyId = "company123",
+                            startAddress = startLocationData,
+                            destinationAddress = destinationData,
+                            arrivalTime = selectedTime,
+                            date = selectedDate,
+                            direction = RideDirection.TO_WORK,
+                            availableSeats = seatsAvailable,
+                            occupiedSeats = 0,
+                            maxDetourMinutes = maxDetour.toIntOrNull() ?: 0,
+                            notes = ""
+                        )
+                        if (success) {
+                            Log.d("RideCreation", "✅ Ride saved successfully")
+                            Toast.makeText(context, "Ride created successfully", Toast.LENGTH_SHORT).show()
+                            navController.navigate("driverMenu/$uid") {
+                                popUpTo("workboundRide/$uid") {
+                                    inclusive = true
+                                }
+                                launchSingleTop = true
+                            }
+                        } else {
+                            Log.e("RideCreation", "❌ Failed to save ride")
+                            Toast.makeText(context, "Failed to create ride. Please try again.", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                },
+                enabled = isFormValid,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                seatOptions.forEach { seat ->
-                    DropdownMenuItem(
-                        text = { Text(seat.toString()) },
-                        onClick = {
-                            seatsAvailable = seat
-                            expanded = false
+                Text("Save")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = {
+                    navController.popBackStack()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Back")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedButton(
+                onClick = {
+                    navController.navigate("intermediate/$uid?fromLogin=false") {
+                        popUpTo("intermediate/$uid?fromLogin=false") {
+                            inclusive = false
                         }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = maxDetour,
-            onValueChange = { maxDetour = it },
-            label = { Text("Max Detour (minutes)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Button(onClick = {
-            val calendar = Calendar.getInstance()
-            val datePicker = DatePickerDialog(
-                context,
-                { _, year, month, day ->
-                    val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                    calendar.set(year, month, day)
-                    selectedDate = sdf.format(calendar.time)
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            )
-            datePicker.datePicker.minDate = calendar.timeInMillis
-            datePicker.show()
-        }) {
-            Text(if (selectedDate.isNotBlank()) "Selected Date: $selectedDate" else "Pick a Date")
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Button(onClick = {
-            val now = Calendar.getInstance()
-            val toast = Toast.makeText(context, "", Toast.LENGTH_SHORT)
-
-            TimePickerDialog(
-                context,
-                { _, hour, minute ->
-                    val selectedCalendar = Calendar.getInstance()
-                    selectedCalendar.set(Calendar.HOUR_OF_DAY, hour)
-                    selectedCalendar.set(Calendar.MINUTE, minute)
-                    selectedCalendar.set(Calendar.SECOND, 0)
-
-                    val todayStr = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(now.time)
-                    if (selectedDate == todayStr && selectedCalendar.before(now)) {
-                        toast.setText("❌ Please select a future time.")
-                        toast.show()
-                    } else {
-                        selectedTime = String.format("%02d:%02d", hour, minute)
+                        launchSingleTop = true
                     }
                 },
-                now.get(Calendar.HOUR_OF_DAY),
-                now.get(Calendar.MINUTE),
-                true
-            ).show()
-        }) {
-            Text(if (selectedTime.isNotBlank()) "Selected Time: $selectedTime" else "Pick an arrival Time")
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    val startLocationData = mapsService.getCoordinatesFromAddress(startLocation.name)!!
-                    val destinationData = mapsService.getCoordinatesFromAddress(destination.name)!!
-
-                    val success = rideRepository.planRideFromUserInput(
-                        driverId = uid,
-                        companyId = "company123",
-                        startAddress = startLocationData,
-                        destinationAddress = destinationData,
-                        arrivalTime = selectedTime,
-                        date = selectedDate,
-                        direction = RideDirection.TO_WORK,
-                        availableSeats = seatsAvailable,
-                        occupiedSeats = 0,
-                        maxDetourMinutes = maxDetour.toIntOrNull() ?: 0,
-                        notes = ""
-                    )
-                    if (success) {
-                        Log.d("RideCreation", "✅ Ride saved successfully")
-                        navController.popBackStack()
-                    } else {
-                        Log.e("RideCreation", "❌ Failed to save ride")
-                        Toast.makeText(context, "❌ Failed to save ride", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            },
-            enabled = isFormValid,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Save")
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedButton(
-            onClick = {
-                navController.popBackStack()
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Back")
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Home,
+                    contentDescription = "Home",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Back to Home", style = MaterialTheme.typography.labelLarge)
             }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedButton(
-            onClick = {
-                navController.navigate("intermediate/$uid?fromLogin=false") {
-                    popUpTo("intermediate/$uid?fromLogin=false") {
-                        inclusive = false
-                    }
-                    launchSingleTop = true
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant, // soft neutral
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant // high contrast
-            )
-        ) {
-            Icon(
-                imageVector = Icons.Default.Home,
-                contentDescription = "Home",
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Back to Home", style = MaterialTheme.typography.labelLarge)
         }
-
     }
 }

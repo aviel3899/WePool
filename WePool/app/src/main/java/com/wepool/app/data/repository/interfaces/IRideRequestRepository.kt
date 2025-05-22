@@ -11,7 +11,8 @@ interface IRideRequestRepository {
         rideId: String,
         passengerId: String,
         pickupLocation: LocationData,
-        detourEvaluationResult: DetourEvaluationResult
+        detourEvaluationResult: DetourEvaluationResult,
+        notes: String = ""
     ): Boolean
     suspend fun updateRequestStatus(rideId: String, requestId: String, newStatus: RequestStatus): Boolean
     suspend fun updateDetourEvaluationResult(

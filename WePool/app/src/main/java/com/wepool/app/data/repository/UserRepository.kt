@@ -5,6 +5,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.messaging.FirebaseMessaging
+import com.wepool.app.data.model.common.LocationData
+import com.wepool.app.data.model.users.Passenger
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.data.repository.interfaces.IPassengerRepository
@@ -249,6 +251,42 @@ class UserRepository(
             .addOnFailureListener { exception ->
                 Log.e("UserRepository", "❌ שגיאה בקבלת token", exception)
             }
+    }
+
+    override suspend fun addFavoriteLocation(uid: String, location: LocationData) {
+        try {
+            val userRef = db.collection("users").document(uid)
+            val snapshot = userRef.get().await()
+            val user = snapshot.toObject(User::class.java)
+
+            if (user != null) {
+                val updatedList = user.favoriteLocations + location
+                userRef.update("favoriteLocations", updatedList).await()
+                Log.d("UserRepository", "✅ מיקום מועדף נוסף עבור המשתמש $uid")
+            } else {
+                Log.w("UserRepository", "⚠️ לא נמצא משתמש עבור UID: $uid")
+            }
+        } catch (e: Exception) {
+            logException("addFavoriteLocation", e)
+        }
+    }
+
+    override suspend fun removeFavoriteLocation(uid: String, placeId: String) {
+        try {
+            val userRef = db.collection("users").document(uid)
+            val snapshot = userRef.get().await()
+            val user = snapshot.toObject(User::class.java)
+
+            if (user != null) {
+                val updatedList = user.favoriteLocations.filterNot { it.placeId == placeId }
+                userRef.update("favoriteLocations", updatedList).await()
+                Log.d("UserRepository", "✅ מיקום מועדף הוסר עבור המשתמש $uid")
+            } else {
+                Log.w("UserRepository", "⚠️ לא נמצא משתמש עבור UID: $uid")
+            }
+        } catch (e: Exception) {
+            logException("removeFavoriteLocation", e)
+        }
     }
 
     private fun logException(func: String, e: Exception) {

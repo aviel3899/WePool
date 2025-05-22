@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -107,28 +109,53 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                 modifier = Modifier.fillMaxWidth().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Filter by status", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "Filter by status",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
                     OutlinedButton(
                         onClick = { expanded = true },
                         modifier = Modifier.fillMaxWidth(0.75f).height(56.dp)
                     ) {
-                        Text(selectedStatus, fontSize = 18.sp)
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = selectedStatus,
+                                modifier = Modifier.align(Alignment.Center),
+                                fontSize = 18.sp
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                modifier = Modifier.align(Alignment.CenterEnd).size(28.dp)
+                            )
+                        }
                     }
 
                     DropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.fillMaxWidth(0.75f)
                     ) {
                         requestStatuses.forEach { status ->
                             DropdownMenuItem(
-                                text = { Text(status) },
+                                text = {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(status)
+                                    }
+                                },
                                 onClick = {
                                     selectedStatus = status
                                     expanded = false
-                                    refresh()
                                 }
                             )
                         }
@@ -139,12 +166,19 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
 
                 Button(
                     onClick = { refresh() },
-                    modifier = Modifier.fillMaxWidth(0.75f).height(56.dp)
+                    modifier = Modifier.fillMaxWidth(0.75f).height(48.dp)
                 ) {
-                    Text("Search", fontSize = 18.sp)
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Refresh",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Refresh")
                 }
             }
         }
+
 
         Spacer(modifier = Modifier.height(32.dp))
 

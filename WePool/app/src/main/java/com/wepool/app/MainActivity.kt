@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
@@ -39,6 +40,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var navController: NavHostController? = null
+    private var wasNavigatedFromIntent = mutableStateOf(false)
 
     @OptIn(ExperimentalPermissionsApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +65,20 @@ class MainActivity : AppCompatActivity() {
                 val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     rememberPermissionState(android.Manifest.permission.POST_NOTIFICATIONS)
                 } else null
+
+                val isLoggedIn = LoginSessionManager.didLoginManually(context)
+                val firebaseUser = FirebaseAuth.getInstance().currentUser
+
+                LaunchedEffect(firebaseUser, isLoggedIn) {
+                    if (firebaseUser != null && isLoggedIn && !wasNavigatedFromIntent.value) {
+                        val uid = firebaseUser.uid
+                        navController?.navigate("roleSelection/$uid") {
+                            popUpTo("login") { inclusive = true }
+                            launchSingleTop = true
+                        }
+                        wasNavigatedFromIntent.value = true
+                    }
+                }
 
                 LaunchedEffect(Unit) {
                     RepositoryProvider.provideRideRepository().deactivateExpiredRides()
@@ -94,9 +110,9 @@ class MainActivity : AppCompatActivity() {
                             val fromLogin = it.arguments?.getString("fromLogin")?.toBooleanStrictOrNull() ?: false
                             IntermediateScreen(navController!!, uid, fromLogin)
                         }
-                        composable("rideHistoryMenu/{uid}") {
+                        composable("rideHistory/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
-                            RideHistoryMenuScreen(navController!!, uid)
+                            RideHistoryScreen(navController!!, uid)
                         }
                         composable("updateDetails/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
@@ -153,10 +169,6 @@ class MainActivity : AppCompatActivity() {
                             val rideId = it.arguments?.getString("rideId")
                             DriverRequestsScreen(uid = uid, navController = navController!!, filterRideId = rideId)
                         }
-                        /*composable("passengerPendingRequests/{uid}") {
-                            val uid = it.arguments?.getString("uid") ?: return@composable
-                            PassengerRequestsScreen(uid, navController!!)
-                        }*/
                         composable("passengerPendingRequests/{uid}?rideId={rideId}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             val rideId = it.arguments?.getString("rideId")
@@ -184,7 +196,6 @@ class MainActivity : AppCompatActivity() {
 
         val screen = intent.getStringExtra("screen")
         val rideId = intent.getStringExtra("rideId")
-      //  val fromNotification = intent.getStringExtra("fromNotification") == "true"
         val fromNotification = intent.getBooleanExtra("fromNotification", false) == true
 
         Log.d("MainActivity", "📥 onNewIntent: rideId=$rideId, screen=$screen, fromNotification=$fromNotification")
@@ -198,6 +209,7 @@ class MainActivity : AppCompatActivity() {
             if (currentUser != null && didLoginManually) {
                 lifecycleScope.launch {
                     handleNotificationNavigation(this@MainActivity, navController!!)
+                    wasNavigatedFromIntent.value = true
                 }
             }
         }

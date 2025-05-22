@@ -1,5 +1,6 @@
 package com.wepool.app.data.repository.interfaces
 
+import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.users.User
 
 interface IUserRepository {
@@ -28,4 +29,7 @@ interface IUserRepository {
 
     suspend fun updateUserToken(uid: String, newToken: String)
     fun uploadFcmTokenForCurrentUser()
+
+    suspend fun addFavoriteLocation(uid: String, location: LocationData)
+    suspend fun removeFavoriteLocation(uid: String, placeId: String)
 }

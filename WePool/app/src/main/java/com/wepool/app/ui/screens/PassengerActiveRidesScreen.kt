@@ -1,19 +1,23 @@
 package com.wepool.app.ui.screens
 
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.ride.Ride
+import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
 import java.time.LocalTime
@@ -31,6 +35,9 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
     var approvalUpdated by remember { mutableStateOf(false) }
     var showTooLateDialog by remember { mutableStateOf(false) }
     var tardiness by remember { mutableStateOf(0) }
+    var showDriverDetailsDialog by remember { mutableStateOf(false) }
+    var selectedDriverRide by remember { mutableStateOf<Ride?>(null) }
+    var selectedDriverUser by remember { mutableStateOf<User?>(null) }
 
     fun refreshRides() {
         scope.launch {
@@ -167,6 +174,27 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                                     ) {
                                         Text("Cancel Ride")
                                     }
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    OutlinedButton(
+                                        onClick = {
+                                            selectedDriverRide = ride
+                                            showDriverDetailsDialog = true
+                                            scope.launch {
+                                                try {
+                                                    selectedDriverUser = ride.driverId.let { userId ->
+                                                        RepositoryProvider.provideUserRepository().getUser(userId)
+                                                    }
+                                                } catch (e: Exception) {
+                                                    Log.e("DriverDetails", "Failed to load driver user: ${e.message}")
+                                                    selectedDriverUser = null
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Text("Driver Details")
+                                    }
                                 }
                             }
                         }
@@ -225,6 +253,65 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                     Text("OK")
                 }
             }
+        )
+    }
+
+    if (showDriverDetailsDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDriverDetailsDialog = false
+                selectedDriverUser = null
+            },
+            title = {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text("Driver Details")
+                }
+            },
+            text = {
+                selectedDriverUser?.let { user ->
+                    Column {
+                        Text("Name: ${user.name}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val context = LocalContext.current
+                        Row(
+                            modifier = Modifier
+                                .clickable {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                                        data = android.net.Uri.parse("tel:${user.phoneNumber}")
+                                    }
+                                    context.startActivity(intent)
+                                }
+                                .padding(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Call,
+                                contentDescription = "Call Driver",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Call: ${user.phoneNumber}",
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                } ?: Text("Loading driver details...")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDriverDetailsDialog = false
+                        selectedDriverUser = null
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Text("Close")
+                    }
+                }
+            }
+
         )
     }
 }

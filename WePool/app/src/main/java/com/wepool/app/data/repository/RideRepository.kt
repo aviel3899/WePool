@@ -82,6 +82,39 @@ class RideRepository(
             ?.dropoffTime
     }
 
+    override suspend fun getPastRidesAsDriver(uid: String): List<Ride> {
+        return try {
+            firestore.collection("rides")
+                .whereEqualTo("driverId", uid)
+                .whereEqualTo("active", false)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { it.toObject(Ride::class.java)?.copy(rideId = it.id) }
+        } catch (e: Exception) {
+            Log.e("RideRepository", "❌ שגיאה ב־getPastRidesAsDriver: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    override suspend fun getPastRidesAsPassenger(uid: String): List<Ride> {
+        return try {
+            val allRides = firestore.collection("rides")
+                .whereEqualTo("active", false)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { it.toObject(Ride::class.java)?.copy(rideId = it.id) }
+
+            allRides.filter { ride ->
+                ride.passengers.contains(uid)
+            }
+        } catch (e: Exception) {
+            Log.e("RideRepository", "❌ שגיאה ב־getPastRidesAsPassenger: ${e.message}", e)
+            emptyList()
+        }
+    }
+
     override suspend fun deactivateExpiredRides(): Unit = withContext(Dispatchers.IO) {
         try {
             val activeRidesSnapshot = firestore.collection("rides")

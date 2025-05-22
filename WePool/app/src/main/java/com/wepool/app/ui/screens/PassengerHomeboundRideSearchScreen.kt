@@ -46,6 +46,7 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
 
     val focusRequester = remember { FocusRequester() }
 
+    var passengerNotes by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf("") }
     var isFormValid by remember { mutableStateOf(false) }
@@ -137,6 +138,19 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = passengerNotes,
+            onValueChange = { passengerNotes = it },
+            label = { Text("Notes for Driver (optional)") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 80.dp),
+            singleLine = false,
+            maxLines = 3
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 

@@ -39,6 +39,7 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
     var startLocation by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf("") }
+    var passengerNotes by remember { mutableStateOf("") }
     var isFormValid by remember { mutableStateOf(false) }
     var startLocationSuggestions by remember { mutableStateOf(emptyList<String>()) }
     var expanded by remember { mutableStateOf(false) }
@@ -127,6 +128,19 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
             enabled = false,
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = passengerNotes,
+            onValueChange = { passengerNotes = it },
+            label = { Text("Notes for Driver (optional)") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 80.dp),
+            singleLine = false,
+            maxLines = 3
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -268,7 +282,8 @@ fun PassengerWorkboundRideSearchScreen(navController: NavController, uid: String
                                                     rideId = ride.ride.rideId,
                                                     passengerId = uid,
                                                     pickupLocation = pickupStop.location,
-                                                    detourEvaluationResult = ride.detourEvaluationResult
+                                                    detourEvaluationResult = ride.detourEvaluationResult,
+                                                    notes = passengerNotes
                                                 )
                                                 Toast.makeText(
                                                     context,

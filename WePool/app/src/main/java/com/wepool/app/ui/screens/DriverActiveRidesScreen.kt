@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,8 +23,10 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.data.model.ride.Ride
+import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.RideNavigationServiceController
+import com.wepool.app.ui.RideStaticMapImage
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -45,13 +48,14 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
     var error by remember { mutableStateOf<String?>(null) }
     var isActionInProgress by remember { mutableStateOf(false) }
     var selectedRide by remember { mutableStateOf<Ride?>(null) }
+    var selectedPassengerUser by remember { mutableStateOf<User?>(null) }
     var passengerNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var showDetailsDialog by remember { mutableStateOf(false) }
     var selectedPassengerStop by remember { mutableStateOf<PickupStop?>(null) }
-    var expanded by remember { mutableStateOf(false) }
     var showTooLateDialog by remember { mutableStateOf(false) }
     var innerTooLateDialog by remember { mutableStateOf(false) }
     var threshold by remember { mutableStateOf(0) }
+    var rideForMapDialog by remember { mutableStateOf<Ride?>(null) }
 
     fun refreshRides() {
         coroutineScope.launch {
@@ -161,6 +165,12 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                                     }) {
                                         Text("Cancel Ride")
                                     }
+
+                                    OutlinedButton(onClick = {
+                                        rideForMapDialog = ride
+                                    }) {
+                                        Text("Show Map")
+                                    }
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -179,7 +189,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                                         }
 
                                         passengerNames = names
-                                        selectedPassengerStop = pickupMap.values.firstOrNull()
+                                        //selectedPassengerStop = pickupMap.values.firstOrNull()
                                         showDetailsDialog = true
                                     }
                                 }) {
@@ -207,7 +217,9 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                     launchSingleTop = true
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
             colors = ButtonDefaults.outlinedButtonColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -219,6 +231,27 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
         }
     }
 
+    // --- Map Dialog ---
+    rideForMapDialog?.let { ride ->
+        AlertDialog(
+            onDismissRequest = { rideForMapDialog = null },
+            confirmButton = {
+                Button(onClick = { rideForMapDialog = null }) {
+                    Text("Close")
+                }
+            },
+            text = {
+                RideStaticMapImage(
+                    ride = ride,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                )
+            }
+        )
+    }
+
+    // --- Passenger Details Dialog ---
     if (showDetailsDialog && selectedRide != null) {
         AlertDialog(
             onDismissRequest = { showDetailsDialog = false },
@@ -229,13 +262,17 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
 
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
-                            value = selectedPassengerStop?.let { passengerNames[it.passengerId] ?: "Unknown" } ?: "Select Passenger",
+                            value = selectedPassengerStop?.let { passengerNames[it.passengerId] ?: "Unknown" }
+                                ?: "Select Passenger",
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Passengers") },
                             trailingIcon = {
                                 IconButton(onClick = { dropdownExpanded = !dropdownExpanded }) {
-                                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Expand Dropdown")
+                                    Icon(
+                                        Icons.Default.ArrowDropDown,
+                                        contentDescription = "Expand Dropdown"
+                                    )
                                 }
                             },
                             modifier = Modifier
@@ -263,6 +300,18 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                                         onClick = {
                                             selectedPassengerStop = stop
                                             dropdownExpanded = false
+
+                                            coroutineScope.launch {
+                                                try {
+                                                    selectedPassengerUser =
+                                                        userRepository.getUser(stop.passengerId)
+                                                } catch (e: Exception) {
+                                                    Log.e(
+                                                        "DriverActiveRides",
+                                                        "❌ Failed to load passenger user: ${e.message}"
+                                                    )
+                                                }
+                                            }
                                         }
                                     )
                                 }
@@ -274,8 +323,34 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
 
                     selectedPassengerStop?.let { stop ->
                         val isWorkbound = selectedRide!!.direction == RideDirection.TO_WORK
-                        Text("Pickup Location: ${stop.location.name}")
+                        Text(
+                            if (isWorkbound) "Pickup Location: ${stop.location.name}"
+                            else "Dropoff Location: ${stop.location.name}"
+                        )
                         Text(if (isWorkbound) "Pickup Time: ${stop.pickupTime}" else "Dropoff Time: ${stop.dropoffTime}")
+                        selectedPassengerUser?.let { user ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_DIAL)
+                                            .apply {
+                                                data = android.net.Uri.parse("tel:${user.phoneNumber}")
+                                            }
+                                        context.startActivity(intent)
+                                    }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Call,
+                                    contentDescription = "Call Passenger",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Call: ${user.phoneNumber}", color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
                             onClick = {
@@ -315,13 +390,18 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 }
             },
             confirmButton = {
-                Button(onClick = { showDetailsDialog = false }) {
+                Button(onClick = {
+                    showDetailsDialog = false
+                    selectedPassengerStop = null
+                    selectedPassengerUser = null
+                }) {
                     Text("Close")
                 }
             }
         )
     }
 
+    // --- Too Late Dialog ---
     if (showTooLateDialog || innerTooLateDialog) {
         AlertDialog(
             onDismissRequest = {

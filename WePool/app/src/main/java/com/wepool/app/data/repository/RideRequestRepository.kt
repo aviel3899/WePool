@@ -22,7 +22,8 @@ class RideRequestRepository(
         rideId: String,
         passengerId: String,
         pickupLocation: LocationData,
-        detourEvaluationResult: DetourEvaluationResult
+        detourEvaluationResult: DetourEvaluationResult,
+        notes: String
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             val rideRef = firestore.collection("rides").document(rideId)
@@ -47,7 +48,8 @@ class RideRequestRepository(
                 passengerId = passengerId,
                 pickupLocation = pickupLocation,
                 detourEvaluationResult = detourEvaluationResult,
-                status = RequestStatus.PENDING
+                status = RequestStatus.PENDING,
+                notes = notes
             )
 
             rideRef.collection("requests").document(requestId).set(request).await()

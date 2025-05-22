@@ -104,7 +104,7 @@ fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin
 
             Button(
                 onClick = {
-                    navController.navigate("rideHistoryMenu/$uid")
+                    navController.navigate("rideHistory/$uid")
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

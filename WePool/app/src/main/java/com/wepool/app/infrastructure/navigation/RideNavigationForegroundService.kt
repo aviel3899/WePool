@@ -24,7 +24,8 @@ class RideNavigationForegroundService : Service() {
         const val ACTION_STOP = "ACTION_STOP_NAVIGATION"
         const val EXTRA_RIDE_ID = "rideId"
         const val NOTIF_ID = 999
-        private const val ARRIVAL_DISTANCE_METERS = 15
+        private const val ARRIVAL_DISTANCE_METERS = 40
+        private const val APPROACHING_DISTANCE_METERS = 200
     }
 
     private lateinit var locationManager: LocationManager
@@ -35,6 +36,9 @@ class RideNavigationForegroundService : Service() {
     private lateinit var checkRunnable: Runnable
     private val handler = HandlerCompat.createAsync(Looper.getMainLooper())
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    private val notifiedApproaching = mutableSetOf<String>() // 🔔 מי שכבר קיבל התראה "הנהג בדרך"
+    private val notifiedNextInLine = mutableSetOf<String>()   // 🔔 מי שכבר קיבל "אתה הבא בתור"
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -112,59 +116,74 @@ class RideNavigationForegroundService : Service() {
             serviceScope.launch(Dispatchers.IO) {
                 val manager = navigationManager ?: return@launch
                 val currentStop = manager.getCurrentStop()
+                val currentPassengerId = manager.getCurrentPassengerId()
 
-                val arrived = currentStop != null && lastKnownLocation?.let {
-                    hasReachedLocation(it, currentStop) && it.accuracy <= 50f
-                } == true
-
-                if (arrived) {
-                    Log.i("RideNavService", "✅ הגעת לתחנה ${currentStop?.name}")
-
-                    manager.getCurrentPassengerId()?.let { passengerId ->
-                        val passenger = RepositoryProvider.providePassengerRepository().getPassenger(passengerId)
-                        passenger?.user?.name?.let { name ->
-                            when {
-                                manager.isCurrentStopPickup() -> {
-                                    NotificationService.sendNotificationToPassengerWhenDriverArriving(
-                                        passengerId = passengerId,
-                                        isPickup = true,
-                                        rideId = manager.getRideId()
-                                    )
-                                }
-                                /*manager.isCurrentStopDropoff() -> {
-                                    NotificationHelper.sendPassengerDropoffNotification(this@RideNavigationForegroundService, name)
-                                }*/
-                                else -> {
-                                    Log.w("RideNavService", "⚠️ לא ניתן לזהות סוג תחנה עבור $name")
-                                }
-                            }
-                        }
+                if (currentStop != null && currentPassengerId != null && lastKnownLocation != null) {
+                    val stopLocation = Location("").apply {
+                        latitude = currentStop.geoPoint.latitude
+                        longitude = currentStop.geoPoint.longitude
                     }
 
-                    manager.moveToNextStop()
+                    val distance = lastKnownLocation!!.distanceTo(stopLocation)
 
-                    // 🆕 שליחת התראה לנוסע הבא בתור (אם יש)
-                    val nextPassengerId = manager.getCurrentPassengerId()
-                    if (nextPassengerId != null) {
-                        Log.i("RideNavService", "🔔 שולח התראה לנוסע הבא בתור: $nextPassengerId")
+                    // 🔔 שליחת התראה כשהנהג מתקרב ל-500 מטר
+                    if (distance < APPROACHING_DISTANCE_METERS && !notifiedApproaching.contains(currentPassengerId)) {
+                        Log.i("RideNavService", "🔔 הנהג מתקרב לנוסע $currentPassengerId (מרחק $distance מטר)")
                         NotificationService.sendNotificationToPassengerWhenDriverArriving(
-                            passengerId = nextPassengerId,
+                            passengerId = currentPassengerId,
                             isPickup = true,
                             rideId = manager.getRideId()
                         )
+                        notifiedApproaching.add(currentPassengerId)
                     }
 
-                    if (manager.hasReachedFinalDestination()) {
-                        Log.i("RideNavService", "🏁 הגעת ליעד הסופי, עצירת השירות")
-                        notifyNavigationEnded()
-                        stopSelf()
-                        return@launch
+                    // ✅ בדיקת הגעה בפועל
+                    val arrived = distance < ARRIVAL_DISTANCE_METERS && lastKnownLocation!!.accuracy <= 50f
+                    if (arrived) {
+                        Log.i("RideNavService", "✅ הגעת לתחנה ${currentStop.name}")
+
+                        RepositoryProvider.providePassengerRepository()
+                            .getPassenger(currentPassengerId)
+                            ?.user?.name
+                            ?.let { name ->
+                                if (manager.isCurrentStopPickup()) {
+                                    NotificationService.sendNotificationToPassengerWhenDriverArriving(
+                                        passengerId = currentPassengerId,
+                                        isPickup = true,
+                                        rideId = manager.getRideId()
+                                    )
+                                } else {
+                                    Log.w("RideNavService", "⚠️ לא ניתן לזהות סוג תחנה עבור $name")
+                                }
+                            }
+
+                        manager.moveToNextStop()
+
+                        // 🆕 שליחת התראה לנוסע הבא בתור
+                        val nextPassengerId = manager.getCurrentPassengerId()
+                        if (nextPassengerId != null && !notifiedNextInLine.contains(nextPassengerId)) {
+                            Log.i("RideNavService", "🔔 שולח התראה לנוסע הבא בתור: $nextPassengerId")
+                            NotificationService.sendNotificationToPassengerWhenDriverArriving(
+                                passengerId = nextPassengerId,
+                                isPickup = true,
+                                rideId = manager.getRideId()
+                            )
+                            notifiedNextInLine.add(nextPassengerId)
+                        }
+
+                        if (manager.hasReachedFinalDestination()) {
+                            Log.i("RideNavService", "🏁 הגעת ליעד הסופי, עצירת השירות")
+                            notifyNavigationEnded()
+                            stopSelf()
+                            return@launch
+                        }
                     }
                 }
 
                 handler.postDelayed(checkRunnable, 5000L)
             }
         }
+
     }
 
 

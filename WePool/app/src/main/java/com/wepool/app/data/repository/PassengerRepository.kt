@@ -3,7 +3,6 @@ package com.wepool.app.data.repository
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wepool.app.data.model.users.Passenger
-import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import kotlinx.coroutines.tasks.await
@@ -30,36 +29,6 @@ class PassengerRepository(
             .document("info")
             .set(passenger)
             .await()
-    }
-
-    override suspend fun addFavoriteLocation(uid: String, location: LocationData)  {
-        val ref = firestore.collection("users")
-            .document(uid)
-            .collection("passengerData")
-            .document("info")
-
-        val snapshot = ref.get().await()
-        val passenger = snapshot.toObject(Passenger::class.java)
-
-        if (passenger != null) {
-            val updatedList = passenger.favoriteLocations + location
-            ref.update("favoriteLocations", updatedList).await()
-        }
-    }
-
-    override suspend fun removeFavoriteLocation(uid: String, placeId: String)  {
-        val ref = firestore.collection("users")
-            .document(uid)
-            .collection("passengerData")
-            .document("info")
-
-        val snapshot = ref.get().await()
-        val passenger = snapshot.toObject(Passenger::class.java)
-
-        if (passenger != null) {
-            val updatedList = passenger.favoriteLocations.filterNot { it.placeId == placeId }
-            ref.update("favoriteLocations", updatedList).await()
-        }
     }
 
     override suspend fun deletePassenger(uid: String) {
