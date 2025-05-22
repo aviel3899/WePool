@@ -8,12 +8,10 @@ import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import kotlinx.coroutines.tasks.await
 
-
 class PassengerRepository(
     private val firestore: FirebaseFirestore
 ) : IPassengerRepository {
 
-    // מחזיר נוסע לפי uid
     override suspend fun getPassenger(uid: String): Passenger? {
         val snapshot = firestore.collection("users")
             .document(uid)
@@ -25,7 +23,6 @@ class PassengerRepository(
         return snapshot.toObject(Passenger::class.java)
     }
 
-    // שומר את נתוני הנוסע - מעדכן אם כבר קיימים נתונים, יוצר חדש אם לא קיימים
     override suspend fun savePassengerData(uid: String, passenger: Passenger)  {
         firestore.collection("users")
             .document(uid)
