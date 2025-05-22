@@ -127,26 +127,4 @@ class PassengerRepository(
         }
         return rides
     }
-
-
-
-    // מעדכן את מיקום האיסוף המועדף של הנוסע במסמך
-    /*override suspend fun updatePreferredPickupLocation(uid: String, location: GeoPoint)  {
-        firestore.collection("users")
-            .document(uid)
-            .collection("passengerData")
-            .document("info")
-            .update("preferredPickupLocation", location)
-            .await()
-    }
-
-    // מעדכן את זמן ההגעה של הנוסע
-    override suspend fun updatePreferredArrivalTime(uid: String, arrivalTime: String)  {
-        firestore.collection("users")
-            .document(uid)
-            .collection("passengerData")
-            .document("info")
-            .update("preferredArrivalTime", arrivalTime)
-            .await()
-    }*/
 }

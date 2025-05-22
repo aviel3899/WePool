@@ -41,6 +41,7 @@ suspend fun handleNotificationNavigation(
 
     navController.navigate(route) {
         popUpTo("login") { inclusive = true }
+        launchSingleTop = true // על מנת שהמסך לא יידחף פעמיים אם המשתמש כבר נמצא באותו המסך
     }
 
     return true

@@ -426,7 +426,7 @@ class RideRepository(
     override suspend fun removePassengerFromRide(
         rideId: String,
         passengerId: String,
-        rideCanceled: Boolean
+        rideCanceledForOnePassenger: Boolean
     ): Unit = withContext(Dispatchers.IO) {
         val docRef = rideCollection.document(rideId)
 
@@ -473,7 +473,7 @@ class RideRepository(
 
             Log.d("RideLeave", "✅ הנוסע $passengerId הוסר והמסלול עודכן (rideId=$rideId)")
 
-            if(!rideCanceled) {
+            if(rideCanceledForOnePassenger) {
                 NotificationService.notifyPassengers(
                     passengerIds = listOf(passengerId),
                     rideId = ride.rideId,
@@ -548,12 +548,6 @@ class RideRepository(
         }
     }
 
-    // מעדכן נסיעה קיימת
-    override suspend fun updateRide(ride: Ride)  {
-        rideCollection.document(ride.rideId).set(ride).await()
-    }
-
-    // מוחק נסיעה
     override suspend fun deleteRide(rideId: String) = withContext(Dispatchers.IO) {
         try {
             val rideSnapshot = firestore.collection("rides").document(rideId).get().await()
@@ -593,8 +587,11 @@ class RideRepository(
         }
     }
 
+    override suspend fun updateRide(ride: Ride)  {
+        rideCollection.document(ride.rideId).set(ride).await()
+    }
 
-override suspend fun updateAvailableSeats(rideId: String, seats: Int) {
+    override suspend fun updateAvailableSeats(rideId: String, seats: Int) {
         firestore.collection("rides")
             .document(rideId)
             .update("availableSeats", seats)

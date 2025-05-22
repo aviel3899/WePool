@@ -291,7 +291,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                                     rideRepository.removePassengerFromRide(
                                         rideId = selectedRide!!.rideId,
                                         passengerId = stop.passengerId,
-                                        rideCanceled = false
+                                        rideCanceledForOnePassenger = true
                                     )
 
                                     val request = requestRepository.getRequestsByPassenger(stop.passengerId)
