@@ -9,9 +9,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.foundation.rememberScrollState
@@ -70,49 +73,94 @@ fun SignUpScreen(navController: NavController) {
             Text("Create an Account", style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedTextField(name, { name = it; errorMessage = null }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                CustomTextField(
+                    value = name,
+                    onValueChange = { name = it; errorMessage = null },
+                    label = "Name",
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(email, { email = it; errorMessage = null }, label = { Text("Email") },
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth())
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                CustomTextField(
+                    value = email,
+                    onValueChange = { email = it; errorMessage = null },
+                    label = "Email",
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(password, { password = it; errorMessage = null }, label = { Text("Password") },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
-                trailingIcon = {
-                    val icon = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(icon, contentDescription = null)
-                    }
-                }, modifier = Modifier.fillMaxWidth())
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                CustomTextField(
+                    value = password,
+                    onValueChange = { password = it; errorMessage = null },
+                    label = "Password",
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(confirmPassword, { confirmPassword = it; errorMessage = null }, label = { Text("Confirm Password") },
-                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
-                trailingIcon = {
-                    val icon = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
-                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                        Icon(icon, contentDescription = null)
-                    }
-                }, modifier = Modifier.fillMaxWidth())
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                CustomTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it; errorMessage = null },
+                    label = "Confirm Password",
+                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            Icon(
+                                imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(phoneNumber, { phoneNumber = it; errorMessage = null }, label = { Text("Phone Number") },
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth())
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                CustomTextField(
+                    value = phoneNumber,
+                    onValueChange = { phoneNumber = it; errorMessage = null },
+                    label = "Phone Number",
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(companyCode, { companyCode = it; errorMessage = null }, label = { Text("Company Code") }, modifier = Modifier.fillMaxWidth())
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                CustomTextField(
+                    value = companyCode,
+                    onValueChange = { companyCode = it; errorMessage = null },
+                    label = "Company Code",
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             Text("Select Your Role(s)", style = MaterialTheme.typography.titleMedium)
             availableRoles.forEach { role ->
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Checkbox(checked = selectedRoles[role] ?: false,
-                        onCheckedChange = { selectedRoles[role] = it })
+                    Checkbox(
+                        checked = selectedRoles[role] ?: false,
+                        onCheckedChange = { selectedRoles[role] = it }
+                    )
                     Text(role.name)
                 }
             }
@@ -170,8 +218,37 @@ fun SignUpScreen(navController: NavController) {
     }
 
     if (errorMessage != null) {
-        AlertDialog(onDismissRequest = { errorMessage = null }, confirmButton = {
-            TextButton(onClick = { errorMessage = null }) { Text("OK") }
-        }, title = { Text("Error") }, text = { Text(errorMessage ?: "") })
+        AlertDialog(
+            onDismissRequest = { errorMessage = null },
+            confirmButton = {
+                TextButton(onClick = { errorMessage = null }) {
+                    Text("OK")
+                }
+            },
+            title = { Text("Error") },
+            text = { Text(errorMessage ?: "") }
+        )
     }
+}
+
+@Composable
+fun CustomTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label, textAlign = TextAlign.Start) }, // ✅ FIX: no fillMaxWidth()
+        keyboardOptions = keyboardOptions,
+        trailingIcon = trailingIcon,
+        visualTransformation = visualTransformation,
+        modifier = modifier,
+        singleLine=true
+    )
 }

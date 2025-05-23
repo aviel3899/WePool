@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,6 +57,8 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
     var rides by remember { mutableStateOf<List<RideCandidate>>(emptyList()) }
     var ridesFetched by remember { mutableStateOf(false) }
 
+    var showDetails by remember { mutableStateOf(true) }
+
     val rideRequestRepository = RepositoryProvider.provideRideRequestRepository()
     val passengerRideFinder = PassengerRideFinder(
         mapsService = RepositoryProvider.mapsService,
@@ -70,6 +74,152 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
     }
 
     Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Join a Homebound Ride", style = MaterialTheme.typography.headlineSmall)
+            IconButton(onClick = { showDetails = !showDetails }) {
+                Icon(
+                    imageVector = if (showDetails) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                    contentDescription = if (showDetails) "Collapse" else "Expand"
+                )
+            }
+        }
+
+        if (showDetails) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = fixedStartLocation,
+                onValueChange = {},
+                label = { Text("Start Location") },
+                enabled = false,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = destination,
+                    onValueChange = {
+                        destination = it
+                        coroutineScope.launch {
+                            destinationSuggestions = RepositoryProvider.mapsService.getAddressSuggestions(it)
+                            expanded = destinationSuggestions.isNotEmpty()
+                        }
+                    },
+                    label = { Text("Destination") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { coordinates ->
+                            textFieldSize = coordinates.size
+                        }
+                        .focusRequester(focusRequester),
+                    singleLine = true,
+                    interactionSource = remember { MutableInteractionSource() }
+                )
+
+                if (expanded && destinationSuggestions.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
+                            .padding(top = with(LocalDensity.current) { textFieldSize.height.toDp() })
+                            .heightIn(max = 200.dp)
+                    ) {
+                        LazyColumn {
+                            items(destinationSuggestions) { suggestion ->
+                                ListItem(
+                                    headlineContent = { Text(suggestion) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            destination = suggestion
+                                            expanded = false
+                                            coroutineScope.launch {
+                                                focusRequester.requestFocus()
+                                            }
+                                        }
+                                        .padding(8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = passengerNotes,
+                onValueChange = { passengerNotes = it },
+                label = { Text("Notes for Driver (optional)") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 80.dp),
+                singleLine = false,
+                maxLines = 3
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(onClick = {
+                val calendar = Calendar.getInstance()
+                DatePickerDialog(
+                    context,
+                    { _, year, month, day ->
+                        val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                        calendar.set(year, month, day)
+                        selectedDate = sdf.format(calendar.time)
+                    },
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH),
+                    calendar.get(Calendar.DAY_OF_MONTH)
+                ).apply {
+                    datePicker.minDate = calendar.timeInMillis
+                    show()
+                }
+            }) {
+                Text(if (selectedDate.isNotBlank()) "Selected Date: $selectedDate" else "Pick a Date")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(onClick = {
+                val now = Calendar.getInstance()
+                TimePickerDialog(
+                    context,
+                    { _, hour, minute ->
+                        val selectedCalendar = Calendar.getInstance()
+                        selectedCalendar.set(Calendar.HOUR_OF_DAY, hour)
+                        selectedCalendar.set(Calendar.MINUTE, minute)
+
+                        val todayStr = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(now.time)
+                        if (selectedDate == todayStr && selectedCalendar.before(now)) {
+                            Toast.makeText(context, "❌ Please select a future time.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            selectedTime = String.format("%02d:%02d", hour, minute)
+                        }
+                    },
+                    now.get(Calendar.HOUR_OF_DAY),
+                    now.get(Calendar.MINUTE),
+                    true
+                ).show()
+            }) {
+                Text(if (selectedTime.isNotBlank()) "Selected Time: $selectedTime" else "Pick a Departure Time")
+            }
+        }
+
+    /*Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(32.dp),
@@ -198,7 +348,7 @@ fun PassengerHomeboundRideSearchScreen(navController: NavController, uid: String
             ).show()
         }) {
             Text(if (selectedTime.isNotBlank()) "Selected Time: $selectedTime" else "Pick a Departure Time")
-        }
+        }*/
 
         Spacer(modifier = Modifier.height(24.dp))
 

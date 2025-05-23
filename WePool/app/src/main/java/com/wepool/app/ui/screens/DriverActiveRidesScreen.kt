@@ -1,20 +1,18 @@
 package com.wepool.app.ui.screens
 
-import android.util.Log
-import androidx.compose.foundation.clickable
+import android.app.TimePickerDialog
+import android.app.DatePickerDialog
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -26,11 +24,15 @@ import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.RideNavigationServiceController
-import com.wepool.app.ui.RideStaticMapImage
+import com.wepool.app.ui.screens.utils.ActiveRidesFilterCard
+import com.wepool.app.ui.screens.utils.BottomNavigationButtons
+import com.wepool.app.ui.screens.utils.RideMapDialog
+import com.wepool.app.ui.screens.utils.RidePassengerDetailsDialog
+import com.wepool.app.ui.screens.utils.filterRides
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import kotlin.math.abs
+import java.util.Calendar
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -41,10 +43,11 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
     val requestRepository = RepositoryProvider.provideRideRequestRepository()
     val userRepository = RepositoryProvider.provideUserRepository()
     val coroutineScope = rememberCoroutineScope()
-    val locationPermissionState = rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
+    val locationPermissionState =
+        rememberPermissionState(android.Manifest.permission.ACCESS_FINE_LOCATION)
 
     var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
+    var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var isActionInProgress by remember { mutableStateOf(false) }
     var selectedRide by remember { mutableStateOf<Ride?>(null) }
@@ -57,12 +60,25 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
     var threshold by remember { mutableStateOf(0) }
     var rideForMapDialog by remember { mutableStateOf<Ride?>(null) }
 
+    var showDateRangePicker by remember { mutableStateOf(false) }
+    var showTimeRangePicker by remember { mutableStateOf(false) }
+    var startDate by remember { mutableStateOf("") }
+    var endDate by remember { mutableStateOf("") }
+    var startTime by remember { mutableStateOf("") }
+    var endTime by remember { mutableStateOf("") }
+    var selectedDirection by remember { mutableStateOf<RideDirection?>(null) }
+    var directionMenuExpanded by remember { mutableStateOf(false) }
+    val directionOptions =
+        listOf(RideDirection.TO_HOME to "To Home", RideDirection.TO_WORK to "To Work")
+
+
     fun refreshRides() {
         coroutineScope.launch {
             try {
                 loading = true
                 error = null
-                rides = driverRepository.getActiveRidesForDriver(uid)
+                val allRides = driverRepository.getActiveRidesForDriver(uid)
+                rides = filterRides(allRides, startDate, endDate, startTime, endTime, selectedDirection)
             } catch (e: Exception) {
                 error = "❌ שגיאה בטעינת נסיעות: ${e.message}"
             } finally {
@@ -71,335 +87,187 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
         }
     }
 
-    fun calculateTimeDifferenceInMinutes(start: String, end: String): Int {
-        val formatter = DateTimeFormatter.ofPattern("HH:mm")
-        val startTime = LocalTime.parse(start, formatter)
-        val endTime = LocalTime.parse(end, formatter)
-        return abs(java.time.Duration.between(startTime, endTime).toMinutes().toInt())
-    }
+    val calendar = remember { Calendar.getInstance() }
 
-    LaunchedEffect(Unit) {
-        refreshRides()
-    }
+    LaunchedEffect(showDateRangePicker) {
+        if (showDateRangePicker) {
+            DatePickerDialog(
+                context,
+                { _, startYear, startMonth, startDay ->
+                    val proposedStart =
+                        String.format("%04d-%02d-%02d", startYear, startMonth + 1, startDay)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Your Active Rides", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(16.dp))
+                    DatePickerDialog(
+                        context,
+                        { _, endYear, endMonth, endDay ->
+                            val proposedEnd =
+                                String.format("%04d-%02d-%02d", endYear, endMonth + 1, endDay)
 
-        when {
-            loading -> CircularProgressIndicator()
-            error != null -> Text(error ?: "Unknown error", color = MaterialTheme.colorScheme.error)
-            rides.isEmpty() -> Text("You have no active rides at the moment.")
-            else -> {
-                val filteredRides = if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
-
-                LazyColumn {
-                    items(filteredRides) { ride ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("From: ${ride.startLocation.name}")
-                                Text("To: ${ride.destination.name}")
-                                Text("Date: ${ride.date}")
-                                Text("Departure Time: ${ride.departureTime}")
-                                Text("Arrival Time: ${ride.arrivalTime}")
-                                Text("Stops on the way: ${ride.pickupStops.size}")
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Button(onClick = {
-                                        coroutineScope.launch {
-                                            if (isActionInProgress) return@launch
-                                            isActionInProgress = true
-                                            if (!locationPermissionState.status.isGranted) {
-                                                locationPermissionState.launchPermissionRequest()
-                                                error = "📍 נדרש לאשר גישה למיקום"
-                                                isActionInProgress = false
-                                                return@launch
-                                            }
-                                            try {
-                                                RideNavigationServiceController.startRideNavigation(context, ride.rideId)
-                                            } catch (e: Exception) {
-                                                error = "⚠️ ${e.message}"
-                                            } finally {
-                                                isActionInProgress = false
-                                            }
-                                        }
-                                    }) {
-                                        Text("Start Ride")
-                                    }
-
-                                    OutlinedButton(onClick = {
-                                        coroutineScope.launch {
-                                            if (isActionInProgress) return@launch
-                                            isActionInProgress = true
-                                            try {
-                                                val now = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
-                                                val diffMinutes = calculateTimeDifferenceInMinutes(now, ride.departureTime!!)
-                                                threshold = if (ride.direction == RideDirection.TO_WORK) 180 else 60
-                                                if (diffMinutes < threshold) {
-                                                    showTooLateDialog = true
-                                                    return@launch
-                                                }
-
-                                                rideRepository.deleteRide(ride.rideId)
-                                                refreshRides()
-                                            } catch (e: Exception) {
-                                                error = e.message
-                                            } finally {
-                                                isActionInProgress = false
-                                            }
-                                        }
-                                    }) {
-                                        Text("Cancel Ride")
-                                    }
-
-                                    OutlinedButton(onClick = {
-                                        rideForMapDialog = ride
-                                    }) {
-                                        Text("Show Map")
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                OutlinedButton(onClick = {
-                                    selectedRide = ride
-                                    coroutineScope.launch {
-                                        val names = mutableMapOf<String, String>()
-                                        val pickupMap = mutableMapOf<String, PickupStop>()
-
-                                        ride.pickupStops.forEach { stop ->
-                                            userRepository.getUser(stop.passengerId)?.let { user ->
-                                                names[stop.passengerId] = user.name
-                                                pickupMap[stop.passengerId] = stop
-                                            }
-                                        }
-
-                                        passengerNames = names
-                                        //selectedPassengerStop = pickupMap.values.firstOrNull()
-                                        showDetailsDialog = true
-                                    }
-                                }) {
-                                    Text("Passenger Details")
-                                }
+                            if (proposedEnd >= proposedStart) {
+                                startDate = proposedStart
+                                endDate = proposedEnd
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "❗ End date must be after start date",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                startDate = ""
+                                endDate = ""
                             }
-                        }
-                    }
+
+                            showDateRangePicker = false
+                        },
+                        calendar.get(Calendar.YEAR),
+                        calendar.get(Calendar.MONTH),
+                        calendar.get(Calendar.DAY_OF_MONTH)
+                    ).show()
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            ).show()
+        }
+    }
+
+    LaunchedEffect(showTimeRangePicker) {
+        if (showTimeRangePicker) {
+            TimePickerDialog(
+                context,
+                { _, hour, minute ->
+                    startTime = String.format("%02d:%02d", hour, minute)
+                    TimePickerDialog(
+                        context,
+                        { _, hour2, minute2 ->
+                            endTime = String.format("%02d:%02d", hour2, minute2)
+                            showTimeRangePicker = false
+                        },
+                        calendar.get(Calendar.HOUR_OF_DAY),
+                        calendar.get(Calendar.MINUTE),
+                        true
+                    ).show()
+                },
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                true
+            ).show()
+        }
+    }
+
+    DriverActiveRidesContent(
+        uid = uid,
+        rides = rides,
+        rideId = rideId,
+        loading = loading,
+        error = error,
+        navController = navController,
+        startDate = startDate,
+        endDate = endDate,
+        startTime = startTime,
+        endTime = endTime,
+        selectedDirection = selectedDirection,
+        directionMenuExpanded = directionMenuExpanded,
+        directionOptions = directionOptions,
+        showDateRangePicker = { showDateRangePicker = true },
+        showTimeRangePicker = { showTimeRangePicker = true },
+        onClearDateRange = {
+            startDate = ""
+            endDate = ""
+        },
+        onClearTimeRange = {
+            startTime = ""
+            endTime = ""
+        },
+        onClearDirection = {
+            selectedDirection = null
+        },
+        onDirectionSelected = {
+            selectedDirection = it
+            directionMenuExpanded = false
+        },
+        onDirectionMenuExpand = { directionMenuExpanded = true },
+        onDirectionMenuDismiss = { directionMenuExpanded = false },
+        onRefreshClicked = { refreshRides() },
+        onStartRideClicked = { ride ->
+            coroutineScope.launch {
+                if (isActionInProgress) return@launch
+                isActionInProgress = true
+                if (!locationPermissionState.status.isGranted) {
+                    locationPermissionState.launchPermissionRequest()
+                    error = "📍 נדרש לאשר גישה למיקום"
+                    isActionInProgress = false
+                    return@launch
+                }
+                try {
+                    RideNavigationServiceController.startRideNavigation(context, ride.rideId)
+                } catch (e: Exception) {
+                    error = "⚠️ ${e.message}"
+                } finally {
+                    isActionInProgress = false
                 }
             }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedButton(onClick = { navController.popBackStack() }, modifier = Modifier.fillMaxWidth()) {
-            Text("Back")
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedButton(
-            onClick = {
-                navController.navigate("intermediate/$uid?fromLogin=false") {
-                    popUpTo("intermediate/$uid?fromLogin=false") { inclusive = false }
-                    launchSingleTop = true
+        },
+        onCancelRideClicked = { ride ->
+            coroutineScope.launch {
+                if (isActionInProgress) return@launch
+                isActionInProgress = true
+                try {
+                    val now = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
+                    val diffMinutes =
+                        rideRepository.calculateTimeDifferenceInMinutes(now, ride.departureTime!!)
+                    threshold = if (ride.direction == RideDirection.TO_WORK) 180 else 60
+                    if (diffMinutes < threshold) {
+                        showTooLateDialog = true
+                        return@launch
+                    }
+                    rideRepository.deleteRide(ride.rideId)
+                    refreshRides()
+                } catch (e: Exception) {
+                    error = e.message
+                } finally {
+                    isActionInProgress = false
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        ) {
-            Icon(Icons.Default.Home, contentDescription = "Home", modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Back to Home")
+            }
+        },
+        onShowMapClicked = { ride -> rideForMapDialog = ride },
+        onPassengerDetailsClicked = { ride ->
+            selectedRide = ride
+            coroutineScope.launch {
+                val names = mutableMapOf<String, String>()
+                ride.pickupStops.forEach { stop ->
+                    userRepository.getUser(stop.passengerId)?.let { user ->
+                        names[stop.passengerId] = user.name
+                    }
+                }
+                passengerNames = names
+                showDetailsDialog = true
+            }
         }
-    }
+    )
 
     // --- Map Dialog ---
     rideForMapDialog?.let { ride ->
-        AlertDialog(
-            onDismissRequest = { rideForMapDialog = null },
-            confirmButton = {
-                Button(onClick = { rideForMapDialog = null }) {
-                    Text("Close")
-                }
-            },
-            text = {
-                RideStaticMapImage(
-                    ride = ride,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                )
-            }
-        )
+        RideMapDialog(ride = ride, onDismiss = { rideForMapDialog = null })
     }
 
     // --- Passenger Details Dialog ---
-    if (showDetailsDialog && selectedRide != null) {
-        AlertDialog(
-            onDismissRequest = { showDetailsDialog = false },
-            title = { Text("Ride Details") },
-            text = {
-                Column {
-                    var dropdownExpanded by remember { mutableStateOf(false) }
-
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = selectedPassengerStop?.let { passengerNames[it.passengerId] ?: "Unknown" }
-                                ?: "Select Passenger",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Passengers") },
-                            trailingIcon = {
-                                IconButton(onClick = { dropdownExpanded = !dropdownExpanded }) {
-                                    Icon(
-                                        Icons.Default.ArrowDropDown,
-                                        contentDescription = "Expand Dropdown"
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { dropdownExpanded = true }
-                        )
-
-                        DropdownMenu(
-                            expanded = dropdownExpanded,
-                            onDismissRequest = { dropdownExpanded = false },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            val stops = selectedRide?.pickupStops.orEmpty()
-                            if (stops.isEmpty()) {
-                                DropdownMenuItem(
-                                    text = { Text("No Passengers") },
-                                    onClick = {},
-                                    enabled = false
-                                )
-                            } else {
-                                stops.forEach { stop ->
-                                    val name = passengerNames[stop.passengerId] ?: "Unknown"
-                                    DropdownMenuItem(
-                                        text = { Text(name) },
-                                        onClick = {
-                                            selectedPassengerStop = stop
-                                            dropdownExpanded = false
-
-                                            coroutineScope.launch {
-                                                try {
-                                                    selectedPassengerUser =
-                                                        userRepository.getUser(stop.passengerId)
-                                                } catch (e: Exception) {
-                                                    Log.e(
-                                                        "DriverActiveRides",
-                                                        "❌ Failed to load passenger user: ${e.message}"
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    selectedPassengerStop?.let { stop ->
-                        val isWorkbound = selectedRide!!.direction == RideDirection.TO_WORK
-                        Text(
-                            if (isWorkbound) "Pickup Location: ${stop.location.name}"
-                            else "Dropoff Location: ${stop.location.name}"
-                        )
-                        Text(if (isWorkbound) "Pickup Time: ${stop.pickupTime}" else "Dropoff Time: ${stop.dropoffTime}")
-                        selectedPassengerUser?.let { user ->
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        val intent = android.content.Intent(android.content.Intent.ACTION_DIAL)
-                                            .apply {
-                                                data = android.net.Uri.parse("tel:${user.phoneNumber}")
-                                            }
-                                        context.startActivity(intent)
-                                    }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Call,
-                                    contentDescription = "Call Passenger",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Call: ${user.phoneNumber}", color = MaterialTheme.colorScheme.primary)
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    val now = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
-                                    val diffMinutes = calculateTimeDifferenceInMinutes(now, selectedRide!!.departureTime!!)
-                                    threshold = if (isWorkbound) 180 else 60
-                                    if (diffMinutes < threshold) {
-                                        innerTooLateDialog = true
-                                        return@launch
-                                    }
-
-                                    rideRepository.removePassengerFromRide(
-                                        rideId = selectedRide!!.rideId,
-                                        passengerId = stop.passengerId,
-                                        rideCanceledForOnePassenger = true
-                                    )
-
-                                    val request = requestRepository.getRequestsByPassenger(stop.passengerId)
-                                        .firstOrNull {
-                                            it.rideId == selectedRide!!.rideId && it.status.name == "ACCEPTED"
-                                        }
-
-                                    request?.let {
-                                        rideRepository.declineRideRequest(it.rideId, it.requestId)
-                                    }
-
-                                    refreshRides()
-                                    showDetailsDialog = false
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
-                        ) {
-                            Text("Cancel Passenger", color = Color.White)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    showDetailsDialog = false
-                    selectedPassengerStop = null
-                    selectedPassengerUser = null
-                }) {
-                    Text("Close")
-                }
-            }
-        )
-    }
+    RidePassengerDetailsDialog(
+        showDialog = showDetailsDialog,
+        ride = selectedRide,
+        passengerNames = passengerNames,
+        userRepository = userRepository,
+        rideRepository = rideRepository,
+        requestRepository = requestRepository,
+        onDismiss = {
+            showDetailsDialog = false
+            selectedPassengerStop = null
+            selectedPassengerUser = null
+        },
+        onPassengerRemoved = {
+            refreshRides()
+            showDetailsDialog = false
+        }
+    )
 
     // --- Too Late Dialog ---
     if (showTooLateDialog || innerTooLateDialog) {
@@ -421,5 +289,169 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 }
             }
         )
+    }
+}
+
+@Composable
+fun DriverActiveRidesContent(
+    uid: String,
+    rides: List<Ride>,
+    rideId: String?,
+    loading: Boolean,
+    error: String?,
+    navController: NavController,
+    startDate: String,
+    endDate: String,
+    startTime: String,
+    endTime: String,
+    selectedDirection: RideDirection?,
+    directionMenuExpanded: Boolean,
+    directionOptions: List<Pair<RideDirection, String>>,
+    showDateRangePicker: () -> Unit,
+    showTimeRangePicker: () -> Unit,
+    onClearDateRange: () -> Unit,
+    onClearTimeRange: () -> Unit,
+    onClearDirection: () -> Unit,
+    onDirectionSelected: (RideDirection) -> Unit,
+    onDirectionMenuExpand: () -> Unit,
+    onDirectionMenuDismiss: () -> Unit,
+    onRefreshClicked: () -> Unit,
+    onStartRideClicked: (Ride) -> Unit,
+    onCancelRideClicked: (Ride) -> Unit,
+    onShowMapClicked: (Ride) -> Unit,
+    onPassengerDetailsClicked: (Ride) -> Unit
+) {
+
+    Scaffold(
+        bottomBar = {
+            BottomNavigationButtons(uid = uid, rideId = rideId, navController = navController)
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = innerPadding.calculateBottomPadding()),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.Start
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start // חשוב!
+            ) {
+                Text(
+                    text = "Your Active Rides",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ActiveRidesFilterCard(
+                    startDate = startDate,
+                    endDate = endDate,
+                    startTime = startTime,
+                    endTime = endTime,
+                    selectedDirection = selectedDirection,
+                    directionMenuExpanded = directionMenuExpanded,
+                    directionOptions = directionOptions,
+                    onShowDateRangePicker = showDateRangePicker,
+                    onShowTimeRangePicker = showTimeRangePicker,
+                    onClearDateRange = onClearDateRange,
+                    onClearTimeRange = onClearTimeRange,
+                    onClearDirection = onClearDirection,
+                    onDirectionSelected = onDirectionSelected,
+                    onDirectionMenuExpand = onDirectionMenuExpand,
+                    onDirectionMenuDismiss = onDirectionMenuDismiss,
+                    onApplyFilter = onRefreshClicked
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                when {
+                    loading -> CircularProgressIndicator()
+                    error != null -> Text(error, color = MaterialTheme.colorScheme.error)
+                    rides.isEmpty() -> Text("Click 'Apply Filter' to search for active rides.")
+                    else -> {
+                        val filteredRides =
+                            if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
+
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(filteredRides) { ride ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.medium,
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text("From: ${ride.startLocation.name}")
+                                        Text("To: ${ride.destination.name}")
+                                        Text("Date: ${ride.date}")
+                                        Text("Departure Time: ${ride.departureTime}")
+                                        Text("Arrival Time: ${ride.arrivalTime}")
+                                        Text("Stops on the way: ${ride.pickupStops.size}")
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        Column(
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Button(
+                                                onClick = { onStartRideClicked(ride) },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFF2E7D32), //ירוק כהה
+                                                    contentColor = Color.White
+                                            )
+                                            ) {
+                                                Text("Start Ride")
+                                            }
+
+                                            Button(
+                                                onClick = { onCancelRideClicked(ride) },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFFC62828), // אדום כהה
+                                                    contentColor = Color.White
+                                                )
+                                            ) {
+                                                Text("Cancel Ride")
+                                            }
+
+                                            OutlinedButton(
+                                                onClick = { onShowMapClicked(ride) },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFF039BE5), // תכלת כהה
+                                                    contentColor = Color.White
+                                                )
+                                            ) {
+                                                Text("Show Map")
+                                            }
+
+                                            OutlinedButton(
+                                                onClick = { onPassengerDetailsClicked(ride) },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFFFBC02D), // צהוב כהה
+                                                    contentColor = Color.White
+                                                )
+                                            ) {
+                                                Text("Passenger Details")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
