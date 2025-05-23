@@ -1,4 +1,4 @@
-package com.wepool.app.ui
+package com.wepool.app.ui.screens.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

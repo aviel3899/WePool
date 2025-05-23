@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.wepool.app.data.model.ride.Ride
-import com.wepool.app.ui.RideDynamicMap
 
 @Composable
 fun RideMapDialog(

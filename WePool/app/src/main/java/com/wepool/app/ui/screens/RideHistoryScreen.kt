@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +24,13 @@ import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import kotlinx.coroutines.launch
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun RideHistoryScreen(navController: NavController, uid: String) {
@@ -37,6 +45,7 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
     var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
 
     var hasFilterBeenApplied by remember { mutableStateOf(false) }
+    var filterExpanded by remember { mutableStateOf(true) }
 
     val filterOptions = listOf(
         null to "All",
@@ -74,7 +83,7 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
-                .padding(bottom = 64.dp) // רווח תחתון כדי לא להסתיר ע"י הכפתור
+                .padding(bottom = 64.dp)
         ) {
             Text(
                 text = "Ride History",
@@ -93,78 +102,93 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Filter by role",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        OutlinedButton(
-                            onClick = { expanded = true },
-                            modifier = Modifier
-                                .fillMaxWidth(0.75f)
-                                .height(56.dp)
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        IconButton(
+                            onClick = { filterExpanded = !filterExpanded },
+                            modifier = Modifier.align(Alignment.TopEnd)
                         ) {
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                Text(
-                                    text = filterOptions.first { it.first == selectedFilter }.second,
-                                    modifier = Modifier.align(Alignment.Center),
-                                    fontSize = 18.sp
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDropDown,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .align(Alignment.CenterEnd)
-                                        .size(28.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = if (filterExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                contentDescription = if (filterExpanded) "Collapse Filter" else "Expand Filter"
+                            )
                         }
 
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier.fillMaxWidth(0.75f)
-                        ) {
-                            filterOptions.forEach { (filter, label) ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Box(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(label)
-                                        }
-                                    },
-                                    onClick = {
-                                        selectedFilter = filter
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
+                        Text(
+                            text = "Filter by role",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    if (filterExpanded) {
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = { refreshRides() },
-                        modifier = Modifier
-                            .fillMaxWidth(0.75f)
-                            .height(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh",
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Refresh")
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            OutlinedButton(
+                                onClick = { expanded = true },
+                                modifier = Modifier
+                                    .fillMaxWidth(0.75f)
+                                    .height(56.dp)
+                            ) {
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    Text(
+                                        text = filterOptions.first { it.first == selectedFilter }.second,
+                                        modifier = Modifier.align(Alignment.Center),
+                                        fontSize = 18.sp
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterEnd)
+                                            .size(28.dp)
+                                    )
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false },
+                                modifier = Modifier.fillMaxWidth(0.75f)
+                            ) {
+                                filterOptions.forEach { (filter, label) ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Box(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(label)
+                                            }
+                                        },
+                                        onClick = {
+                                            selectedFilter = filter
+                                            expanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Button(
+                            onClick = { refreshRides() },
+                            modifier = Modifier
+                                .fillMaxWidth(0.75f)
+                                .height(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Refresh",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Refresh")
+                        }
                     }
                 }
             }
@@ -344,8 +368,55 @@ fun RideHistoryCard(ride: Ride) {
             },
             text = {
                 Column {
-                    Text("Email: ${selectedPassenger!!.email}")
-                    Text("Phone: ${selectedPassenger!!.phoneNumber}")
+                    val context = LocalContext.current
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("mailto:${selectedPassenger!!.email}")
+                                }
+                                context.startActivity(intent)
+                            }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = "Email",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Email: ${selectedPassenger!!.email}",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val intent = Intent(Intent.ACTION_DIAL).apply {
+                                    data = Uri.parse("tel:${selectedPassenger!!.phoneNumber}")
+                                }
+                                context.startActivity(intent)
+                            }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Call,
+                            contentDescription = "Phone",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Phone: ${selectedPassenger!!.phoneNumber}",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -398,8 +469,55 @@ fun RideHistoryCard(ride: Ride) {
             },
             text = {
                 Column {
-                    Text("Email: ${selectedDriverUser!!.email}")
-                    Text("Phone: ${selectedDriverUser!!.phoneNumber}")
+                    val context = LocalContext.current
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("mailto:${selectedDriverUser!!.email}")
+                                }
+                                context.startActivity(intent)
+                            }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = "Email",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Email: ${selectedDriverUser!!.email}",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val intent = Intent(Intent.ACTION_DIAL).apply {
+                                    data = Uri.parse("tel:${selectedDriverUser!!.phoneNumber}")
+                                }
+                                context.startActivity(intent)
+                            }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Call,
+                            contentDescription = "Phone",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Phone: ${selectedDriverUser!!.phoneNumber}",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             },
             confirmButton = {
