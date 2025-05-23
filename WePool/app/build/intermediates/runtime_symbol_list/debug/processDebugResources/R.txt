@@ -3015,6 +3015,7 @@ int drawable design_password_eye 0x7f07009a
 int drawable design_snackbar_background 0x7f07009b
 int drawable googleg_disabled_color_18 0x7f07009c
 int drawable googleg_standard_color_18 0x7f07009d
+int drawable home_house_svgrepo_com 0x7f070108
 int drawable ic_arrow_back_black_24 0x7f07009e
 int drawable ic_call_answer 0x7f07009f
 int drawable ic_call_answer_low 0x7f0700a0

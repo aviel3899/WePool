@@ -32,4 +32,5 @@ interface IUserRepository {
 
     suspend fun addFavoriteLocation(uid: String, location: LocationData)
     suspend fun removeFavoriteLocation(uid: String, placeId: String)
+    suspend fun updateFavoriteLocations(uid: String, updatedList: List<LocationData>)
 }

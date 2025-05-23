@@ -174,7 +174,10 @@ class MainActivity : AppCompatActivity() {
                             val rideId = it.arguments?.getString("rideId")
                             PassengerRequestsScreen(uid = uid, navController = navController!!, filterRideId = rideId)
                         }
-
+                        composable("preferredLocations/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            PreferredLocationsScreen(uid, navController!!)
+                        }
                     }
                 }
             }

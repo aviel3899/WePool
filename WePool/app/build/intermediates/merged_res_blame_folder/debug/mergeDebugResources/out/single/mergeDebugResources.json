@@ -4,40 +4,68 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xxhdpi\\ic_launcher.webp"
     },
     {
-        "merged": "com.wepool.app-debug-81:/drawable_contact_details_svgrepo_com.xml.flat",
-        "source": "com.wepool.app-main-83:/drawable/contact_details_svgrepo_com.xml"
-    },
-    {
-        "merged": "com.wepool.app-debug-81:/drawable_login_line_svgrepo_com.xml.flat",
-        "source": "com.wepool.app-main-83:/drawable/login_line_svgrepo_com.xml"
-    },
-    {
-        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-mdpi_ic_launcher.webp.flat",
-        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-mdpi\\ic_launcher.webp"
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_contact_details_svgrepo_com.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\contact_details_svgrepo_com.xml"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-xhdpi_ic_launcher_round.webp.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xhdpi\\ic_launcher_round.webp"
     },
     {
-        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-xxxhdpi_ic_launcher.webp.flat",
-        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xxxhdpi\\ic_launcher.webp"
-    },
-    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_ic_launcher_background.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\ic_launcher_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xxxhdpi\\ic_launcher.webp"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_seat_belt_svgrepo_com.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\seat_belt_svgrepo_com.xml"
     },
     {
-        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-xxxhdpi_ic_launcher_round.webp.flat",
-        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xxxhdpi\\ic_launcher_round.webp"
-    },
-    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "com.wepool.app-debug-81:/drawable_home_house_svgrepo_com.xml.flat",
+        "source": "com.wepool.app-main-83:/drawable/home_house_svgrepo_com.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-hdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-hdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xxhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_login_line_svgrepo_com.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\login_line_svgrepo_com.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-mdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_home_house_svgrepo_com.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\home_house_svgrepo_com.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xxxhdpi\\ic_launcher_round.webp"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\xml_backup_rules.xml.flat",
@@ -48,40 +76,24 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\xml\\data_extraction_rules.xml"
     },
     {
-        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-hdpi_ic_launcher.webp.flat",
-        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-hdpi\\ic_launcher.webp"
-    },
-    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-mdpi_ic_launcher_round.webp.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-mdpi\\ic_launcher_round.webp"
-    },
-    {
-        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-hdpi_ic_launcher_round.webp.flat",
-        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-hdpi\\ic_launcher_round.webp"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_steering_wheel_car_svgrepo_com.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\steering_wheel_car_svgrepo_com.xml"
     },
     {
-        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_ic_launcher_foreground.xml.flat",
-        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\ic_launcher_foreground.xml"
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_home_svgrepo_com.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\home_svgrepo_com.xml"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_logout_svgrepo_com.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\logout_svgrepo_com.xml"
     },
     {
-        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-xxhdpi_ic_launcher_round.webp.flat",
-        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xxhdpi\\ic_launcher_round.webp"
-    },
-    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_pin_base.png.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\pin_base.png"
-    },
-    {
-        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-xhdpi_ic_launcher.webp.flat",

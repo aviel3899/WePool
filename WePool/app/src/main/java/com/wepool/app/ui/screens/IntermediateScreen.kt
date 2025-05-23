@@ -164,7 +164,9 @@ fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin:
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     OutlinedButton(
-                        onClick = { /* Not implemented yet */ },
+                        onClick = {
+                            navController.navigate("preferredLocations/$uid")
+                        },
                         modifier = Modifier.size(buttonSize),
                         shape = MaterialTheme.shapes.medium,
                         border = ButtonDefaults.outlinedButtonBorder(enabled = true)

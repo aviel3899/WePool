@@ -28,6 +28,7 @@ class GoogleMapsService(
         const val GEOCODING_URL = "https://maps.googleapis.com/maps/api/geocode/json"
         const val AUTOCOMPLETE_URL = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
         const val DIRECTIONS_URL = "https://maps.googleapis.com/maps/api/directions/json"
+        const val DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json"
     }
 
     override suspend fun getDurationAndRouteFromGoogleApi(

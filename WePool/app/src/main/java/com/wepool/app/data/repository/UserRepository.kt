@@ -289,6 +289,17 @@ class UserRepository(
         }
     }
 
+    override suspend fun updateFavoriteLocations(uid: String, updatedList: List<LocationData>) {
+        try {
+            val userRef = db.collection("users").document(uid)
+            userRef.update("favoriteLocations", updatedList).await()
+            Log.d("UserRepository", "📌 מיקומים מועדפים עודכנו עבור $uid")
+        } catch (e: Exception) {
+            logException("updateFavoriteLocations", e)
+        }
+    }
+
+
     private fun logException(func: String, e: Exception) {
         println("🔥 [UserRepository::$func] ${e.message}")
     }
