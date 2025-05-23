@@ -13,7 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.ride.PickupStop
@@ -47,13 +49,18 @@ fun RidePassengerDetailsDialog(
     var dropdownExpanded by remember { mutableStateOf(false) }
     var innerTooLateDialog by remember { mutableStateOf(false) }
     var threshold by remember { mutableStateOf(0) }
+    val textFieldWidth = remember { mutableStateOf(0) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Ride Details") },
         text = {
             Column {
-                Box(modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates ->
+                        textFieldWidth.value = coordinates.size.width
+                    }) {
                     OutlinedTextField(
                         value = selectedPassengerStop?.let {
                             passengerNames[it.passengerId] ?: "Unknown"
@@ -74,7 +81,7 @@ fun RidePassengerDetailsDialog(
                     DropdownMenu(
                         expanded = dropdownExpanded,
                         onDismissRequest = { dropdownExpanded = false },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.width(with(LocalDensity.current) { textFieldWidth.value.toDp() })
                     ) {
                         val stops = ride.pickupStops
                         if (stops.isEmpty()) {
@@ -93,8 +100,7 @@ fun RidePassengerDetailsDialog(
                                         dropdownExpanded = false
                                         coroutineScope.launch {
                                             try {
-                                                selectedPassengerUser =
-                                                    userRepository.getUser(stop.passengerId)
+                                                selectedPassengerUser = userRepository.getUser(stop.passengerId)
                                             } catch (e: Exception) {
                                                 Log.e("RideDialog", "Failed to load user: ${e.message}")
                                             }

@@ -6,6 +6,11 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -324,13 +329,11 @@ fun DriverActiveRidesContent(
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
-
-        // תוכן הגלילה
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 96.dp), // להשאיר מקום לכפתורים
+                .padding(bottom = 96.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
@@ -368,8 +371,7 @@ fun DriverActiveRidesContent(
                 error != null -> Text(error, color = MaterialTheme.colorScheme.error)
                 rides.isEmpty() -> Text("Click 'Apply Filter' to search for active rides.")
                 else -> {
-                    val filteredRides =
-                        if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
+                    val filteredRides = if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
 
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -391,50 +393,43 @@ fun DriverActiveRidesContent(
                                     Spacer(modifier = Modifier.height(8.dp))
 
                                     Column(
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        Button(
-                                            onClick = { onStartRideClicked(ride) },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF2E7D32), //ירוק כהה
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text("Start Ride")
-                                        }
-
-                                        Button(
-                                            onClick = { onCancelRideClicked(ride) },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFFC62828), // אדום כהה
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text("Cancel Ride")
-                                        }
-
-                                        OutlinedButton(
-                                            onClick = { onShowMapClicked(ride) },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF039BE5), // תכלת כהה
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text("Show Map")
-                                        }
-
-                                        OutlinedButton(
-                                            onClick = { onPassengerDetailsClicked(ride) },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFFFBC02D), // צהוב כהה
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text("Passenger Details")
+                                        listOf(
+                                            Triple("Start", Icons.Default.PlayArrow, Color(0xFF2E7D32)) to { onStartRideClicked(ride) },
+                                            Triple("Cancel", Icons.Default.Cancel, Color(0xFFC62828)) to { onCancelRideClicked(ride) },
+                                            Triple("Map", Icons.Default.Map, Color(0xFF039BE5)) to { onShowMapClicked(ride) },
+                                            Triple("Passengers", Icons.Default.Person, Color(0xFFFBC02D)) to { onPassengerDetailsClicked(ride) }
+                                        ).chunked(2).forEach { rowButtons ->
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+                                            ) {
+                                                rowButtons.forEach { (data, action) ->
+                                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                        OutlinedButton(
+                                                            onClick = action,
+                                                            modifier = Modifier
+                                                                .width(160.dp)
+                                                                .height(100.dp),
+                                                            shape = MaterialTheme.shapes.large,
+                                                            border = ButtonDefaults.outlinedButtonBorder(enabled = true),
+                                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = data.third)
+                                                        ) {
+                                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                                Icon(
+                                                                    imageVector = data.second,
+                                                                    contentDescription = data.first,
+                                                                    tint = data.third,
+                                                                    modifier = Modifier.size(48.dp)
+                                                                )
+                                                                Spacer(modifier = Modifier.height(4.dp))
+                                                                Text(data.first, style = MaterialTheme.typography.labelSmall)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }

@@ -30,6 +30,8 @@ import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.handleNotificationNavigation
 import com.wepool.app.data.repository.LoginSessionManager
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.painterResource
+import com.wepool.app.R
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -166,6 +168,13 @@ fun LoginScreen(navController: NavController) {
                 enabled = !isLoading,
                 shape = RoundedCornerShape(16.dp)
             ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.login_line_svgrepo_com),
+                    contentDescription = "Login Icon",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(if (isLoading) "Logging in..." else "Log In")
             }
 
@@ -177,6 +186,13 @@ fun LoginScreen(navController: NavController) {
                 enabled = !isLoading,
                 shape = RoundedCornerShape(16.dp)
             ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.contact_details_svgrepo_com),
+                    contentDescription = "Sign Up Icon",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text("Sign Up")
             }
 

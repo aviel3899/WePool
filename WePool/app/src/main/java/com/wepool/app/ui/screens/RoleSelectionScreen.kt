@@ -2,9 +2,6 @@ package com.wepool.app.ui.screens
 
 import android.util.Log
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DriveEta
-import androidx.compose.material.icons.filled.EmojiPeople
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment

@@ -4,20 +4,28 @@ import android.app.Activity
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.ManageAccounts
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.data.model.ride.RideRequestUpdateResult
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.painterResource
+import com.wepool.app.R
 
 @Composable
-fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin: Boolean = false) {
+fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin: Boolean = false) {
     val context = LocalContext.current
     val activity = remember(context) { context as? Activity }
     val coroutineScope = rememberCoroutineScope()
@@ -27,7 +35,6 @@ fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin
     var dialogMessage by remember { mutableStateOf<String?>(null) }
     var updateResult by remember { mutableStateOf<RideRequestUpdateResult?>(null) }
 
-    // Load welcome/update message once
     LaunchedEffect(Unit) {
         try {
             val userRepo = RepositoryProvider.provideUserRepository()
@@ -48,26 +55,19 @@ fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin
                     dialogMessage = when {
                         x == 0 && y == 0 && z == 0 ->
                             "Hello ${user.name}!\nSince your last login, you have no notifications."
-
                         x > 0 && y == 0 && z == 0 ->
                             "Hello ${user.name}!\nYou have $x ride requests waiting for your approval."
-
                         x == 0 && y > 0 && z == 0 ->
                             "Hello ${user.name}!\nYou have $y new ride approvals."
-
                         x == 0 && y == 0 && z > 0 ->
                             "Hello ${user.name}!\nYou have $z declined ride requests."
-
                         x > 0 && y > 0 && z == 0 ->
                             "Hello ${user.name}!\nSince your last login:\n$x ride requests need your approval\n$y new ride approvals."
-
                         x > 0 && y == 0 && z > 0 ->
                             "Hello ${user.name}!\nSince your last login:\n$x ride requests need your approval\n$z declined ride requests."
-
                         x == 0 && y > 0 && z > 0 ->
                             "Hello ${user.name}!\nSince your last login:\n$y new ride approvals\n$z declined ride requests."
-
-                        else -> // כל השלושה > 0
+                        else ->
                             "Hello ${user.name}!\nSince your last login:\n$x ride requests need your approval\n$y new ride approvals\n$z declined ride requests."
                     }
                 }
@@ -84,53 +84,101 @@ fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 32.dp),
+                .padding(horizontal = 32.dp)
+                .padding(bottom = 96.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Welcome to WePool", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = {
-                    navController.navigate("roleSelection/$uid")
-                },
-                modifier = Modifier.fillMaxWidth()
+            val buttonSize = 120.dp
+            val iconSize = 72.dp
+            val iconColor = Color(0xFF03A9F4)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text("Role Selection")
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    OutlinedButton(
+                        onClick = { navController.navigate("rideHistory/$uid") },
+                        modifier = Modifier.size(buttonSize),
+                        shape = MaterialTheme.shapes.medium,
+                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = "Ride History",
+                            tint = iconColor,
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Ride\nHistory", textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    OutlinedButton(
+                        onClick = { navController.navigate("roleSelection/$uid") },
+                        modifier = Modifier.size(buttonSize),
+                        shape = MaterialTheme.shapes.medium,
+                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Role Selection",
+                            tint = iconColor,
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Role\nSelection", textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = {
-                    navController.navigate("rideHistory/$uid")
-                },
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text("Ride History")
-            }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    OutlinedButton(
+                        onClick = { navController.navigate("updateDetails/$uid") },
+                        modifier = Modifier.size(buttonSize),
+                        shape = MaterialTheme.shapes.medium,
+                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ManageAccounts,
+                            contentDescription = "Update Personal Details",
+                            tint = iconColor,
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Update\nDetails", textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = {
-                    navController.navigate("updateDetails/$uid")
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Update Personal Details")
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            TextButton(
-                onClick = {
-                    navController.navigate("login")
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Logout", color = MaterialTheme.colorScheme.error)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    OutlinedButton(
+                        onClick = { /* Not implemented yet */ },
+                        modifier = Modifier.size(buttonSize),
+                        shape = MaterialTheme.shapes.medium,
+                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = "Preferred Locations",
+                            tint = iconColor,
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Preferred\nLocations", textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
             }
         }
 
@@ -189,10 +237,36 @@ fun IntermediateScreen(navController: NavController, uid: String , cameFromLogin
                         }) {
                             Text("OK")
                         }
-
                     }
                 }
             }
         }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            OutlinedButton(
+                onClick = {
+                    navController.navigate("login")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.logout_svgrepo_com),
+                    contentDescription = "Logout",
+                    modifier = Modifier.size(24.dp)
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Logout", color = MaterialTheme.colorScheme.error)
+            }
+        }
+
     }
 }
