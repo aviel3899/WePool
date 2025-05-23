@@ -14,7 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +32,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import com.wepool.app.data.model.common.LocationData
-import com.wepool.app.ui.screens.utils.BottomNavigationButtons
+import com.wepool.app.ui.screens.components.BottomNavigationButtons
 
 @Composable
 fun HomeboundRideCreationScreen(navController: NavController, uid: String) {
@@ -288,7 +287,9 @@ fun HomeboundRideCreationScreen(navController: NavController, uid: String) {
                 navController = navController,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(16.dp),
+                showBackButton = true,
+                showHomeButton = true
             )
         }
     }

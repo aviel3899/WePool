@@ -1,101 +1,130 @@
 package com.wepool.app.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.RequestPage
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.screens.components.BottomNavigationButtons
 
 @Composable
 fun DriverMenuScreen(navController: NavController, uid: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp)
+                .padding(bottom = 96.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Driver Menu", style = MaterialTheme.typography.headlineSmall)
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = {
-                    navController.navigate("createRideDirection/$uid")
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Create a Ride")
+            val buttonSize = 120.dp
+            val iconSize = 72.dp
+            val iconColor = Color(0xFF03A9F4)
+
+            // Create a Ride - Top Row
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                OutlinedButton(
+                    onClick = { navController.navigate("createRideDirection/$uid") },
+                    modifier = Modifier.size(buttonSize),
+                    shape = MaterialTheme.shapes.medium,
+                    border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AddCircle,
+                        contentDescription = "Create Ride",
+                        tint = iconColor,
+                        modifier = Modifier.size(iconSize)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Create Ride", style = MaterialTheme.typography.labelLarge)
             }
 
-            Button(
-                onClick = {
-                    navController.navigate("driverPendingRequests/$uid")
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Requests")
-            }
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = {
-                    navController.navigate("driverActiveRides/$uid")
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Show Active Rides")
-            }
-
-            OutlinedButton(
-                onClick = {
-                    navController.popBackStack()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Back")
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            OutlinedButton(
-                onClick = {
-                    navController.navigate("intermediate/$uid?fromLogin=false") {
-                        popUpTo("intermediate/$uid?fromLogin=false") {
-                            inclusive = false
-                        }
-                        launchSingleTop = true
-                    }
-                },
+            // Requests + Active Rides - Bottom Row
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant, // soft neutral
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant // high contrast
-                )
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = "Home",
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Back to Home", style = MaterialTheme.typography.labelLarge)
-            }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedButton(
+                        onClick = { navController.navigate("driverPendingRequests/$uid") },
+                        modifier = Modifier.size(buttonSize),
+                        shape = MaterialTheme.shapes.medium,
+                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.RequestPage,
+                            contentDescription = "Requests",
+                            tint = iconColor,
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Requests", style = MaterialTheme.typography.labelLarge)
+                }
 
+                Spacer(modifier = Modifier.width(48.dp))
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedButton(
+                        onClick = { navController.navigate("driverActiveRides/$uid") },
+                        modifier = Modifier.size(buttonSize),
+                        shape = MaterialTheme.shapes.medium,
+                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DirectionsCar,
+                            contentDescription = "Active Rides",
+                            tint = iconColor,
+                            modifier = Modifier.size(iconSize)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Active Rides", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
+
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
+            tonalElevation = 4.dp,
+            shadowElevation = 4.dp,
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            BottomNavigationButtons(
+                uid = uid,
+                rideId = null,
+                navController = navController,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                showBackButton = true,
+                showHomeButton = true
+            )
         }
     }
 }

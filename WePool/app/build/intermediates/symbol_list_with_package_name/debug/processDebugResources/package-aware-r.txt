@@ -3111,6 +3111,8 @@ drawable notification_template_icon_bg
 drawable notification_template_icon_low_bg
 drawable notification_tile_bg
 drawable notify_panel_notification_icon_bg
+drawable seat_belt_svgrepo_com
+drawable steering_wheel_car_svgrepo_com
 drawable test_level_drawable
 drawable tooltip_frame_dark
 drawable tooltip_frame_light

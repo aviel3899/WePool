@@ -8,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +21,7 @@ import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import kotlinx.coroutines.launch
 
 @Composable
@@ -57,6 +57,7 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
                         val passengerRides = rideRepository.getPastRidesAsPassenger(uid)
                         (driverRides + passengerRides).distinctBy { it.rideId }
                     }
+
                     else -> emptyList()
                 }
                 hasFilterBeenApplied = true
@@ -87,7 +88,9 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -103,7 +106,9 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
                     ) {
                         OutlinedButton(
                             onClick = { expanded = true },
-                            modifier = Modifier.fillMaxWidth(0.75f).height(56.dp)
+                            modifier = Modifier
+                                .fillMaxWidth(0.75f)
+                                .height(56.dp)
                         ) {
                             Box(modifier = Modifier.fillMaxWidth()) {
                                 Text(
@@ -114,7 +119,9 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
                                 Icon(
                                     imageVector = Icons.Default.ArrowDropDown,
                                     contentDescription = null,
-                                    modifier = Modifier.align(Alignment.CenterEnd).size(28.dp)
+                                    modifier = Modifier
+                                        .align(Alignment.CenterEnd)
+                                        .size(28.dp)
                                 )
                             }
                         }
@@ -147,7 +154,9 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
 
                     Button(
                         onClick = { refreshRides() },
-                        modifier = Modifier.fillMaxWidth(0.75f).height(48.dp)
+                        modifier = Modifier
+                            .fillMaxWidth(0.75f)
+                            .height(48.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
@@ -170,15 +179,19 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
+
                 loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                 rides.isEmpty() -> Text(
                     "No ride history found for selected role.",
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
+
                 else -> {
                     LazyColumn(
-                        modifier = Modifier.fillMaxWidth().fillMaxHeight()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight()
                     ) {
                         items(rides) { ride ->
                             RideHistoryCard(ride = ride)
@@ -188,30 +201,24 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
                 }
             }
         }
-
-        OutlinedButton(
-            onClick = {
-                navController.navigate("intermediate/$uid?fromLogin=false") {
-                    popUpTo("intermediate/$uid?fromLogin=false") { inclusive = false }
-                    launchSingleTop = true
-                }
-            },
+        Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(16.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                .fillMaxWidth(),
+            tonalElevation = 4.dp,
+            shadowElevation = 4.dp,
+            color = MaterialTheme.colorScheme.surface
         ) {
-            Icon(
-                imageVector = Icons.Default.Home,
-                contentDescription = "Home",
-                modifier = Modifier.size(20.dp)
+            BottomNavigationButtons(
+                uid = uid,
+                rideId = null,
+                navController = navController,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                showBackButton = true,
+                showHomeButton = false
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Back to Home", style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -342,7 +349,8 @@ fun RideHistoryCard(ride: Ride) {
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    val pickupStop = ride.pickupStops.firstOrNull { it.passengerId == selectedPassenger!!.uid }
+                    val pickupStop =
+                        ride.pickupStops.firstOrNull { it.passengerId == selectedPassenger!!.uid }
                     var locationLabel = ""
                     var timeLabel = ""
                     var timeReference = ""

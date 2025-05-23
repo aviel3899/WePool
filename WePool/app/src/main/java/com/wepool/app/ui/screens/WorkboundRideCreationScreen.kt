@@ -29,7 +29,7 @@ import androidx.navigation.NavController
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.infrastructure.RepositoryProvider
-import com.wepool.app.ui.screens.utils.BottomNavigationButtons
+import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -228,7 +228,8 @@ fun WorkboundRideCreationScreen(navController: NavController, uid: String) {
                             selectedCalendar.set(Calendar.MINUTE, minute)
                             selectedCalendar.set(Calendar.SECOND, 0)
 
-                            val todayStr = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(now.time)
+                            val todayStr =
+                                SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(now.time)
                             if (selectedDate == todayStr && selectedCalendar.before(now)) {
                                 toast.setText("❌ Please select a future time.")
                                 toast.show()
@@ -250,8 +251,10 @@ fun WorkboundRideCreationScreen(navController: NavController, uid: String) {
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val startLocationData = mapsService.getCoordinatesFromAddress(startLocation.name)!!
-                        val destinationData = mapsService.getCoordinatesFromAddress(destination.name)!!
+                        val startLocationData =
+                            mapsService.getCoordinatesFromAddress(startLocation.name)!!
+                        val destinationData =
+                            mapsService.getCoordinatesFromAddress(destination.name)!!
 
                         val success = rideRepository.planRideFromUserInput(
                             driverId = uid,
@@ -268,7 +271,8 @@ fun WorkboundRideCreationScreen(navController: NavController, uid: String) {
                         )
                         if (success) {
                             Log.d("RideCreation", "✅ Ride saved successfully")
-                            Toast.makeText(context, "Ride created successfully", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Ride created successfully", Toast.LENGTH_SHORT)
+                                .show()
                             navController.navigate("driverMenu/$uid") {
                                 popUpTo("workboundRide/$uid") {
                                     inclusive = true
@@ -277,7 +281,11 @@ fun WorkboundRideCreationScreen(navController: NavController, uid: String) {
                             }
                         } else {
                             Log.e("RideCreation", "❌ Failed to save ride")
-                            Toast.makeText(context, "Failed to create ride. Please try again.", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                "Failed to create ride. Please try again.",
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     }
                 },
@@ -304,7 +312,9 @@ fun WorkboundRideCreationScreen(navController: NavController, uid: String) {
                 navController = navController,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(16.dp),
+                showBackButton = true,
+                showHomeButton = true
             )
         }
     }

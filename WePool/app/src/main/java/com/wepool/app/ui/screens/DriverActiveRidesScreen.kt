@@ -24,11 +24,11 @@ import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.RideNavigationServiceController
-import com.wepool.app.ui.screens.utils.ActiveRidesFilterCard
-import com.wepool.app.ui.screens.utils.BottomNavigationButtons
-import com.wepool.app.ui.screens.utils.RideMapDialog
-import com.wepool.app.ui.screens.utils.RidePassengerDetailsDialog
-import com.wepool.app.ui.screens.utils.filterRides
+import com.wepool.app.ui.screens.components.ActiveRidesFilterCard
+import com.wepool.app.ui.screens.components.BottomNavigationButtons
+import com.wepool.app.ui.screens.components.RideMapDialog
+import com.wepool.app.ui.screens.components.RidePassengerDetailsDialog
+import com.wepool.app.ui.screens.components.filterRides
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -78,7 +78,8 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 loading = true
                 error = null
                 val allRides = driverRepository.getActiveRidesForDriver(uid)
-                rides = filterRides(allRides, startDate, endDate, startTime, endTime, selectedDirection)
+                rides =
+                    filterRides(allRides, startDate, endDate, startTime, endTime, selectedDirection)
             } catch (e: Exception) {
                 error = "❌ שגיאה בטעינת נסיעות: ${e.message}"
             } finally {
@@ -322,128 +323,118 @@ fun DriverActiveRidesContent(
     onPassengerDetailsClicked: (Ride) -> Unit
 ) {
 
-    Scaffold(
-        bottomBar = {
-            BottomNavigationButtons(uid = uid, rideId = rideId, navController = navController)
-        }
-    ) { innerPadding ->
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        // תוכן הגלילה
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = innerPadding.calculateBottomPadding()),
+                .padding(bottom = 96.dp), // להשאיר מקום לכפתורים
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.Start // חשוב!
-            ) {
-                Text(
-                    text = "Your Active Rides",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Your Active Rides",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-                ActiveRidesFilterCard(
-                    startDate = startDate,
-                    endDate = endDate,
-                    startTime = startTime,
-                    endTime = endTime,
-                    selectedDirection = selectedDirection,
-                    directionMenuExpanded = directionMenuExpanded,
-                    directionOptions = directionOptions,
-                    onShowDateRangePicker = showDateRangePicker,
-                    onShowTimeRangePicker = showTimeRangePicker,
-                    onClearDateRange = onClearDateRange,
-                    onClearTimeRange = onClearTimeRange,
-                    onClearDirection = onClearDirection,
-                    onDirectionSelected = onDirectionSelected,
-                    onDirectionMenuExpand = onDirectionMenuExpand,
-                    onDirectionMenuDismiss = onDirectionMenuDismiss,
-                    onApplyFilter = onRefreshClicked
-                )
+            ActiveRidesFilterCard(
+                startDate = startDate,
+                endDate = endDate,
+                startTime = startTime,
+                endTime = endTime,
+                selectedDirection = selectedDirection,
+                directionMenuExpanded = directionMenuExpanded,
+                directionOptions = directionOptions,
+                onShowDateRangePicker = showDateRangePicker,
+                onShowTimeRangePicker = showTimeRangePicker,
+                onClearDateRange = onClearDateRange,
+                onClearTimeRange = onClearTimeRange,
+                onClearDirection = onClearDirection,
+                onDirectionSelected = onDirectionSelected,
+                onDirectionMenuExpand = onDirectionMenuExpand,
+                onDirectionMenuDismiss = onDirectionMenuDismiss,
+                onApplyFilter = onRefreshClicked
+            )
 
-                Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                when {
-                    loading -> CircularProgressIndicator()
-                    error != null -> Text(error, color = MaterialTheme.colorScheme.error)
-                    rides.isEmpty() -> Text("Click 'Apply Filter' to search for active rides.")
-                    else -> {
-                        val filteredRides =
-                            if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
+            when {
+                loading -> CircularProgressIndicator()
+                error != null -> Text(error, color = MaterialTheme.colorScheme.error)
+                rides.isEmpty() -> Text("Click 'Apply Filter' to search for active rides.")
+                else -> {
+                    val filteredRides =
+                        if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
 
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(filteredRides) { ride ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = MaterialTheme.shapes.medium,
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Text("From: ${ride.startLocation.name}")
-                                        Text("To: ${ride.destination.name}")
-                                        Text("Date: ${ride.date}")
-                                        Text("Departure Time: ${ride.departureTime}")
-                                        Text("Arrival Time: ${ride.arrivalTime}")
-                                        Text("Stops on the way: ${ride.pickupStops.size}")
-                                        Spacer(modifier = Modifier.height(8.dp))
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(filteredRides) { ride ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.medium,
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text("From: ${ride.startLocation.name}")
+                                    Text("To: ${ride.destination.name}")
+                                    Text("Date: ${ride.date}")
+                                    Text("Departure Time: ${ride.departureTime}")
+                                    Text("Arrival Time: ${ride.arrivalTime}")
+                                    Text("Stops on the way: ${ride.pickupStops.size}")
+                                    Spacer(modifier = Modifier.height(8.dp))
 
-                                        Column(
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            Button(
-                                                onClick = { onStartRideClicked(ride) },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = Color(0xFF2E7D32), //ירוק כהה
-                                                    contentColor = Color.White
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Button(
+                                            onClick = { onStartRideClicked(ride) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF2E7D32), //ירוק כהה
+                                                contentColor = Color.White
                                             )
-                                            ) {
-                                                Text("Start Ride")
-                                            }
+                                        ) {
+                                            Text("Start Ride")
+                                        }
 
-                                            Button(
-                                                onClick = { onCancelRideClicked(ride) },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = Color(0xFFC62828), // אדום כהה
-                                                    contentColor = Color.White
-                                                )
-                                            ) {
-                                                Text("Cancel Ride")
-                                            }
+                                        Button(
+                                            onClick = { onCancelRideClicked(ride) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFFC62828), // אדום כהה
+                                                contentColor = Color.White
+                                            )
+                                        ) {
+                                            Text("Cancel Ride")
+                                        }
 
-                                            OutlinedButton(
-                                                onClick = { onShowMapClicked(ride) },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = Color(0xFF039BE5), // תכלת כהה
-                                                    contentColor = Color.White
-                                                )
-                                            ) {
-                                                Text("Show Map")
-                                            }
+                                        OutlinedButton(
+                                            onClick = { onShowMapClicked(ride) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF039BE5), // תכלת כהה
+                                                contentColor = Color.White
+                                            )
+                                        ) {
+                                            Text("Show Map")
+                                        }
 
-                                            OutlinedButton(
-                                                onClick = { onPassengerDetailsClicked(ride) },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = Color(0xFFFBC02D), // צהוב כהה
-                                                    contentColor = Color.White
-                                                )
-                                            ) {
-                                                Text("Passenger Details")
-                                            }
+                                        OutlinedButton(
+                                            onClick = { onPassengerDetailsClicked(ride) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFFFBC02D), // צהוב כהה
+                                                contentColor = Color.White
+                                            )
+                                        ) {
+                                            Text("Passenger Details")
                                         }
                                     }
                                 }
@@ -452,6 +443,26 @@ fun DriverActiveRidesContent(
                     }
                 }
             }
+        }
+
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
+            tonalElevation = 4.dp,
+            shadowElevation = 4.dp,
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            BottomNavigationButtons(
+                uid = uid,
+                rideId = rideId,
+                navController = navController,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                showBackButton = true,
+                showHomeButton = true
+            )
         }
     }
 }
