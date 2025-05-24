@@ -2976,6 +2976,7 @@ int drawable abc_textfield_search_activated_mtrl_alpha 0x7f070074
 int drawable abc_textfield_search_default_mtrl_alpha 0x7f070075
 int drawable abc_textfield_search_material 0x7f070076
 int drawable abc_vector_test 0x7f070077
+int drawable admin_svgrepo_com 0x7f07010a
 int drawable amu_bubble_mask 0x7f070078
 int drawable amu_bubble_shadow 0x7f070079
 int drawable avd_hide_password 0x7f07007a
@@ -2988,6 +2989,7 @@ int drawable btn_radio_off_mtrl 0x7f070080
 int drawable btn_radio_off_to_on_mtrl_animation 0x7f070081
 int drawable btn_radio_on_mtrl 0x7f070082
 int drawable btn_radio_on_to_off_mtrl_animation 0x7f070083
+int drawable cancel_svgrepo_com 0x7f07010b
 int drawable common_full_open_on_phone 0x7f070084
 int drawable common_google_signin_btn_icon_dark 0x7f070085
 int drawable common_google_signin_btn_icon_dark_focused 0x7f070086
@@ -3016,6 +3018,7 @@ int drawable design_snackbar_background 0x7f07009b
 int drawable googleg_disabled_color_18 0x7f07009c
 int drawable googleg_standard_color_18 0x7f07009d
 int drawable home_house_svgrepo_com 0x7f070108
+int drawable hr_manager_svgrepo_com 0x7f07010c
 int drawable ic_arrow_back_black_24 0x7f07009e
 int drawable ic_call_answer 0x7f07009f
 int drawable ic_call_answer_low 0x7f0700a0

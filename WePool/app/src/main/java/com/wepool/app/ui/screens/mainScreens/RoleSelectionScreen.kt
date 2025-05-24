@@ -7,15 +7,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.wepool.app.data.model.users.User
+import com.wepool.app.R
 import com.wepool.app.data.model.users.Passenger
+import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import kotlinx.coroutines.launch
-import androidx.compose.ui.res.painterResource
-import com.wepool.app.R
 
 @Composable
 fun RoleSelectionScreen(
@@ -23,9 +23,6 @@ fun RoleSelectionScreen(
     navController: NavController
 ) {
     val userRepository = RepositoryProvider.provideUserRepository()
-    val driverRepository = RepositoryProvider.provideDriverRepository()
-    val passengerRepository = RepositoryProvider.providePassengerRepository()
-    val coroutineScope = rememberCoroutineScope()
 
     var user by remember { mutableStateOf<User?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -62,73 +59,70 @@ fun RoleSelectionScreen(
             Text("Choose Your Role", style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(32.dp))
 
-            val buttonSize = 120.dp
-            val iconSize = 72.dp
-            val iconColor = Color(0xFF03A9F4)
-
             when {
                 loading -> CircularProgressIndicator()
 
                 error != null -> Text(error!!, color = MaterialTheme.colorScheme.error)
 
                 user != null -> {
-                    if (user!!.roles.isEmpty()) {
+                    val roles = user!!.roles
+                    if (roles.isEmpty()) {
                         Text("⚠ No roles assigned to this user.")
                     } else {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            user!!.roles.forEach { role ->
-                                val iconRes = when (role) {
-                                    "DRIVER" -> R.drawable.steering_wheel_car_svgrepo_com
-                                    "PASSENGER" -> R.drawable.seat_belt_svgrepo_com
-                                    else -> R.drawable.seat_belt_svgrepo_com
-                                }
-
+                        when (roles.size) {
+                            1 -> {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    OutlinedButton(
-                                        onClick = {
-                                            Log.d("RoleSelection", "🎯 Role selected: $role")
-                                            coroutineScope.launch {
-                                                when (role) {
-                                                    "PASSENGER" -> {
-                                                        val existing = passengerRepository.getPassenger(uid)
-                                                        if (existing == null) {
-                                                            passengerRepository.savePassengerData(
-                                                                uid,
-                                                                Passenger(user = user!!)
-                                                            )
-                                                            Log.d("RoleSelection", "✅ Passenger data created")
-                                                        }
-                                                        navController.navigate("passengerMenu/$uid")
-                                                    }
-
-                                                    "DRIVER" -> {
-                                                        val existing = driverRepository.getDriver(uid)
-                                                        if (existing == null) {
-                                                            navController.navigate("driverCarDetails/$uid")
-                                                        } else {
-                                                            navController.navigate("driverMenu/$uid")
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier.size(buttonSize),
-                                        shape = MaterialTheme.shapes.medium,
-                                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = iconRes),
-                                            contentDescription = "$role Icon",
-                                            tint = Color.Unspecified,
-                                            modifier = Modifier.size(iconSize)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(role.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelLarge)
+                                    RoleButton(roles[0], uid, navController)
                                 }
+                            }
+
+                            2 -> {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                ) {
+                                    roles.forEach { role ->
+                                        RoleButton(role, uid, navController)
+                                    }
+                                }
+                            }
+
+                            3 -> {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly
+                                    ) {
+                                        RoleButton(roles[0], uid, navController)
+                                        RoleButton(roles[1], uid, navController)
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    RoleButton(roles[2], uid, navController)
+                                }
+                            }
+
+                            4 -> {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly
+                                    ) {
+                                        RoleButton(roles[0], uid, navController)
+                                        RoleButton(roles[1], uid, navController)
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly
+                                    ) {
+                                        RoleButton(roles[2], uid, navController)
+                                        RoleButton(roles[3], uid, navController)
+                                    }
+                                }
+                            }
+
+                            else -> {
+                                Text("⚠ Too many roles assigned.")
                             }
                         }
                     }
@@ -155,5 +149,67 @@ fun RoleSelectionScreen(
                 showHomeButton = false
             )
         }
+    }
+}
+
+@Composable
+fun RoleButton(role: String, uid: String, navController: NavController) {
+    val coroutineScope = rememberCoroutineScope()
+    val driverRepository = RepositoryProvider.provideDriverRepository()
+    val passengerRepository = RepositoryProvider.providePassengerRepository()
+    val userRepository = RepositoryProvider.provideUserRepository()
+
+    val iconRes = when (role) {
+        "DRIVER" -> R.drawable.steering_wheel_car_svgrepo_com
+        "PASSENGER" -> R.drawable.seat_belt_svgrepo_com
+        "HR_MANAGER" -> R.drawable.hr_manager_svgrepo_com
+        "ADMIN" -> R.drawable.admin_svgrepo_com
+        else -> R.drawable.cancel_svgrepo_com
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        OutlinedButton(
+            onClick = {
+                coroutineScope.launch {
+                    val user = userRepository.getUser(uid)
+                    when (role) {
+                        "PASSENGER" -> {
+                            val existing = passengerRepository.getPassenger(uid)
+                            if (existing == null && user != null) {
+                                passengerRepository.savePassengerData(uid, Passenger(user))
+                            }
+                            navController.navigate("passengerMenu/$uid")
+                        }
+
+                        "DRIVER" -> {
+                            val existing = driverRepository.getDriver(uid)
+                            if (existing == null) {
+                                navController.navigate("driverCarDetails/$uid")
+                            } else {
+                                navController.navigate("driverMenu/$uid")
+                            }
+                        }
+
+                        "HR_MANAGER" -> navController.navigate("hrDashboard/$uid")
+                        "ADMIN" -> navController.navigate("adminPanel/$uid")
+                    }
+                }
+            },
+            modifier = Modifier.size(120.dp),
+            shape = MaterialTheme.shapes.medium,
+            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+        ) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = "$role Icon",
+                tint = Color.Unspecified,
+                modifier = Modifier.size(72.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            role.lowercase().replaceFirstChar { it.uppercase() },
+            style = MaterialTheme.typography.labelLarge
+        )
     }
 }

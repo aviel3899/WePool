@@ -2977,6 +2977,7 @@ drawable abc_textfield_search_activated_mtrl_alpha
 drawable abc_textfield_search_default_mtrl_alpha
 drawable abc_textfield_search_material
 drawable abc_vector_test
+drawable admin_svgrepo_com
 drawable amu_bubble_mask
 drawable amu_bubble_shadow
 drawable avd_hide_password
@@ -2989,6 +2990,7 @@ drawable btn_radio_off_mtrl
 drawable btn_radio_off_to_on_mtrl_animation
 drawable btn_radio_on_mtrl
 drawable btn_radio_on_to_off_mtrl_animation
+drawable cancel_svgrepo_com
 drawable common_full_open_on_phone
 drawable common_google_signin_btn_icon_dark
 drawable common_google_signin_btn_icon_dark_focused
@@ -3017,6 +3019,7 @@ drawable design_snackbar_background
 drawable googleg_disabled_color_18
 drawable googleg_standard_color_18
 drawable home_house_svgrepo_com
+drawable hr_manager_svgrepo_com
 drawable ic_arrow_back_black_24
 drawable ic_call_answer
 drawable ic_call_answer_low
