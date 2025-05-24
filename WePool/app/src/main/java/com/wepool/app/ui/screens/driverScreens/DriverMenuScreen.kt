@@ -36,7 +36,7 @@ fun DriverMenuScreen(navController: NavController, uid: String) {
             // Create a Ride - Top Row
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 OutlinedButton(
-                    onClick = { navController.navigate("createRideDirection/$uid") },
+                    onClick = { navController.navigate("rideDirection/$uid/DRIVER") },
                     modifier = Modifier.size(buttonSize),
                     shape = MaterialTheme.shapes.medium,
                     border = ButtonDefaults.outlinedButtonBorder(enabled = true)

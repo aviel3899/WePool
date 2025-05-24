@@ -1,6 +1,7 @@
 package com.wepool.app.data.model.logic
 
 import android.util.Log
+import com.wepool.app.data.model.enums.RequestStatus
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.data.model.ride.RideCandidate
@@ -46,6 +47,17 @@ class PassengerRideFinder(
                 isRideTimeValid(ride.arrivalTime!!, ride.maxDetourMinutes, passengerArrivalTime, direction)
             } else {
                 isRideTimeValid(ride.departureTime!!, ride.maxDetourMinutes, passengerDepartureTime, direction)
+            }
+
+            val notAlreadyRequested = try {
+                val existingRequests = rideRequestRepository.getRequestsForRide(ride.rideId)
+                existingRequests.none {
+                    it.passengerId == pickupPoint.passengerId &&
+                            (it.status == RequestStatus.PENDING || it.status == RequestStatus.ACCEPTED)
+                }
+            } catch (e: Exception) {
+                Log.e("RideFilter", "❌ שגיאה בשליפת בקשות לנסיעה ${ride.rideId}: ${e.message}")
+                false
             }
 
             val notAlreadyJoined = !ride.passengers.contains(pickupPoint.passengerId)
@@ -96,18 +108,20 @@ class PassengerRideFinder(
 
             val notHisOwnRide = ride.driverId != pickupPoint.passengerId
 
-            if (!dateOK || !timeOK || !seatOK || !notAlreadyJoined || !detourOK || !futureEnough || !notHisOwnRide) {
+            if (!dateOK || !timeOK || !seatOK || !notAlreadyJoined || !notAlreadyRequested || !detourOK || !futureEnough || !notHisOwnRide) {
                 Log.d("RideFilter", """ ❌ נסיעה לא מתאימה:
-    - תאריך תואם? $dateOK
-    - זמן תואם? $timeOK
-    - יש מקומות פנויים? $seatOK
-    - נוסע עדיין לא הצטרף? $notAlreadyJoined
-    - סטייה מותרת? $detourOK
-    - זמן יציאה מספיק עתידי? $futureEnough
-    - האם הנסיעה היא לא של עצמו? $notHisOwnRide
-    """.trimIndent())
+                - תאריך תואם? $dateOK
+                - זמן תואם? $timeOK
+                - יש מקומות פנויים? $seatOK
+                - נוסע עדיין לא הצטרף? $notAlreadyJoined
+                - נוסע עדיין לא שלח בקשה? $notAlreadyRequested
+                - סטייה מותרת? $detourOK
+                - זמן יציאה מספיק עתידי? $futureEnough
+                - האם הנסיעה היא לא של עצמו? $notHisOwnRide
+                """.trimIndent())
                 return@mapNotNull null
             }
+
 
             return@mapNotNull RideCandidate(
                 ride = ride,

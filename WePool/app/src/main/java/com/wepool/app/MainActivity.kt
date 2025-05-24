@@ -17,6 +17,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,11 +27,11 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.firebase.auth.FirebaseAuth
+import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.repository.LoginSessionManager
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.handleNotificationNavigation
 import com.wepool.app.notifications.NotificationHelper
-import com.wepool.app.ui.screens.driverScreens.CreateRideDirectionScreen
 import com.wepool.app.ui.screens.driverScreens.DriverActiveRidesScreen
 import com.wepool.app.ui.screens.driverScreens.DriverCarDetailsScreen
 import com.wepool.app.ui.screens.driverScreens.DriverMenuScreen
@@ -40,15 +42,13 @@ import com.wepool.app.ui.screens.mainScreens.PreferredLocationsScreen
 import com.wepool.app.ui.screens.mainScreens.RideHistoryScreen
 import com.wepool.app.ui.screens.mainScreens.RoleSelectionScreen
 import com.wepool.app.ui.screens.mainScreens.SignUpScreen
-import com.wepool.app.ui.screens.driverScreens.HomeboundRideCreationScreen
+import com.wepool.app.ui.screens.driverScreens.RideCreationScreen
+import com.wepool.app.ui.screens.mainScreens.RideDirectionScreen
 import com.wepool.app.ui.screens.passengerScreens.PassengerActiveRidesScreen
-import com.wepool.app.ui.screens.passengerScreens.PassengerHomeboundRideSearchScreen
 import com.wepool.app.ui.screens.passengerScreens.PassengerMenuScreen
 import com.wepool.app.ui.screens.passengerScreens.PassengerRequestsScreen
-import com.wepool.app.ui.screens.passengerScreens.PassengerRideDirectionScreen
-import com.wepool.app.ui.screens.passengerScreens.PassengerWorkboundRideSearchScreen
 import com.wepool.app.ui.screens.mainScreens.UpdateDetailsScreen
-import com.wepool.app.ui.screens.driverScreens.WorkboundRideCreationScreen
+import com.wepool.app.ui.screens.passengerScreens.PassengerRideSearchScreen
 import com.wepool.app.ui.theme.WePoolTheme
 import kotlinx.coroutines.launch
 
@@ -70,7 +70,10 @@ class MainActivity : AppCompatActivity() {
         val rideId = intent?.getStringExtra("rideId")
         val fromNotification = intent?.getStringExtra("fromNotification") == "true"
 
-        Log.d("MainActivity", "📥 onNewIntent: rideId=$rideId, screen=$screen, fromNotification=$fromNotification")
+        Log.d(
+            "MainActivity",
+            "📥 onNewIntent: rideId=$rideId, screen=$screen, fromNotification=$fromNotification"
+        )
 
         if (fromNotification && !screen.isNullOrEmpty() && !rideId.isNullOrEmpty()) {
             NotificationHelper.storeNotificationData(this, screen, rideId)
@@ -81,9 +84,10 @@ class MainActivity : AppCompatActivity() {
             WePoolTheme {
                 navController = rememberNavController()
                 val context = LocalContext.current
-                val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    rememberPermissionState(android.Manifest.permission.POST_NOTIFICATIONS)
-                } else null
+                val notificationPermissionState =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        rememberPermissionState(android.Manifest.permission.POST_NOTIFICATIONS)
+                    } else null
 
                 val isLoggedIn = LoginSessionManager.didLoginManually(context)
                 val firebaseUser = FirebaseAuth.getInstance().currentUser
@@ -108,7 +112,8 @@ class MainActivity : AppCompatActivity() {
                         notificationPermissionState.launchPermissionRequest()
                     }
 
-                    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    val manager =
+                        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                     manager.cancelAll()
                 }
 
@@ -126,7 +131,9 @@ class MainActivity : AppCompatActivity() {
                         }
                         composable("intermediate/{uid}?fromLogin={fromLogin}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
-                            val fromLogin = it.arguments?.getString("fromLogin")?.toBooleanStrictOrNull() ?: false
+                            val fromLogin =
+                                it.arguments?.getString("fromLogin")?.toBooleanStrictOrNull()
+                                    ?: false
                             IntermediateScreen(navController!!, uid, fromLogin)
                         }
                         composable("rideHistory/{uid}") {
@@ -137,33 +144,9 @@ class MainActivity : AppCompatActivity() {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             UpdateDetailsScreen(navController!!, uid)
                         }
-                        composable("createRideDirection/{uid}") {
-                            val uid = it.arguments?.getString("uid") ?: return@composable
-                            CreateRideDirectionScreen(navController!!, uid)
-                        }
-                        composable("homeboundRide/{uid}") {
-                            val uid = it.arguments?.getString("uid") ?: return@composable
-                            HomeboundRideCreationScreen(navController!!, uid)
-                        }
-                        composable("workboundRide/{uid}") {
-                            val uid = it.arguments?.getString("uid") ?: return@composable
-                            WorkboundRideCreationScreen(navController!!, uid)
-                        }
                         composable("driverCarDetails/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             DriverCarDetailsScreen(uid, navController!!)
-                        }
-                        composable("passengerRideDirection/{uid}") {
-                            val uid = it.arguments?.getString("uid") ?: return@composable
-                            PassengerRideDirectionScreen(navController!!, uid)
-                        }
-                        composable("passengerHomeboundRideSearch/{uid}") {
-                            val uid = it.arguments?.getString("uid") ?: return@composable
-                            PassengerHomeboundRideSearchScreen(navController!!, uid)
-                        }
-                        composable("passengerWorkboundRideSearch/{uid}") {
-                            val uid = it.arguments?.getString("uid") ?: return@composable
-                            PassengerWorkboundRideSearchScreen(navController!!, uid)
                         }
                         composable("driverMenu/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
@@ -213,9 +196,54 @@ class MainActivity : AppCompatActivity() {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             PreferredLocationsScreen(uid, navController!!)
                         }
+                        composable("passengerRideSearch/{uid}/{direction}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            val directionStr =
+                                it.arguments?.getString("direction") ?: return@composable
+                            val direction = RideDirection.valueOf(directionStr)
+                            PassengerRideSearchScreen(navController!!, uid, direction)
+                        }
+                        composable("rideCreation/{uid}/{direction}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            val directionStr =
+                                it.arguments?.getString("direction") ?: return@composable
+                            val direction = RideDirection.valueOf(directionStr)
+                            RideCreationScreen(
+                                navController = navController!!,
+                                uid = uid,
+                                direction = direction
+                            )
+                        }
+                        appNavGraph(navController!!) // ride direction selection screen
                     }
                 }
             }
+        }
+    }
+
+    private fun NavGraphBuilder.appNavGraph(navController: NavController) {
+        composable("rideDirection/{uid}/{role}") { backStackEntry ->
+            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+            val role = backStackEntry.arguments?.getString("role") ?: return@composable
+
+            RideDirectionScreen(
+                navController = navController,
+                uid = uid,
+                onToWorkClick = {
+                    if (role == "DRIVER") {
+                        navController.navigate("rideCreation/$uid/TO_WORK")
+                    } else {
+                        navController.navigate("passengerRideSearch/$uid/TO_WORK")
+                    }
+                },
+                onToHomeClick = {
+                    if (role == "DRIVER") {
+                        navController.navigate("rideCreation/$uid/TO_HOME")
+                    } else {
+                        navController.navigate("passengerRideSearch/$uid/TO_HOME")
+                    }
+                }
+            )
         }
     }
 
@@ -236,7 +264,10 @@ class MainActivity : AppCompatActivity() {
         val rideId = intent.getStringExtra("rideId")
         val fromNotification = intent.getBooleanExtra("fromNotification", false) == true
 
-        Log.d("MainActivity", "📥 onNewIntent: rideId=$rideId, screen=$screen, fromNotification=$fromNotification")
+        Log.d(
+            "MainActivity",
+            "📥 onNewIntent: rideId=$rideId, screen=$screen, fromNotification=$fromNotification"
+        )
 
         if (fromNotification && !screen.isNullOrEmpty() && !rideId.isNullOrEmpty()) {
             NotificationHelper.storeNotificationData(this, screen, rideId)

@@ -36,7 +36,7 @@ fun PassengerMenuScreen(uid: String, navController: NavController) {
             // Join a Ride - Top Row
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 OutlinedButton(
-                    onClick = { navController.navigate("passengerRideDirection/$uid") },
+                    onClick = { navController.navigate("rideDirection/$uid/PASSENGER") },
                     modifier = Modifier.size(buttonSize),
                     shape = MaterialTheme.shapes.medium,
                     border = ButtonDefaults.outlinedButtonBorder(enabled = true)

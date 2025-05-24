@@ -3120,6 +3120,7 @@ drawable steering_wheel_car_svgrepo_com
 drawable test_level_drawable
 drawable tooltip_frame_dark
 drawable tooltip_frame_light
+drawable work_is_money_svgrepo_com
 id ALT
 id BOTTOM_END
 id BOTTOM_START
