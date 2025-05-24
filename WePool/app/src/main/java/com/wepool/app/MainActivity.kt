@@ -29,7 +29,26 @@ import com.wepool.app.data.repository.LoginSessionManager
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.handleNotificationNavigation
 import com.wepool.app.notifications.NotificationHelper
-import com.wepool.app.ui.screens.*
+import com.wepool.app.ui.screens.driverScreens.CreateRideDirectionScreen
+import com.wepool.app.ui.screens.driverScreens.DriverActiveRidesScreen
+import com.wepool.app.ui.screens.driverScreens.DriverCarDetailsScreen
+import com.wepool.app.ui.screens.driverScreens.DriverMenuScreen
+import com.wepool.app.ui.screens.driverScreens.DriverRequestsScreen
+import com.wepool.app.ui.screens.mainScreens.IntermediateScreen
+import com.wepool.app.ui.screens.mainScreens.LoginScreen
+import com.wepool.app.ui.screens.mainScreens.PreferredLocationsScreen
+import com.wepool.app.ui.screens.mainScreens.RideHistoryScreen
+import com.wepool.app.ui.screens.mainScreens.RoleSelectionScreen
+import com.wepool.app.ui.screens.mainScreens.SignUpScreen
+import com.wepool.app.ui.screens.driverScreens.HomeboundRideCreationScreen
+import com.wepool.app.ui.screens.passengerScreens.PassengerActiveRidesScreen
+import com.wepool.app.ui.screens.passengerScreens.PassengerHomeboundRideSearchScreen
+import com.wepool.app.ui.screens.passengerScreens.PassengerMenuScreen
+import com.wepool.app.ui.screens.passengerScreens.PassengerRequestsScreen
+import com.wepool.app.ui.screens.passengerScreens.PassengerRideDirectionScreen
+import com.wepool.app.ui.screens.passengerScreens.PassengerWorkboundRideSearchScreen
+import com.wepool.app.ui.screens.mainScreens.UpdateDetailsScreen
+import com.wepool.app.ui.screens.driverScreens.WorkboundRideCreationScreen
 import com.wepool.app.ui.theme.WePoolTheme
 import kotlinx.coroutines.launch
 
@@ -157,22 +176,38 @@ class MainActivity : AppCompatActivity() {
                         composable("passengerActiveRides/{uid}?rideId={rideId}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             val rideId = it.arguments?.getString("rideId")
-                            PassengerActiveRidesScreen(uid = uid, navController = navController!!, rideId = rideId)
+                            PassengerActiveRidesScreen(
+                                uid = uid,
+                                navController = navController!!,
+                                rideId = rideId
+                            )
                         }
                         composable("driverActiveRides/{uid}?rideId={rideId}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             val rideId = it.arguments?.getString("rideId")
-                            DriverActiveRidesScreen(uid = uid, navController = navController!!, rideId = rideId)
+                            DriverActiveRidesScreen(
+                                uid = uid,
+                                navController = navController!!,
+                                rideId = rideId
+                            )
                         }
                         composable("driverPendingRequests/{uid}?rideId={rideId}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             val rideId = it.arguments?.getString("rideId")
-                            DriverRequestsScreen(uid = uid, navController = navController!!, filterRideId = rideId)
+                            DriverRequestsScreen(
+                                uid = uid,
+                                navController = navController!!,
+                                filterRideId = rideId
+                            )
                         }
                         composable("passengerPendingRequests/{uid}?rideId={rideId}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             val rideId = it.arguments?.getString("rideId")
-                            PassengerRequestsScreen(uid = uid, navController = navController!!, filterRideId = rideId)
+                            PassengerRequestsScreen(
+                                uid = uid,
+                                navController = navController!!,
+                                filterRideId = rideId
+                            )
                         }
                         composable("preferredLocations/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
