@@ -89,7 +89,7 @@ class CompanyRepository(
     }
 
     override suspend fun generateRandomUniqueCompanyCode(): String {
-        val allowedChars = ('1'..'9') + ('A'..'Z')
+        val allowedChars = ('1'..'9') + ('A'..'Z').filterNot { it == 'O' } // ללא האות O וללא הספרה 0 כדי למנוע בלבולים בהזנת קוד החברה
         var code: String
         var attempts = 0
 
