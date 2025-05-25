@@ -146,9 +146,9 @@ class UserRepository(
 
     override suspend fun updateUserCompanyCode(uid: String, newCompanyCode: String?) {
         try {
-            usersCollection.document(uid).update("companyId", newCompanyCode).await()
+            usersCollection.document(uid).update("companyCode", newCompanyCode).await()
         } catch (e: Exception) {
-            logException("updateUserCompanyId", e)
+            logException("updateUserCompanyCode", e)
         }
     }
 
