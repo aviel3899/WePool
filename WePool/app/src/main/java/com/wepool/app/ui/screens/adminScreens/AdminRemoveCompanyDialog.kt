@@ -20,6 +20,7 @@ fun AdminRemoveCompanyDialog(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val companyRepository = RepositoryProvider.provideCompanyRepository()
+    val hrManagerRepository = RepositoryProvider.provideHRManagerRepository()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -29,10 +30,25 @@ fun AdminRemoveCompanyDialog(
             TextButton(
                 onClick = {
                     coroutineScope.launch {
-                        companyRepository.deleteCompanyById(companyToRemove.companyId)
-                        Toast.makeText(context, "🗑️ Company removed successfully", Toast.LENGTH_SHORT).show()
-                        onCompanyRemoved()
-                        onDismiss()
+                        try {
+                            companyRepository.deleteCompanyById(
+                                companyId = companyToRemove.companyId,
+                                hrManagerRepository = hrManagerRepository
+                            )
+                            Toast.makeText(
+                                context,
+                                "🗑️ Company removed successfully",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            onCompanyRemoved()
+                            onDismiss()
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "❌ Failed to remove company: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                     }
                 }
             ) {

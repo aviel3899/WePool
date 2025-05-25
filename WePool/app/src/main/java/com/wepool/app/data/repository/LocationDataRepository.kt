@@ -22,7 +22,7 @@ class LocationDataRepository(
 
     override suspend fun addLocationToUser(uid: String, location: LocationData)  {
         userLocationsCollection(uid)
-            .document(location.name) // name משמש כמזהה מסמך
+            .document(location.name)
             .set(location)
             .await()
     }

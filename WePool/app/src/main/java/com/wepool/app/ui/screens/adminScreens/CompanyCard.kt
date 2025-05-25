@@ -39,10 +39,11 @@ fun CompanyCard(
     fun removeCompany() {
         coroutineScope.launch {
             try {
-                companyRepository.deleteCompanyById(company.companyId)
+                val hrManagerRepository = RepositoryProvider.provideHRManagerRepository()
+                companyRepository.deleteCompanyById(company.companyId, hrManagerRepository)
                 onCompanyUpdated()
             } catch (e: Exception) {
-                // Handle error
+                Log.e("CompanyUI", "❌ Failed to remove company", e)
             }
         }
     }

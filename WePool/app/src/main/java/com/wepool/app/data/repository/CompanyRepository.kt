@@ -3,6 +3,7 @@ package com.wepool.app.data.repository
 import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.company.Company
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.repository.interfaces.ICompanyRepository
@@ -53,17 +54,42 @@ class CompanyRepository(
         }
     }
 
-    override suspend fun deleteCompanyById(companyId: String) {
+    override suspend fun deleteCompanyById(
+        companyId: String,
+        hrManagerRepository: IHRManagerRepository
+    ) {
         try {
-            firestore.collection("companies").document(companyId).delete().await()
-            Log.d("CompanyRepository", "🗑️ Company $companyId deleted")
+            val companyDoc = firestore.collection("companies").document(companyId).get().await()
+            val company = companyDoc.toObject(Company::class.java)
+
+            if (company != null) {
+                val employeeUids = company.employees
+                val hrManagerUid = company.hrManagerUid
+
+                for (uid in employeeUids) {
+                    userRepository.updateUserCompanyCode(uid, "")
+                }
+
+                if (hrManagerUid != null) {
+                    userRepository.removeRoleFromUser(hrManagerUid, UserRole.HR_MANAGER.name)
+                    hrManagerRepository.deleteHRManager(hrManagerUid)
+                    Log.d("CompanyRepository", "👤 HR Manager $hrManagerUid demoted and HR data deleted")
+                }
+
+                firestore.collection("companies").document(companyId).delete().await()
+
+                Log.d("CompanyRepository", "🗑️ Company $companyId deleted and all employees updated")
+
+            } else {
+                Log.e("CompanyRepository", "❌ Company $companyId not found for deletion")
+            }
         } catch (e: Exception) {
-            Log.e("CompanyRepository", "❌ Failed to delete company", e)
+            Log.e("CompanyRepository", "❌ Error deleting company and updating employees", e)
         }
     }
 
     override suspend fun generateRandomUniqueCompanyCode(): String {
-        val allowedChars = ('0'..'9') + ('A'..'Z')
+        val allowedChars = ('1'..'9') + ('A'..'Z')
         var code: String
         var attempts = 0
 
@@ -79,7 +105,6 @@ class CompanyRepository(
 
         return code
     }
-
 
     override suspend fun createOrUpdateCompany(company: Company) {
         try {
@@ -104,7 +129,6 @@ class CompanyRepository(
         }
     }
 
-
     override suspend fun updateLocation(companyId: String, newAddress: String) {
         try {
             val locationData = mapsService.getCoordinatesFromAddress(newAddress)
@@ -122,6 +146,53 @@ class CompanyRepository(
             Log.e("CompanyRepository", "❌ Failed to update location from address", e)
         }
     }
+
+    override suspend fun getLocationByCompanyCode(companyCode: String): LocationData? {
+        return try {
+            Log.d("CompanyRepository", "🔍 Searching for company with code: $companyCode")
+
+            val snapshot = firestore.collection("companies")
+                .whereEqualTo("companyCode", companyCode)
+                .limit(1)
+                .get()
+                .await()
+
+            val doc = snapshot.documents.firstOrNull()
+            if (doc == null) {
+                Log.e("CompanyRepository", "❌ No company found with code: $companyCode")
+                return null
+            }
+
+            val locationMap = doc.get("location") as? Map<*, *>
+            if (locationMap == null) {
+                Log.e("CompanyRepository", "❌ 'location' field missing in company document")
+                return null
+            }
+
+            val name = locationMap["name"] as? String ?: ""
+            val placeId = locationMap["placeId"] as? String ?: ""
+            val geoPoint = locationMap["geoPoint"] as? com.google.firebase.firestore.GeoPoint
+
+            if (geoPoint == null) {
+                Log.e("CompanyRepository", "❌ 'geoPoint' is missing or invalid in location")
+                return null
+            }
+
+            val locationData = LocationData(
+                name = name,
+                placeId = placeId,
+                geoPoint = geoPoint
+            )
+
+            Log.d("CompanyRepository", "✅ Found location: $locationData")
+            locationData
+
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Exception while fetching location by code: $companyCode", e)
+            null
+        }
+    }
+
 
     override suspend fun updateLogoUrl(companyId: String, newLogoUrl: String?) {
         try {

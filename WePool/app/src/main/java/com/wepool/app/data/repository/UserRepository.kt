@@ -80,7 +80,6 @@ class UserRepository(
         }
     }
 
-
     override suspend fun deleteAllUsers(driverRepository: IDriverRepository, passengerRepository: IPassengerRepository, hrManagerRepository: IHRManagerRepository) {
         try {
             val allUsers = getAllUsers()

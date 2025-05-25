@@ -56,6 +56,10 @@ import com.wepool.app.ui.screens.hrManagerScreens.HRManageEmployeesScreen
 import com.wepool.app.ui.screens.hrManagerScreens.HRManageCompanyScreen
 import com.wepool.app.ui.theme.WePoolTheme
 import kotlinx.coroutines.launch
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.tasks.await
 
 class MainActivity : AppCompatActivity() {
 

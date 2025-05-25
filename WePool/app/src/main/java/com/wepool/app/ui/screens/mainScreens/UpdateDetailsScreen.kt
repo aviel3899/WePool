@@ -42,6 +42,7 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var selectedRoles by remember { mutableStateOf(setOf<UserRole>()) }
     var originalRoles by remember { mutableStateOf(setOf<UserRole>()) }
+    var companyCode by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -57,6 +58,7 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                 phoneNumber = loadedUser.phoneNumber ?: ""
                 selectedRoles = loadedUser.roles.toSet()
                 originalRoles = loadedUser.roles.toSet()
+                companyCode = loadedUser.companyCode
             }
         } catch (e: Exception) {
             errorMessage = "Error loading user: ${e.message}"
@@ -86,6 +88,15 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
             value = phoneNumber,
             onValueChange = { phoneNumber = it },
             label = { Text("Phone Number") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = companyCode,
+            onValueChange = { companyCode = it },
+            label = { Text("Company Code") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -205,6 +216,7 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                         user?.let {
                             val updatedUser = it.copy(
                                 phoneNumber = phoneNumber,
+                                companyCode = companyCode,
                                 roles = selectedRoles.toList()
                             )
                             userRepository.createOrUpdateUser(updatedUser)
