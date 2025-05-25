@@ -58,6 +58,7 @@ fun CompanyCard(
 
                 if (!company.employees.contains(hrManagerUid)) {
                     companyRepository.addEmployeeToCompany(company.companyId, hrManagerUid)
+                    userRepository.updateUserCompanyCode(hrManagerUid, company.companyCode)
                     Toast.makeText(context, "✅ HR added as employee", Toast.LENGTH_SHORT).show()
                 }
 
