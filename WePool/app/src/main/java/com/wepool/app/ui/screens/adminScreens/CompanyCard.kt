@@ -53,6 +53,10 @@ fun CompanyCard(
             try {
                 val hrManagerUid = selectedHrUid ?: return@launch
 
+                if (!company.employees.contains(hrManagerUid)) {
+                    companyRepository.addEmployeeToCompany(company.companyId, hrManagerUid)
+                }
+
                 companyRepository.setHrManager(
                     companyId = company.companyId,
                     hrManagerUid = hrManagerUid,
@@ -298,15 +302,15 @@ fun CompanyCard(
                         selectedHrUid = uid
                     },
                     usersProvider = {
-                        company.employees.mapNotNull { uid ->
-                            try {
-                                val user = userRepository.getUser(uid)
-                                if (user != null) uid to "${user.name} (${user.email})" else null
-                            } catch (e: Exception) {
-                                null
+                        try {
+                            userRepository.getAllUsers().map { user ->
+                                user.uid to "${user.name} (${user.email})"
                             }
+                        } catch (e: Exception) {
+                            emptyList()
                         }
                     }
+
                 )
             },
             confirmButton = {
