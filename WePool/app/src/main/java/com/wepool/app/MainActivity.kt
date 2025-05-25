@@ -32,23 +32,28 @@ import com.wepool.app.data.repository.LoginSessionManager
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.handleNotificationNavigation
 import com.wepool.app.notifications.NotificationHelper
+import com.wepool.app.ui.screens.adminScreens.AdminMenuScreen
+import com.wepool.app.ui.screens.adminScreens.CompanyListScreen
 import com.wepool.app.ui.screens.driverScreens.DriverActiveRidesScreen
 import com.wepool.app.ui.screens.driverScreens.DriverCarDetailsScreen
 import com.wepool.app.ui.screens.driverScreens.DriverMenuScreen
 import com.wepool.app.ui.screens.driverScreens.DriverRequestsScreen
+import com.wepool.app.ui.screens.driverScreens.RideCreationScreen
 import com.wepool.app.ui.screens.mainScreens.IntermediateScreen
 import com.wepool.app.ui.screens.mainScreens.LoginScreen
 import com.wepool.app.ui.screens.mainScreens.PreferredLocationsScreen
 import com.wepool.app.ui.screens.mainScreens.RideHistoryScreen
 import com.wepool.app.ui.screens.mainScreens.RoleSelectionScreen
 import com.wepool.app.ui.screens.mainScreens.SignUpScreen
-import com.wepool.app.ui.screens.driverScreens.RideCreationScreen
 import com.wepool.app.ui.screens.mainScreens.RideDirectionScreen
+import com.wepool.app.ui.screens.mainScreens.UpdateDetailsScreen
 import com.wepool.app.ui.screens.passengerScreens.PassengerActiveRidesScreen
 import com.wepool.app.ui.screens.passengerScreens.PassengerMenuScreen
 import com.wepool.app.ui.screens.passengerScreens.PassengerRequestsScreen
-import com.wepool.app.ui.screens.mainScreens.UpdateDetailsScreen
 import com.wepool.app.ui.screens.passengerScreens.PassengerRideSearchScreen
+import com.wepool.app.ui.screens.hrManagerScreens.HRManagerMenuScreen
+import com.wepool.app.ui.screens.hrManagerScreens.HRManageEmployeesScreen
+import com.wepool.app.ui.screens.hrManagerScreens.HRManageCompanyScreen
 import com.wepool.app.ui.theme.WePoolTheme
 import kotlinx.coroutines.launch
 
@@ -215,6 +220,27 @@ class MainActivity : AppCompatActivity() {
                             )
                         }
                         appNavGraph(navController!!) // ride direction selection screen
+                        composable("hrManagerMenu/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            HRManagerMenuScreen(uid = uid, navController = navController!!)
+                        }
+                        composable("adminMenu/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            AdminMenuScreen(uid = uid, navController = navController!!)
+                        }
+                        composable("companyList/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            CompanyListScreen(uid = uid, navController = navController!!)
+                        }
+                        composable("hrManageEmployees/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            HRManageEmployeesScreen(uid = uid, navController = navController!!)
+                        }
+
+                        composable("hrManageCompany/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            HRManageCompanyScreen(uid = uid, navController = navController!!)
+                        }
                     }
                 }
             }

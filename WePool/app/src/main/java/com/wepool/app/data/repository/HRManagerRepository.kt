@@ -38,10 +38,16 @@ class HRManagerRepository(
 
     override suspend fun deleteHRManager(uid: String) {
         try {
-            hrManagerDocRef(uid).delete().await()
-            Log.d("HRManagerRepository", "🗑️ HRManager deleted for user: $uid")
+            firestore
+                .collection("users")
+                .document(uid)
+                .collection("HRManagerData")
+                .document("info")
+                .delete()
+                .await()
+            Log.d("HRManagerRepository", "🗑️ HRManager info deleted for $uid")
         } catch (e: Exception) {
-            Log.e("HRManagerRepository", "❌ Failed to delete HRManager", e)
+            Log.e("HRManagerRepository", "❌ Failed to delete HRManager info for $uid", e)
         }
     }
 

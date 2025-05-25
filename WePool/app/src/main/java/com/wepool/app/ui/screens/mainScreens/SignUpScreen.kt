@@ -161,7 +161,12 @@ fun SignUpScreen(navController: NavController) {
                         checked = selectedRoles[role] ?: false,
                         onCheckedChange = { selectedRoles[role] = it }
                     )
-                    Text(role.name)
+                    val readableName = role.name
+                        .lowercase()
+                        .replace("_", " ")
+                        .replaceFirstChar { it.uppercase() }
+
+                    Text(readableName)
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
@@ -175,7 +180,7 @@ fun SignUpScreen(navController: NavController) {
                     errorMessage = "הסיסמאות לא תואמות"
                     return@Button
                 }
-                val chosenRoles = selectedRoles.filterValues { it }.keys.map { it.name }
+                val chosenRoles = selectedRoles.filterValues { it }.keys.toList()
                 if (chosenRoles.isEmpty()) {
                     errorMessage = "בחר לפחות תפקיד אחד"
                     return@Button

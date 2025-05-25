@@ -3,8 +3,10 @@ package com.wepool.app.data.repository
 import android.util.Log
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
+import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.repository.interfaces.IUserRepository
+import com.wepool.app.infrastructure.config.AdminConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -23,7 +25,7 @@ class AuthRepository(
             val result: AuthResult = auth.signInWithEmailAndPassword(email, password).await()
             val uid = result.user?.uid ?: return Result.failure(Exception("UID לא קיים"))
 
-            val user = userRepository.getUser(uid)
+            val user: User = userRepository.getUser(uid)
                 ?: return Result.failure(Exception("המשתמש לא נמצא במסד הנתונים"))
 
             if (user.isBanned) {
@@ -34,6 +36,15 @@ class AuthRepository(
             if (!user.isActive) {
                 Log.w("AuthRepository", "⚠️ המשתמש אינו פעיל | UID: $uid")
                 return Result.failure(Exception("המשתמש אינו פעיל במערכת"))
+            }
+
+            // הוספת תפקיד ADMIN למיילים המורשים אם עדיין לא קיים
+            if (user.email in AdminConfig.authorizedAdminEmails &&
+                !user.roles.contains(UserRole.ADMIN)
+            ) {
+                val updatedUser = user.copy(roles = user.roles + UserRole.ADMIN)
+                userRepository.createOrUpdateUser(updatedUser)
+                Log.d("AuthRepository", "👑 נוסף תפקיד ADMIN למשתמש עם UID: $uid")
             }
 
             userRepository.uploadFcmTokenForCurrentUser()

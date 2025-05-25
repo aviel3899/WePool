@@ -28,7 +28,7 @@ object RouteMatcher {
 
 
     fun updateMaxDistanceMeters(newDistance: Double, user: User) {
-        val isAdmin = user.roles.any { it == UserRole.ADMIN.name }
+        val isAdmin = UserRole.ADMIN in user.roles
 
         if (!isAdmin) {
             throw SecurityException("Unauthorized: Only Admin can update max distance.")
@@ -42,7 +42,7 @@ object RouteMatcher {
     }
 
     fun updateAverageSpeedMetersPerMinute(newSpeedInKilometerPerHour: Double, user: User) {
-        val isAdmin = user.roles.any { it == UserRole.ADMIN.name }
+        val isAdmin = UserRole.ADMIN in user.roles
 
         if (!isAdmin) {
             throw SecurityException("Unauthorized: Only Admin can update average speed.")

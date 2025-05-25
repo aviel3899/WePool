@@ -3,6 +3,7 @@ package com.wepool.app.infrastructure.navigation
 import android.content.Context
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
+import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.notifications.NotificationHelper
 
@@ -28,12 +29,15 @@ suspend fun handleNotificationNavigation(
             isDriver -> "driverActiveRides/$uid?rideId=$rideId"
             else -> "passengerMenu/$uid"
         }
+
         "rideCancelled" -> "passengerPendingRequests/$uid?rideId=$rideId"
-        "pendingRequests" -> if (user?.roles?.contains("DRIVER") == true)
+
+        "pendingRequests" -> if (user?.roles?.contains(UserRole.DRIVER) == true)
             "driverPendingRequests/$uid?rideId=$rideId"
         else
             "passengerPendingRequests/$uid"
-        else -> if (user?.roles?.contains("DRIVER") == true)
+
+        else -> if (user?.roles?.contains(UserRole.DRIVER) == true)
             "driverMenu/$uid"
         else
             "passengerMenu/$uid"
@@ -41,7 +45,7 @@ suspend fun handleNotificationNavigation(
 
     navController.navigate(route) {
         popUpTo("login") { inclusive = true }
-        launchSingleTop = true // על מנת שהמסך לא יידחף פעמיים אם המשתמש כבר נמצא באותו המסך
+        launchSingleTop = true
     }
 
     return true

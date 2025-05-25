@@ -1,7 +1,9 @@
 package com.wepool.app.data.model.users
 
 import com.wepool.app.data.model.common.LocationData
+import com.wepool.app.data.model.enums.UserRole
 
+@kotlinx.serialization.Serializable
 data class User(
     val uid: String = "",
     val name: String = "",
@@ -10,7 +12,7 @@ data class User(
     val companyCode: String = "",
     val isBanned: Boolean = false,
     val isActive: Boolean = true,
-    val roles: List<String> = emptyList(),
+    val roles: List<UserRole> = emptyList(),
     val lastLoginTimestamp: Long? = null,
     val fcmToken: String? = null,
     val favoriteLocations: List<LocationData> = emptyList()

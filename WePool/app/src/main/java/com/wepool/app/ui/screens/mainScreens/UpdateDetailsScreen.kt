@@ -40,8 +40,8 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    var selectedRoles by remember { mutableStateOf(setOf<String>()) }
-    var originalRoles by remember { mutableStateOf(setOf<String>()) }
+    var selectedRoles by remember { mutableStateOf(setOf<UserRole>()) }
+    var originalRoles by remember { mutableStateOf(setOf<UserRole>()) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -92,7 +92,7 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Select Roles:", style = MaterialTheme.typography.titleMedium)
-        listOf(UserRole.DRIVER.name, UserRole.PASSENGER.name).forEach { role ->
+        listOf(UserRole.DRIVER, UserRole.PASSENGER).forEach { role ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = selectedRoles.contains(role),
@@ -104,9 +104,14 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                         }
                     }
                 )
-                Text(role)
+                val readableName = role.name
+                    .lowercase()
+                    .replace("_", " ")
+                    .replaceFirstChar { it.uppercase() }
+                Text(readableName)
             }
         }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -177,22 +182,22 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                         val removedRoles = originalRoles - selectedRoles
                         val addedRoles = selectedRoles - originalRoles
 
-                        if ("DRIVER" in removedRoles) {
+                        if (UserRole.DRIVER in removedRoles) {
                             driverRepository.getDriver(uid)?.let {
                                 driverRepository.deleteDriver(uid)
                             }
                         }
-                        if ("PASSENGER" in removedRoles) {
+                        if (UserRole.PASSENGER in removedRoles) {
                             passengerRepository.getPassenger(uid)?.let {
                                 passengerRepository.deletePassenger(uid)
                             }
                         }
 
-                        if ("DRIVER" in addedRoles) {
+                        if (UserRole.DRIVER in addedRoles) {
                             val driver = Driver(user = user!!)
                             driverRepository.saveDriver(driver)
                         }
-                        if ("PASSENGER" in addedRoles) {
+                        if (UserRole.PASSENGER in addedRoles) {
                             val passenger = Passenger(user = user!!)
                             passengerRepository.savePassengerData(uid, passenger)
                         }

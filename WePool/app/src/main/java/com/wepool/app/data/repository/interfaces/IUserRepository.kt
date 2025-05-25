@@ -2,11 +2,17 @@ package com.wepool.app.data.repository.interfaces
 
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.users.User
+import com.wepool.app.data.repository.HRManagerRepository
 
 interface IUserRepository {
     suspend fun createOrUpdateUser(user: User)
-    suspend fun deleteUser(uid: String, driverRepository: IDriverRepository, passengerRepository: IPassengerRepository)
-    suspend fun deleteAllUsers(driverRepository: IDriverRepository, passengerRepository: IPassengerRepository)
+    suspend fun deleteUser(
+        uid: String,
+        driverRepository: IDriverRepository,
+        passengerRepository: IPassengerRepository,
+        hrManagerRepository: IHRManagerRepository
+    )
+    suspend fun deleteAllUsers(driverRepository: IDriverRepository, passengerRepository: IPassengerRepository, hrManagerRepository: IHRManagerRepository)
 
     suspend fun getUser(uid: String): User?
     suspend fun getAllUsers(): List<User>

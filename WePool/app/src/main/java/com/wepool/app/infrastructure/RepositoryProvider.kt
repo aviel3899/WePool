@@ -3,6 +3,7 @@ package com.wepool.app.infrastructure
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wepool.app.data.remote.GoogleMapsService
+import com.wepool.app.data.repository.AdminRepository
 import com.wepool.app.data.repository.DriverRepository
 import com.wepool.app.data.repository.PassengerRepository
 import com.wepool.app.data.repository.UserRepository
@@ -20,6 +21,7 @@ import com.wepool.app.data.repository.interfaces.ICompanyRepository
 import com.wepool.app.data.repository.CompanyRepository
 import com.wepool.app.data.repository.HRManagerRepository
 import com.wepool.app.data.repository.RideChatRepository
+import com.wepool.app.data.repository.interfaces.IAdminRepository
 import com.wepool.app.data.repository.interfaces.IHRManagerRepository
 import com.wepool.app.data.repository.interfaces.IRideChatRepository
 
@@ -62,10 +64,17 @@ object RepositoryProvider {
         return HRManagerRepository(firestore = firestore, userRepository = provideUserRepository(), companyRepository = provideCompanyRepository())
     }
 
-    //need to create AdminRepository
+    fun provideAdminRepository(): IAdminRepository {
+        return AdminRepository(
+            userRepository = provideUserRepository(),
+            hrManagerRepository = provideHRManagerRepository(),
+            companyRepository = provideCompanyRepository()
+        )
+    }
 
     fun provideCompanyRepository(): ICompanyRepository {
-        return CompanyRepository(firestore = firestore, mapsService = mapsService)
+        return CompanyRepository(
+            firestore = firestore, mapsService = mapsService, userRepository = provideUserRepository())
     }
 
     fun provideRideRepository(): IRideRepository {

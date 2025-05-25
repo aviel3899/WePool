@@ -1,18 +1,33 @@
 package com.wepool.app.data.repository
 
 import android.util.Log
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wepool.app.data.model.company.Company
+import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.repository.interfaces.ICompanyRepository
 import com.wepool.app.data.remote.IGoogleMapsService
+import com.wepool.app.data.repository.interfaces.IHRManagerRepository
+import com.wepool.app.data.repository.interfaces.IUserRepository
 import kotlinx.coroutines.tasks.await
 
 class CompanyRepository(
     private val firestore: FirebaseFirestore,
-    private val mapsService: IGoogleMapsService
+    private val mapsService: IGoogleMapsService,
+    private val userRepository: IUserRepository,
 ) : ICompanyRepository {
 
     private val companiesCollection = firestore.collection("companies")
+
+    override suspend fun getAllCompanies(): List<Company> {
+        return try {
+            val snapshot = companiesCollection.get().await()
+            snapshot.documents.mapNotNull { it.toObject(Company::class.java) }
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to get all companies", e)
+            emptyList()
+        }
+    }
 
     override suspend fun getCompanyById(companyId: String): Company? {
         return try {
@@ -35,6 +50,15 @@ class CompanyRepository(
         } catch (e: Exception) {
             Log.e("CompanyRepository", "❌ Failed to get company by code", e)
             null
+        }
+    }
+
+    override suspend fun deleteCompanyById(companyId: String) {
+        try {
+            firestore.collection("companies").document(companyId).delete().await()
+            Log.d("CompanyRepository", "🗑️ Company $companyId deleted")
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to delete company", e)
         }
     }
 
@@ -167,14 +191,35 @@ class CompanyRepository(
         }
     }
 
-    override suspend fun setHrManager(companyId: String, hrManagerUid: String) {
+    override suspend fun setHrManager(
+        companyId: String,
+        hrManagerUid: String,
+        hrManagerRepository: IHRManagerRepository // ← נוסף כאן
+    ) {
         try {
+            val companyDoc = companiesCollection.document(companyId).get().await()
+            val company = companyDoc.toObject(Company::class.java)
+            val previousHrUid = company?.hrManagerUid
+
+            // עדכון החברה עם HR החדש
             companiesCollection.document(companyId)
                 .update("hrManagerUid", hrManagerUid)
                 .await()
-            Log.d("CompanyRepository", "🏢 HR manager set: $hrManagerUid for $companyId")
+
+            // הוספת תפקיד למשתמש החדש
+            userRepository.addRoleToUser(hrManagerUid, UserRole.HR_MANAGER.name)
+
+            // הסרת HR קודם (אם קיים והוא שונה)
+            if (previousHrUid != null && previousHrUid != hrManagerUid) {
+                userRepository.removeRoleFromUser(previousHrUid, UserRole.HR_MANAGER.name)
+                hrManagerRepository.deleteHRManager(previousHrUid)
+            }
+
+            Log.d("CompanyRepository", "🏢 HR manager updated: $hrManagerUid (prev: $previousHrUid) for $companyId")
+
         } catch (e: Exception) {
-            Log.e("CompanyRepository", "❌ Failed to set HR manager", e)
+            Log.e("CompanyRepository", "❌ Failed to update HR manager", e)
         }
     }
+
 }

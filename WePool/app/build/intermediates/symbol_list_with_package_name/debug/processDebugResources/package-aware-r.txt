@@ -2977,6 +2977,7 @@ drawable abc_textfield_search_activated_mtrl_alpha
 drawable abc_textfield_search_default_mtrl_alpha
 drawable abc_textfield_search_material
 drawable abc_vector_test
+drawable add_square_svgrepo_com
 drawable admin_svgrepo_com
 drawable amu_bubble_mask
 drawable amu_bubble_shadow
@@ -3010,12 +3011,16 @@ drawable common_google_signin_btn_text_light
 drawable common_google_signin_btn_text_light_focused
 drawable common_google_signin_btn_text_light_normal
 drawable common_google_signin_btn_text_light_normal_background
+drawable company_svgrepo_com
 drawable contact_details_svgrepo_com
+drawable crying_face_svgrepo_com
 drawable design_fab_background
 drawable design_ic_visibility
 drawable design_ic_visibility_off
 drawable design_password_eye
 drawable design_snackbar_background
+drawable employees_svgrepo_com
+drawable folder_secret_svgrepo_com
 drawable googleg_disabled_color_18
 drawable googleg_standard_color_18
 drawable home_house_svgrepo_com
@@ -3044,6 +3049,7 @@ drawable ic_passkey
 drawable ic_password
 drawable ic_search_black_24
 drawable indeterminate_static
+drawable information_svgrepo_com
 drawable login_line_svgrepo_com
 drawable logout_svgrepo_com
 drawable m3_avd_hide_password
@@ -3118,11 +3124,14 @@ drawable notification_template_icon_bg
 drawable notification_template_icon_low_bg
 drawable notification_tile_bg
 drawable notify_panel_notification_icon_bg
+drawable remove_square_svgrepo_com
 drawable seat_belt_svgrepo_com
+drawable smiling_face_with_halo_svgrepo_com
 drawable steering_wheel_car_svgrepo_com
 drawable test_level_drawable
 drawable tooltip_frame_dark
 drawable tooltip_frame_light
+drawable trash_svgrepo_com
 drawable work_is_money_svgrepo_com
 id ALT
 id BOTTOM_END

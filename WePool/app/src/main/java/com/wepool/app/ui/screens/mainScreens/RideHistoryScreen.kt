@@ -70,7 +70,7 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
                 }
                 hasFilterBeenApplied = true
             } catch (e: Exception) {
-                error = "❌ שגיאה בטעינת נסיעות: ${e.message}"
+                error = "❌ Error loading rides: ${e.message}"
             } finally {
                 loading = false
             }
@@ -186,7 +186,7 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Refresh")
+                            Text("Search")
                         }
                     }
                 }

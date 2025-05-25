@@ -6,11 +6,12 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.messaging.FirebaseMessaging
 import com.wepool.app.data.model.common.LocationData
-import com.wepool.app.data.model.users.Passenger
+import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.data.repository.interfaces.IPassengerRepository
 import com.wepool.app.data.model.users.User
+import com.wepool.app.data.repository.interfaces.IHRManagerRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -50,19 +51,26 @@ class UserRepository(
         }
     }
 
-    override suspend fun deleteUser(uid: String, driverRepository: IDriverRepository, passengerRepository: IPassengerRepository) {
+    override suspend fun deleteUser(
+        uid: String,
+        driverRepository: IDriverRepository,
+        passengerRepository: IPassengerRepository,
+        hrManagerRepository: IHRManagerRepository
+    ) {
         try {
             val userSnapshot = usersCollection.document(uid).get().await()
             val user = userSnapshot.toObject(User::class.java) ?: return
 
             user.roles.forEach { role ->
                 when (role) {
-                    "DRIVER" -> driverRepository.deleteDriver(uid)
-                    "PASSENGER" -> passengerRepository.deletePassenger(uid)
-                    // צריך להוסיף HRManager & Admin
+                    UserRole.DRIVER -> driverRepository.deleteDriver(uid)
+                    UserRole.PASSENGER -> passengerRepository.deletePassenger(uid)
+                    UserRole.HR_MANAGER -> hrManagerRepository.deleteHRManager(uid)
+                    UserRole.ADMIN -> {
+                        Log.d("Firestore", "ℹ Admin role detected for $uid – no delete action taken.")
+                    }
                 }
             }
-
             usersCollection.document(uid).delete().await()
 
             Log.d("Firestore", "🧹 המשתמש $uid וכל הנתונים המשויכים לו נמחקו")
@@ -72,11 +80,12 @@ class UserRepository(
         }
     }
 
-    override suspend fun deleteAllUsers(driverRepository: IDriverRepository, passengerRepository: IPassengerRepository) {
+
+    override suspend fun deleteAllUsers(driverRepository: IDriverRepository, passengerRepository: IPassengerRepository, hrManagerRepository: IHRManagerRepository) {
         try {
             val allUsers = getAllUsers()
             for (user in allUsers) {
-                deleteUser(user.uid, driverRepository, passengerRepository)
+                deleteUser(user.uid, driverRepository, passengerRepository, hrManagerRepository)
             }
             Log.d("UserRepository", "🧹 כל המשתמשים נמחקו בהצלחה עם כל הנתונים המשויכים להם.")
         } catch (e: Exception) {

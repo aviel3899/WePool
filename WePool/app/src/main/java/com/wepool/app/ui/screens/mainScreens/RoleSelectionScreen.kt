@@ -11,6 +11,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.R
+import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.Passenger
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
@@ -153,18 +154,17 @@ fun RoleSelectionScreen(
 }
 
 @Composable
-fun RoleButton(role: String, uid: String, navController: NavController) {
+fun RoleButton(role: UserRole, uid: String, navController: NavController) {
     val coroutineScope = rememberCoroutineScope()
     val driverRepository = RepositoryProvider.provideDriverRepository()
     val passengerRepository = RepositoryProvider.providePassengerRepository()
     val userRepository = RepositoryProvider.provideUserRepository()
 
     val iconRes = when (role) {
-        "DRIVER" -> R.drawable.steering_wheel_car_svgrepo_com
-        "PASSENGER" -> R.drawable.seat_belt_svgrepo_com
-        "HR_MANAGER" -> R.drawable.hr_manager_svgrepo_com
-        "ADMIN" -> R.drawable.admin_svgrepo_com
-        else -> R.drawable.cancel_svgrepo_com
+        UserRole.DRIVER -> R.drawable.steering_wheel_car_svgrepo_com
+        UserRole.PASSENGER -> R.drawable.seat_belt_svgrepo_com
+        UserRole.HR_MANAGER -> R.drawable.hr_manager_svgrepo_com
+        UserRole.ADMIN -> R.drawable.admin_svgrepo_com
     }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -173,7 +173,7 @@ fun RoleButton(role: String, uid: String, navController: NavController) {
                 coroutineScope.launch {
                     val user = userRepository.getUser(uid)
                     when (role) {
-                        "PASSENGER" -> {
+                        UserRole.PASSENGER -> {
                             val existing = passengerRepository.getPassenger(uid)
                             if (existing == null && user != null) {
                                 passengerRepository.savePassengerData(uid, Passenger(user))
@@ -181,7 +181,7 @@ fun RoleButton(role: String, uid: String, navController: NavController) {
                             navController.navigate("passengerMenu/$uid")
                         }
 
-                        "DRIVER" -> {
+                        UserRole.DRIVER -> {
                             val existing = driverRepository.getDriver(uid)
                             if (existing == null) {
                                 navController.navigate("driverCarDetails/$uid")
@@ -190,8 +190,8 @@ fun RoleButton(role: String, uid: String, navController: NavController) {
                             }
                         }
 
-                        "HR_MANAGER" -> navController.navigate("hrDashboard/$uid")
-                        "ADMIN" -> navController.navigate("adminPanel/$uid")
+                        UserRole.HR_MANAGER -> navController.navigate("hrManagerMenu/$uid")
+                        UserRole.ADMIN -> navController.navigate("adminMenu/$uid")
                     }
                 }
             },
@@ -207,9 +207,11 @@ fun RoleButton(role: String, uid: String, navController: NavController) {
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            role.lowercase().replaceFirstChar { it.uppercase() },
-            style = MaterialTheme.typography.labelLarge
-        )
+        val readableName = role.name
+            .lowercase()
+            .replace("_", " ")
+            .replaceFirstChar { it.uppercase() }
+
+        Text(readableName, style = MaterialTheme.typography.labelLarge)
     }
 }
