@@ -1,12 +1,15 @@
 package com.wepool.app.ui.screens.adminScreens
 
+import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.wepool.app.R
@@ -48,13 +51,14 @@ fun CompanyCard(
         }
     }
 
-    fun setHrManager() {
+    fun setHrManager(context: Context) {
         coroutineScope.launch {
             try {
                 val hrManagerUid = selectedHrUid ?: return@launch
 
                 if (!company.employees.contains(hrManagerUid)) {
                     companyRepository.addEmployeeToCompany(company.companyId, hrManagerUid)
+                    Toast.makeText(context, "✅ HR added as employee", Toast.LENGTH_SHORT).show()
                 }
 
                 companyRepository.setHrManager(
@@ -320,8 +324,10 @@ fun CompanyCard(
                         .padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
+                    val context = LocalContext.current
+
                     TextButton(onClick = {
-                        setHrManager()
+                        setHrManager(context)
                         showSetHr = false
                         showHrConfirmationDialog = true
                     }) {
