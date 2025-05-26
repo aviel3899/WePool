@@ -27,7 +27,7 @@ import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
-import com.wepool.app.ui.screens.components.FavoriteLocationDropdown
+import com.wepool.app.ui.screens.favoriteLocations.FavoriteLocationDropdown
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -47,6 +47,7 @@ fun PassengerRideSearchScreen(
     val title = if (isToHome) "Join a Homebound Ride" else "Join a Workbound Ride"
 
     var companyId by remember { mutableStateOf("") }
+    var companyCode by remember { mutableStateOf("") }
     var locationInput by remember { mutableStateOf(LocationData()) }
     var locationSuggestions by remember { mutableStateOf<List<String>>(emptyList()) }
     var passengerNotes by remember { mutableStateOf("") }
@@ -72,7 +73,7 @@ fun PassengerRideSearchScreen(
         coroutineScope.launch {
             val user = userRepository.getUser(uid)
             favoriteLocations = user?.favoriteLocations ?: emptyList()
-            val companyCode = user?.companyCode.orEmpty()
+            companyCode = user?.companyCode.orEmpty()
 
             val company =
                 RepositoryProvider.provideCompanyRepository().getCompanyByCode(companyCode)
@@ -80,15 +81,13 @@ fun PassengerRideSearchScreen(
             if (company != null) {
                 companyId = company.companyId
                 val location = RepositoryProvider.provideCompanyRepository()
-                    .getLocationByCompanyCode(companyId)
+                    .getLocationByCompanyCode(companyCode)
                 fixedLocation = location
             } else {
-
-                Log.e("CompanyRepository", "❌ חברה לא נמצאה עבור קוד החברה: $companyCode")
+                Log.e("CompanyRepository", "❌ No company found with code: $companyCode")
             }
         }
     }
-
 
     LaunchedEffect(locationInput.name, selectedDate, selectedTime) {
         isFormValid =
@@ -243,7 +242,7 @@ fun PassengerRideSearchScreen(
                                 pickupStop = PickupStop(location = geo, passengerId = uid)
                                 val availableRides =
                                     passengerRideFinder.getAvailableRidesForPassenger(
-                                        companyId = companyId,
+                                        companyCode = companyCode,
                                         direction = direction,
                                         passengerArrivalTime = if (!isToHome) selectedTime else "",
                                         passengerDepartureTime = if (isToHome) selectedTime else "",
@@ -357,11 +356,7 @@ fun PassengerRideSearchScreen(
                 ) {
                     BottomNavigationButtons(
                         uid = uid,
-                        rideId = null,
                         navController = navController,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
                         showBackButton = true,
                         showHomeButton = true
                     )

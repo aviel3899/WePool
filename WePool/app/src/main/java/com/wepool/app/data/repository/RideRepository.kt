@@ -61,9 +61,9 @@ class RideRepository(
         return@withContext snapshot.toObjects(Ride::class.java)
     }
 
-    override suspend fun getRidesByCompanyAndDirection(companyId: String, direction: RideDirection): List<Ride> {
+    override suspend fun getRidesByCompanyAndDirection(companyCode: String, direction: RideDirection): List<Ride> {
         return rideCollection
-            .whereEqualTo("companyId", companyId)
+            .whereEqualTo("companyCode", companyCode)
             .whereEqualTo("direction", direction)
             .get()
             .await()

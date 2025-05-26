@@ -23,7 +23,7 @@ import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
-import com.wepool.app.ui.screens.components.FavoriteLocationDropdown
+import com.wepool.app.ui.screens.favoriteLocations.FavoriteLocationDropdown
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -287,17 +287,44 @@ fun RideCreationScreen(navController: NavController, uid: String, direction: Rid
 
                     Button(
                         onClick = {
+                            // Combine the selected date and selected time into a single Calendar object
                             val selectedCalendar = Calendar.getInstance()
+
+                            // Set the selected date (day, month, year)
+                            val selectedDateParts = selectedDate.split("-")
+                            selectedCalendar.set(
+                                Calendar.DAY_OF_MONTH,
+                                selectedDateParts[0].toInt()
+                            )
+                            selectedCalendar.set(
+                                Calendar.MONTH,
+                                selectedDateParts[1].toInt() - 1
+                            ) // Months are 0-based
+                            selectedCalendar.set(Calendar.YEAR, selectedDateParts[2].toInt())
+
+                            // Set the selected time (hour, minute)
                             val selectedHourMin = selectedTime.split(":")
                             selectedCalendar.set(Calendar.HOUR_OF_DAY, selectedHourMin[0].toInt())
                             selectedCalendar.set(Calendar.MINUTE, selectedHourMin[1].toInt())
+                            selectedCalendar.set(
+                                Calendar.SECOND,
+                                0
+                            ) // Reset seconds to ensure precise comparison
+                            selectedCalendar.set(
+                                Calendar.MILLISECOND,
+                                0
+                            ) // Reset milliseconds to ensure precise comparison
 
+                            // Get the current time (now)
                             val now = Calendar.getInstance()
+
+                            // Calculate the time difference between now and the selected time
                             val timeDifference = selectedCalendar.timeInMillis - now.timeInMillis
 
-                            Log.d("TimeDifference", "Time difference in milliseconds: $timeDifference")
+                            // Define minimum gap based on direction (workbound or homebound)
                             val minimumGapMillis = if (isToWork) 60 * 60 * 1000 else 10 * 60 * 1000
 
+                            // If the ride's selected time is too soon, show a toast
                             if (timeDifference < minimumGapMillis) {
                                 Toast.makeText(
                                     context,
@@ -369,11 +396,7 @@ fun RideCreationScreen(navController: NavController, uid: String, direction: Rid
                 ) {
                     BottomNavigationButtons(
                         uid = uid,
-                        rideId = null,
                         navController = navController,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
                         showBackButton = true,
                         showHomeButton = true
                     )

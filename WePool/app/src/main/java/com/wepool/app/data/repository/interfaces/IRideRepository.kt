@@ -13,7 +13,7 @@ interface IRideRepository {
     suspend fun getRide(rideId: String): Ride?
     suspend fun getAllRides(): List<Ride>
     suspend fun getRidesByDriver(driverId: String): List<Ride>
-    suspend fun getRidesByCompanyAndDirection(companyId: String, direction: RideDirection): List<Ride>
+    suspend fun getRidesByCompanyAndDirection(companyCode: String, direction: RideDirection): List<Ride>
     fun getPickupTimeForPassenger(ride: Ride, passengerId: String): String?
     fun getDropoffTimeForPassenger(ride: Ride, passengerId: String):String?
     suspend fun getPastRidesAsDriver(uid: String): List<Ride>

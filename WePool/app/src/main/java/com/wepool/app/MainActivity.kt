@@ -34,6 +34,8 @@ import com.wepool.app.infrastructure.navigation.handleNotificationNavigation
 import com.wepool.app.notifications.NotificationHelper
 import com.wepool.app.ui.screens.adminScreens.AdminMenuScreen
 import com.wepool.app.ui.screens.adminScreens.CompanyListScreen
+import com.wepool.app.ui.screens.adminScreens.UserListScreen
+import com.wepool.app.ui.screens.adminScreens.RidesListScreen
 import com.wepool.app.ui.screens.driverScreens.DriverActiveRidesScreen
 import com.wepool.app.ui.screens.driverScreens.DriverCarDetailsScreen
 import com.wepool.app.ui.screens.driverScreens.DriverMenuScreen
@@ -41,12 +43,12 @@ import com.wepool.app.ui.screens.driverScreens.DriverRequestsScreen
 import com.wepool.app.ui.screens.driverScreens.RideCreationScreen
 import com.wepool.app.ui.screens.mainScreens.IntermediateScreen
 import com.wepool.app.ui.screens.mainScreens.LoginScreen
-import com.wepool.app.ui.screens.mainScreens.PreferredLocationsScreen
-import com.wepool.app.ui.screens.mainScreens.RideHistoryScreen
 import com.wepool.app.ui.screens.mainScreens.RoleSelectionScreen
 import com.wepool.app.ui.screens.mainScreens.SignUpScreen
 import com.wepool.app.ui.screens.mainScreens.RideDirectionScreen
 import com.wepool.app.ui.screens.mainScreens.UpdateDetailsScreen
+import com.wepool.app.ui.screens.favoriteLocations.PreferredLocationsScreen
+import com.wepool.app.ui.screens.rideHistory.RideHistoryScreen
 import com.wepool.app.ui.screens.passengerScreens.PassengerActiveRidesScreen
 import com.wepool.app.ui.screens.passengerScreens.PassengerMenuScreen
 import com.wepool.app.ui.screens.passengerScreens.PassengerRequestsScreen
@@ -56,11 +58,6 @@ import com.wepool.app.ui.screens.hrManagerScreens.HRManageEmployeesScreen
 import com.wepool.app.ui.screens.hrManagerScreens.HRManageCompanyScreen
 import com.wepool.app.ui.theme.WePoolTheme
 import kotlinx.coroutines.launch
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FieldValue
-import com.wepool.app.ui.screens.adminScreens.UserListScreen
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.tasks.await
 
 class MainActivity : AppCompatActivity() {
 
@@ -141,10 +138,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         composable("intermediate/{uid}?fromLogin={fromLogin}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
-                            val fromLogin =
-                                it.arguments?.getString("fromLogin")?.toBooleanStrictOrNull()
-                                    ?: false
-                            IntermediateScreen(navController!!, uid, fromLogin)
+                            IntermediateScreen(navController!!, uid)
                         }
                         composable("rideHistory/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
@@ -246,9 +240,13 @@ class MainActivity : AppCompatActivity() {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             HRManageCompanyScreen(uid = uid, navController = navController!!)
                         }
-                        composable("userList/{uid}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: ""
+                        composable("userList/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
                             UserListScreen(uid = uid, navController = navController!!)
+                        }
+                        composable("ridesList/{uid}") {
+                            val uid = it.arguments?.getString("uid") ?: return@composable
+                            RidesListScreen(uid = uid, navController = navController!!)
                         }
                     }
                 }

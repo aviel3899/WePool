@@ -1,4 +1,4 @@
-package com.wepool.app.ui.screens.mainScreens
+package com.wepool.app.ui.screens.favoriteLocations
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,7 +20,6 @@ import androidx.navigation.NavController
 import com.wepool.app.R
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.infrastructure.RepositoryProvider
-import com.wepool.app.ui.screens.components.AddLocationDialog
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import kotlinx.coroutines.launch
 
@@ -67,7 +66,6 @@ fun PreferredLocationsScreen(uid: String, navController: NavController) {
             bottomBar = {
                 BottomNavigationButtons(
                     uid = uid,
-                    rideId = null,
                     navController = navController,
                     showBackButton = true,
                     showHomeButton = false

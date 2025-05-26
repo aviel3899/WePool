@@ -19,7 +19,6 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
             bottomBar = {
                 BottomNavigationButtons(
                     uid = uid,
-                    rideId = null,
                     navController = navController,
                     showBackButton = true,
                     showHomeButton = true

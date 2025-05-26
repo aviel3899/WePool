@@ -48,6 +48,10 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\work_is_money_svgrepo_com.xml"
     },
     {
+        "merged": "com.wepool.app-debug-81:/drawable_arrow_forward_long_svgrepo_com.xml.flat",
+        "source": "com.wepool.app-main-83:/drawable/arrow_forward_long_svgrepo_com.xml"
+    },
+    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-hdpi_ic_launcher_round.webp.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-hdpi\\ic_launcher_round.webp"
     },
@@ -56,8 +60,8 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\folder_secret_svgrepo_com.xml"
     },
     {
-        "merged": "com.wepool.app-debug-81:/drawable_users_young_svgrepo_com.xml.flat",
-        "source": "com.wepool.app-main-83:/drawable/users_young_svgrepo_com.xml"
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_car_svgrepo_com.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\car_svgrepo_com.xml"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_ic_launcher_foreground.xml.flat",
@@ -110,6 +114,10 @@
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_remove_square_svgrepo_com.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\remove_square_svgrepo_com.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_users_young_svgrepo_com.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\users_young_svgrepo_com.xml"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\xml_data_extraction_rules.xml.flat",

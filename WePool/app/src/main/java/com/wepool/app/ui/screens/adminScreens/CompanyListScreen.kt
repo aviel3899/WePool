@@ -246,11 +246,7 @@ fun CompanyListScreen(uid: String, navController: NavController) {
 
                 BottomNavigationButtons(
                     uid = uid,
-                    rideId = null,
                     navController = navController,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
                     showBackButton = true,
                     showHomeButton = true
                 )

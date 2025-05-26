@@ -16,20 +16,18 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.Driver
 import com.wepool.app.data.model.users.Passenger
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
-import com.google.firebase.auth.FirebaseAuth
+import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @Composable
 fun UpdateDetailsScreen(navController: NavController, uid: String) {
-    val context = LocalContext.current
-    val activity = remember(context) { context as? Activity }
-
     val coroutineScope = rememberCoroutineScope()
     val userRepository = RepositoryProvider.provideUserRepository()
     val driverRepository = RepositoryProvider.provideDriverRepository()
@@ -77,172 +75,180 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Update Personal Details", style = MaterialTheme.typography.headlineSmall)
-            Spacer(modifier = Modifier.height(24.dp))
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp)
+                    .padding(bottom = 160.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Update Personal Details", style = MaterialTheme.typography.headlineSmall)
+                Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedTextField(
-                value = phoneNumber,
-                onValueChange = { phoneNumber = it },
-                label = { Text("Phone Number") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Select Roles:", style = MaterialTheme.typography.titleMedium)
-            listOf(UserRole.DRIVER, UserRole.PASSENGER).forEach { role ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = selectedRoles.contains(role),
-                        onCheckedChange = {
-                            selectedRoles = if (it) {
-                                selectedRoles + role
-                            } else {
-                                selectedRoles - role
-                            }
-                        }
-                    )
-                    val readableName = role.name
-                        .lowercase()
-                        .replace("_", " ")
-                        .replaceFirstChar { it.uppercase() }
-                    Text(readableName)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = newPassword,
-                onValueChange = { newPassword = it },
-                label = { Text("New Password (optional)") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                        )
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                        Icon(
-                            imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (confirmPasswordVisible) "Hide confirm password" else "Show confirm password"
-                        )
-                    }
-                },
-                isError = !passwordsMatch && confirmPassword.isNotEmpty()
-            )
-
-            if (!passwordsMatch && confirmPassword.isNotEmpty()) {
-                Text(
-                    "Passwords do not match",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.align(Alignment.Start)
+                OutlinedTextField(
+                    value = phoneNumber,
+                    onValueChange = { phoneNumber = it },
+                    label = { Text("Phone Number") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = {
-                    if (!passwordsMatch) {
-                        errorMessage = "Passwords do not match. Please try again."
-                        return@Button
+                Text("Select Roles:", style = MaterialTheme.typography.titleMedium)
+                listOf(UserRole.DRIVER, UserRole.PASSENGER).forEach { role ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = selectedRoles.contains(role),
+                            onCheckedChange = {
+                                selectedRoles = if (it) {
+                                    selectedRoles + role
+                                } else {
+                                    selectedRoles - role
+                                }
+                            }
+                        )
+                        val readableName = role.name
+                            .lowercase()
+                            .replace("_", " ")
+                            .replaceFirstChar { it.uppercase() }
+                        Text(readableName)
                     }
+                }
 
-                    coroutineScope.launch {
-                        try {
-                            if (newPassword.isNotBlank()) {
-                                try {
-                                    auth.currentUser?.updatePassword(newPassword)?.await()
-                                } catch (e: Exception) {
-                                    errorMessage = "Password update failed: ${e.message}"
-                                    return@launch
-                                }
-                            }
+                Spacer(modifier = Modifier.height(16.dp))
 
-                            val removedRoles = originalRoles - selectedRoles
-                            val addedRoles = selectedRoles - originalRoles
-
-                            if (UserRole.DRIVER in removedRoles) {
-                                driverRepository.getDriver(uid)?.let {
-                                    driverRepository.deleteDriver(uid)
-                                }
-                            }
-                            if (UserRole.PASSENGER in removedRoles) {
-                                passengerRepository.getPassenger(uid)?.let {
-                                    passengerRepository.deletePassenger(uid)
-                                }
-                            }
-
-                            if (UserRole.DRIVER in addedRoles) {
-                                val driver = Driver(user = user!!)
-                                driverRepository.saveDriver(driver)
-                            }
-                            if (UserRole.PASSENGER in addedRoles) {
-                                val passenger = Passenger(user = user!!)
-                                passengerRepository.savePassengerData(uid, passenger)
-                            }
-
-                            user?.let {
-                                val updatedUser = it.copy(
-                                    phoneNumber = phoneNumber,
-                                    roles = selectedRoles.toList()
-                                )
-                                userRepository.createOrUpdateUser(updatedUser)
-                            }
-
-                            navController.navigate("intermediate/$uid") {
-                                popUpTo("updateDetails/$uid") { inclusive = true }
-                            }
-                        } catch (e: Exception) {
-                            errorMessage = "Update failed: ${e.message}"
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = { Text("New Password (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = null
+                            )
                         }
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Save and Exit")
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Confirm Password") },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            Icon(
+                                imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    isError = !passwordsMatch && confirmPassword.isNotEmpty()
+                )
+
+                if (!passwordsMatch && confirmPassword.isNotEmpty()) {
+                    Text(
+                        "Passwords do not match",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        if (!passwordsMatch) {
+                            errorMessage = "Passwords do not match. Please try again."
+                            return@Button
+                        }
+
+                        coroutineScope.launch {
+                            try {
+                                if (newPassword.isNotBlank()) {
+                                    try {
+                                        auth.currentUser?.updatePassword(newPassword)?.await()
+                                    } catch (e: Exception) {
+                                        errorMessage = "Password update failed: ${e.message}"
+                                        return@launch
+                                    }
+                                }
+
+                                val removedRoles = originalRoles - selectedRoles
+                                val addedRoles = selectedRoles - originalRoles
+
+                                if (UserRole.DRIVER in removedRoles) {
+                                    driverRepository.getDriver(uid)?.let {
+                                        driverRepository.deleteDriver(uid)
+                                    }
+                                }
+                                if (UserRole.PASSENGER in removedRoles) {
+                                    passengerRepository.getPassenger(uid)?.let {
+                                        passengerRepository.deletePassenger(uid)
+                                    }
+                                }
+
+                                if (UserRole.DRIVER in addedRoles) {
+                                    val driver = Driver(user = user!!)
+                                    driverRepository.saveDriver(driver)
+                                }
+                                if (UserRole.PASSENGER in addedRoles) {
+                                    val passenger = Passenger(user = user!!)
+                                    passengerRepository.savePassengerData(uid, passenger)
+                                }
+
+                                user?.let {
+                                    val updatedUser = it.copy(
+                                        phoneNumber = phoneNumber,
+                                        roles = selectedRoles.toList()
+                                    )
+                                    userRepository.createOrUpdateUser(updatedUser)
+                                }
+
+                                navController.navigate("intermediate/$uid") {
+                                    popUpTo("updateDetails/$uid") { inclusive = true }
+                                }
+                            } catch (e: Exception) {
+                                errorMessage = "Update failed: ${e.message}"
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Save and Exit")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                errorMessage?.let {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(it, color = MaterialTheme.colorScheme.error)
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedButton(
-                onClick = {
-                    navController.navigate("intermediate/$uid?fromLogin=false") {
-                        popUpTo("updateDetails/$uid") { inclusive = true }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                tonalElevation = 4.dp,
+                shadowElevation = 4.dp,
+                color = MaterialTheme.colorScheme.surface
             ) {
-                Text("Cancel")
-            }
-
-            errorMessage?.let {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(it, color = MaterialTheme.colorScheme.error)
+                BottomNavigationButtons(
+                    uid = uid,
+                    navController = navController,
+                    showBackButton = true,
+                    showHomeButton = false
+                )
             }
         }
     }

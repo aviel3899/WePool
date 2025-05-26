@@ -7,9 +7,10 @@ color purple_700
 color teal_200
 color teal_700
 color white
-drawable add_square_svgrepo_com
 drawable admin_svgrepo_com
+drawable arrow_forward_long_svgrepo_com
 drawable cancel_svgrepo_com
+drawable car_svgrepo_com
 drawable company_svgrepo_com
 drawable contact_details_svgrepo_com
 drawable crying_face_svgrepo_com
@@ -22,7 +23,6 @@ drawable ic_launcher_foreground
 drawable information_svgrepo_com
 drawable login_line_svgrepo_com
 drawable logout_svgrepo_com
-drawable remove_square_svgrepo_com
 drawable seat_belt_svgrepo_com
 drawable smiling_face_with_halo_svgrepo_com
 drawable steering_wheel_car_svgrepo_com

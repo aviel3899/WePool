@@ -55,6 +55,19 @@ fun AdminMenuScreen(
                         onClick = { navController.navigate("userList/$uid") }
                     )
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    DashboardButton(
+                        label = "Rides",
+                        iconRes = R.drawable.car_svgrepo_com,
+                        onClick = { navController.navigate("ridesList/$uid") }
+                    )
+                }
             }
 
             Surface(
@@ -67,11 +80,7 @@ fun AdminMenuScreen(
             ) {
                 BottomNavigationButtons(
                     uid = uid,
-                    rideId = null,
                     navController = navController,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
                     showBackButton = true,
                     showHomeButton = true
                 )
@@ -113,4 +122,3 @@ fun DashboardButton(
         )
     }
 }
-

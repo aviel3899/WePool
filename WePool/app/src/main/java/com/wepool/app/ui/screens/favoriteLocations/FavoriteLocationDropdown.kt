@@ -1,4 +1,4 @@
-package com.wepool.app.ui.screens.components
+package com.wepool.app.ui.screens.favoriteLocations
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

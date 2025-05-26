@@ -326,11 +326,7 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
             ) {
                 BottomNavigationButtons(
                     uid = uid,
-                    rideId = rideId,
                     navController = navController,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
                     showBackButton = true,
                     showHomeButton = true
                 )

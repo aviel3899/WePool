@@ -4,7 +4,6 @@ import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.ride.RideRequest
 import com.wepool.app.data.model.enums.RequestStatus
 import com.wepool.app.data.model.logic.DetourEvaluationResult
-import com.wepool.app.data.model.ride.RideRequestUpdateResult
 
 interface IRideRequestRepository {
     suspend fun sendRequest(
@@ -20,8 +19,6 @@ interface IRideRequestRepository {
         requestId: String,
         newDetour: DetourEvaluationResult
     )
-    suspend fun updatePassengerSawApprovedRequest(rideId: String, requestId: String, approved: Boolean): Boolean
-    suspend fun updatePassengerSawDeclinedRequest(rideId: String, requestId: String, declined: Boolean): Boolean
     suspend fun getRequestsForRide(rideId: String): List<RideRequest>
     suspend fun getPendingRequestsByRide(rideId: String): List<RideRequest>
     suspend fun getRequestsByPassenger(passengerId: String): List<RideRequest>
@@ -29,5 +26,4 @@ interface IRideRequestRepository {
     suspend fun getPendingRequestsByDriver(driverId: String): List<RideRequest>
     suspend fun getPendingRequestsByPassenger(passengerId: String): List<RideRequest>
     suspend fun deleteRequest(rideId: String, requestId: String)
-    suspend fun getNewRideRequestUpdatesForUser(uid: String): RideRequestUpdateResult
 }

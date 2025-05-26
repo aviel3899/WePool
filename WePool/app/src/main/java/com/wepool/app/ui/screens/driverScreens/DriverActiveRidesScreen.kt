@@ -38,8 +38,6 @@ import com.wepool.app.ui.screens.components.RideMapDialog
 import com.wepool.app.ui.screens.components.RidePassengerDetailsDialog
 import com.wepool.app.ui.screens.components.filterRides
 import kotlinx.coroutines.launch
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.Calendar
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
@@ -51,8 +49,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
     val requestRepository = RepositoryProvider.provideRideRequestRepository()
     val userRepository = RepositoryProvider.provideUserRepository()
     val coroutineScope = rememberCoroutineScope()
-    val locationPermissionState =
-        rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
 
     var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
@@ -79,7 +76,6 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
     val directionOptions =
         listOf(RideDirection.TO_HOME to "To Home", RideDirection.TO_WORK to "To Work")
 
-
     fun refreshRides() {
         coroutineScope.launch {
             try {
@@ -89,7 +85,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 rides =
                     filterRides(allRides, startDate, endDate, startTime, endTime, selectedDirection)
             } catch (e: Exception) {
-                error = "❌ Error loading rides: ${e.message}"
+                error = "❌Error loading Rides: ${e.message}"
             } finally {
                 loading = false
             }
@@ -105,13 +101,11 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 { _, startYear, startMonth, startDay ->
                     val proposedStart =
                         String.format("%04d-%02d-%02d", startYear, startMonth + 1, startDay)
-
                     DatePickerDialog(
                         context,
                         { _, endYear, endMonth, endDay ->
                             val proposedEnd =
                                 String.format("%04d-%02d-%02d", endYear, endMonth + 1, endDay)
-
                             if (proposedEnd >= proposedStart) {
                                 startDate = proposedStart
                                 endDate = proposedEnd
@@ -124,7 +118,6 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                                 startDate = ""
                                 endDate = ""
                             }
-
                             showDateRangePicker = false
                         },
                         calendar.get(Calendar.YEAR),
@@ -210,7 +203,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 try {
                     RideNavigationServiceController.startRideNavigation(context, ride.rideId)
                 } catch (e: Exception) {
-                    error = "⚠️ ${e.message}"
+                    error = "⚠ ${e.message}"
                 } finally {
                     isActionInProgress = false
                 }
@@ -221,9 +214,21 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 if (isActionInProgress) return@launch
                 isActionInProgress = true
                 try {
-                    val now = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
-                    val diffMinutes =
-                        rideRepository.calculateTimeDifferenceInMinutes(now, ride.departureTime!!)
+                    val rideDateParts = ride.date.split("-").map { it.toInt() } // [dd, MM, yyyy]
+                    val rideTimeParts = ride.departureTime!!.split(":").map { it.toInt() }
+                    val rideCalendar = Calendar.getInstance().apply {
+                        set(Calendar.DAY_OF_MONTH, rideDateParts[0])
+                        set(Calendar.MONTH, rideDateParts[1] - 1)
+                        set(Calendar.YEAR, rideDateParts[2])
+                        set(Calendar.HOUR_OF_DAY, rideTimeParts[0])
+                        set(Calendar.MINUTE, rideTimeParts[1])
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                    val now = Calendar.getInstance()
+                    val diffMillis = rideCalendar.timeInMillis - now.timeInMillis
+                    val diffMinutes = diffMillis / (60 * 1000)
+
                     threshold = if (ride.direction == RideDirection.TO_WORK) 180 else 60
                     if (diffMinutes < threshold) {
                         showTooLateDialog = true
@@ -254,12 +259,10 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
         }
     )
 
-    // --- Map Dialog ---
     rideForMapDialog?.let { ride ->
         RideMapDialog(ride = ride, onDismiss = { rideForMapDialog = null })
     }
 
-    // --- Passenger Details Dialog ---
     RidePassengerDetailsDialog(
         showDialog = showDetailsDialog,
         ride = selectedRide,
@@ -278,9 +281,8 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
         }
     )
 
-    // --- Too Late Dialog ---
-    if (showTooLateDialog || innerTooLateDialog) {
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        if (showTooLateDialog || innerTooLateDialog) {
             AlertDialog(
                 onDismissRequest = {
                     showTooLateDialog = false
@@ -487,11 +489,7 @@ fun DriverActiveRidesContent(
             ) {
                 BottomNavigationButtons(
                     uid = uid,
-                    rideId = rideId,
                     navController = navController,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
                     showBackButton = true,
                     showHomeButton = true
                 )

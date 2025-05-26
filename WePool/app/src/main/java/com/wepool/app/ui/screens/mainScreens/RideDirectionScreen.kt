@@ -1,9 +1,6 @@
 package com.wepool.app.ui.screens.mainScreens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.House
-import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -90,11 +87,7 @@ fun RideDirectionScreen(
             ) {
                 BottomNavigationButtons(
                     uid = uid,
-                    rideId = null,
                     navController = navController,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
                     showBackButton = true,
                     showHomeButton = true
                 )

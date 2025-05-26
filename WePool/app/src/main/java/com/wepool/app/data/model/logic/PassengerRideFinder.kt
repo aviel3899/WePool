@@ -29,7 +29,7 @@ class PassengerRideFinder(
     private val minDepartureDelayToHomeMinutes = 10L
 
     suspend fun getAvailableRidesForPassenger(
-        companyId: String,
+        companyCode: String,
         direction: RideDirection,
         passengerArrivalTime: String = "",
         passengerDepartureTime: String = "",
@@ -39,7 +39,7 @@ class PassengerRideFinder(
         rideRequestRepository: IRideRequestRepository
     ): List<RideCandidate> = withContext(Dispatchers.IO) {
 
-        val allRides = rideRepository.getRidesByCompanyAndDirection(companyId, direction)
+        val allRides = rideRepository.getRidesByCompanyAndDirection(companyCode, direction)
 
         val candidates = allRides.mapNotNull { ride ->
             val dateOK = ride.date == passengerDate

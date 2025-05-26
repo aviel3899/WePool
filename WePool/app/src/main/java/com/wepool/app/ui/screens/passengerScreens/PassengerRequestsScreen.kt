@@ -69,35 +69,6 @@ fun PassengerRequestsScreen(
                     baseFiltered
                 }
 
-                when (selectedStatus) {
-                    "All" -> filtered.forEach {
-                        if (!it.passengerSawApprovedRequest && it.status == RequestStatus.ACCEPTED)
-                            requestRepo.updatePassengerSawApprovedRequest(
-                                it.rideId,
-                                it.requestId,
-                                true
-                            )
-                        if (!it.passengerSawDeclinedRequest && it.status == RequestStatus.DECLINED)
-                            requestRepo.updatePassengerSawDeclinedRequest(
-                                it.rideId,
-                                it.requestId,
-                                true
-                            )
-                    }
-
-                    "Accepted" -> filtered.filter {
-                        it.status == RequestStatus.ACCEPTED && !it.passengerSawApprovedRequest
-                    }.forEach {
-                        requestRepo.updatePassengerSawApprovedRequest(it.rideId, it.requestId, true)
-                    }
-
-                    "Declined" -> filtered.filter {
-                        it.status == RequestStatus.DECLINED && !it.passengerSawDeclinedRequest
-                    }.forEach {
-                        requestRepo.updatePassengerSawDeclinedRequest(it.rideId, it.requestId, true)
-                    }
-                }
-
                 val rideMap: Map<String, Ride> = filtered.mapNotNull { request ->
                     val ride = rideRepo.getRide(request.rideId)
                     if (ride != null) request.rideId to ride else null
@@ -310,11 +281,7 @@ fun PassengerRequestsScreen(
             ) {
                 BottomNavigationButtons(
                     uid = uid,
-                    rideId = null,
                     navController = navController,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
                     showBackButton = true,
                     showHomeButton = true
                 )

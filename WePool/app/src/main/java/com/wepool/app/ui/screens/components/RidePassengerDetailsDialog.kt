@@ -27,8 +27,7 @@ import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.data.repository.interfaces.IRideRequestRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import kotlinx.coroutines.launch
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 @Composable
 fun RidePassengerDetailsDialog(
@@ -158,35 +157,56 @@ fun RidePassengerDetailsDialog(
                         Button(
                             onClick = {
                                 coroutineScope.launch {
-                                    val now =
-                                        LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
-                                    val diff = rideRepository.calculateTimeDifferenceInMinutes(
-                                        now,
-                                        ride.departureTime!!
-                                    )
-                                    threshold = if (isWorkbound) 180 else 60
-                                    if (diff < threshold) {
-                                        innerTooLateDialog = true
-                                        return@launch
-                                    }
+                                    try {
+                                        val rideDateParts = ride.date.split("-")
+                                            .map { it.toInt() } // [dd, MM, yyyy]
+                                        val rideTimeParts =
+                                            ride.departureTime!!.split(":").map { it.toInt() }
 
-                                    rideRepository.removePassengerFromRide(
-                                        rideId = ride.rideId,
-                                        passengerId = stop.passengerId,
-                                        rideCanceledForOnePassenger = true
-                                    )
-
-                                    requestRepository.getRequestsByPassenger(stop.passengerId)
-                                        .firstOrNull {
-                                            it.rideId == ride.rideId && it.status.name == "ACCEPTED"
-                                        }?.let {
-                                            rideRepository.declineRideRequest(
-                                                it.rideId,
-                                                it.requestId
-                                            )
+                                        val rideCalendar = Calendar.getInstance().apply {
+                                            set(Calendar.DAY_OF_MONTH, rideDateParts[0])
+                                            set(Calendar.MONTH, rideDateParts[1] - 1)
+                                            set(Calendar.YEAR, rideDateParts[2])
+                                            set(Calendar.HOUR_OF_DAY, rideTimeParts[0])
+                                            set(Calendar.MINUTE, rideTimeParts[1])
+                                            set(Calendar.SECOND, 0)
+                                            set(Calendar.MILLISECOND, 0)
                                         }
 
-                                    onPassengerRemoved()
+                                        val now = Calendar.getInstance()
+                                        val diffMillis =
+                                            rideCalendar.timeInMillis - now.timeInMillis
+                                        val diffMinutes = diffMillis / (60 * 1000)
+
+                                        threshold = if (isWorkbound) 180 else 60
+                                        if (diffMinutes < threshold) {
+                                            innerTooLateDialog = true
+                                            return@launch
+                                        }
+
+                                        rideRepository.removePassengerFromRide(
+                                            rideId = ride.rideId,
+                                            passengerId = stop.passengerId,
+                                            rideCanceledForOnePassenger = true
+                                        )
+
+                                        requestRepository.getRequestsByPassenger(stop.passengerId)
+                                            .firstOrNull {
+                                                it.rideId == ride.rideId && it.status.name == "ACCEPTED"
+                                            }?.let {
+                                                rideRepository.declineRideRequest(
+                                                    it.rideId,
+                                                    it.requestId
+                                                )
+                                            }
+
+                                        onPassengerRemoved()
+                                    } catch (e: Exception) {
+                                        Log.e(
+                                            "RideDialog",
+                                            "❌ Failed to cancel passenger: ${e.message}"
+                                        )
+                                    }
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
@@ -218,6 +238,7 @@ fun RidePassengerDetailsDialog(
                         Text("OK")
                     }
                 }
+
             )
         }
     }

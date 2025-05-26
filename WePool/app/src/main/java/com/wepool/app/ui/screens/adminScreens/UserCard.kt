@@ -2,9 +2,11 @@ package com.wepool.app.ui.screens.adminScreens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,9 +18,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.wepool.app.R
+import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
+import java.util.*
 
 @Composable
 fun UserCard(user: User) {
@@ -45,6 +49,37 @@ fun UserCard(user: User) {
                         text = user.name,
                         style = MaterialTheme.typography.titleMedium
                     )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    val roleToIcon = mapOf(
+                        UserRole.ADMIN to R.drawable.admin_svgrepo_com,
+                        UserRole.HR_MANAGER to R.drawable.hr_manager_svgrepo_com,
+                        UserRole.DRIVER to R.drawable.steering_wheel_car_svgrepo_com,
+                        UserRole.PASSENGER to R.drawable.seat_belt_svgrepo_com
+                    )
+
+                    listOf(
+                        UserRole.ADMIN,
+                        UserRole.HR_MANAGER,
+                        UserRole.DRIVER,
+                        UserRole.PASSENGER
+                    ).forEach { role ->
+                        if (role in user.roles) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Image(
+                                painter = painterResource(id = roleToIcon[role]!!),
+                                contentDescription = role.name,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -103,6 +138,19 @@ fun UserCard(user: User) {
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
+
+                        if (UserRole.DRIVER in user.roles || UserRole.PASSENGER in user.roles) {
+                            IconButton(onClick = {
+                                // TODO: Connect to passenger ride history screen
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.History,
+                                    contentDescription = "Ride History",
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -110,6 +158,14 @@ fun UserCard(user: User) {
     }
 
     if (showDetails) {
+        val formattedLastLogin = remember(user.lastLoginTimestamp) {
+            user.lastLoginTimestamp?.let {
+                val date = java.util.Date(it)
+                val format = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                format.format(date)
+            } ?: "Never"
+        }
+
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             AlertDialog(
                 onDismissRequest = { showDetails = false },
@@ -126,6 +182,7 @@ fun UserCard(user: User) {
                         Text("Name: ${user.name}")
                         Text("Permissions: ${user.roles.joinToString()}")
                         companyName?.let { Text("Company: $it") }
+                        Text("Last login: $formattedLastLogin")
                     }
                 },
                 confirmButton = {

@@ -24,9 +24,7 @@ import androidx.compose.ui.unit.LayoutDirection
 @Composable
 fun BottomNavigationButtons(
     uid: String,
-    rideId: String?,
     navController: NavController,
-    modifier: Modifier = Modifier,
     showBackButton: Boolean = true,
     showHomeButton: Boolean = true
 ) {
@@ -52,8 +50,8 @@ fun BottomNavigationButtons(
                     icon = Icons.Default.Home,
                     text = "Home",
                     onClick = {
-                        navController.navigate("intermediate/$uid?fromLogin=false") {
-                            popUpTo("intermediate/$rideId?fromLogin=false") { inclusive = false }
+                        navController.navigate("intermediate/$uid") {
+                            popUpTo("intermediate/$uid") { inclusive = false }
                             launchSingleTop = true
                         }
                     },

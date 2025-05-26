@@ -155,7 +155,7 @@ fun LoginScreen(navController: NavController) {
 
                             val navigated = handleNotificationNavigation(context, navController)
                             if (!navigated) {
-                                navController.navigate("intermediate/$uid?fromLogin=true") {
+                                navController.navigate("intermediate/$uid") {
                                     popUpTo("login") { inclusive = true }
                                 }
                             }

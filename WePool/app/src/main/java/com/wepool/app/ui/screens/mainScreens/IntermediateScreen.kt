@@ -20,66 +20,28 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.infrastructure.RepositoryProvider
-import com.wepool.app.data.model.ride.RideRequestUpdateResult
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import com.wepool.app.R
 
 @Composable
-fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin: Boolean = false) {
+fun IntermediateScreen(navController: NavController, uid: String) {
     val context = LocalContext.current
-    val activity = remember(context) { context as? Activity }
-    val coroutineScope = rememberCoroutineScope()
 
     var hasShownDialog by remember { mutableStateOf(false) }
-    val showDialog = cameFromLogin && !hasShownDialog
     var dialogMessage by remember { mutableStateOf<String?>(null) }
-    var updateResult by remember { mutableStateOf<RideRequestUpdateResult?>(null) }
+    val showDialog = !hasShownDialog && dialogMessage != null
 
     LaunchedEffect(Unit) {
         try {
             val userRepo = RepositoryProvider.provideUserRepository()
-            val updateRepo = RepositoryProvider.provideRideRequestRepository()
             val user = userRepo.getUser(uid)
 
             if (user != null) {
                 if (user.lastLoginTimestamp == null) {
                     dialogMessage =
                         "Hello ${user.name}!\nWe are glad to see you for the first time!"
-                } else {
-                    val result = updateRepo.getNewRideRequestUpdatesForUser(uid)
-                    updateResult = result
-
-                    val x = result.newPendingRequestForDriver.size
-                    val y = result.newAcceptedRequestsAsPassenger.size
-                    val z = result.newDeclinedRequestsAsPassenger.size
-
-                    dialogMessage = when {
-                        x == 0 && y == 0 && z == 0 ->
-                            "Hello ${user.name}!\nSince your last login, you have no notifications."
-
-                        x > 0 && y == 0 && z == 0 ->
-                            "Hello ${user.name}!\nYou have $x ride requests waiting for your approval."
-
-                        x == 0 && y > 0 && z == 0 ->
-                            "Hello ${user.name}!\nYou have $y new ride approvals."
-
-                        x == 0 && y == 0 && z > 0 ->
-                            "Hello ${user.name}!\nYou have $z declined ride requests."
-
-                        x > 0 && y > 0 && z == 0 ->
-                            "Hello ${user.name}!\nSince your last login:\n$x ride requests need your approval\n$y new ride approvals."
-
-                        x > 0 && y == 0 && z > 0 ->
-                            "Hello ${user.name}!\nSince your last login:\n$x ride requests need your approval\n$z declined ride requests."
-
-                        x == 0 && y > 0 && z > 0 ->
-                            "Hello ${user.name}!\nSince your last login:\n$y new ride approvals\n$z declined ride requests."
-
-                        else ->
-                            "Hello ${user.name}!\nSince your last login:\n$x ride requests need your approval\n$y new ride approvals\n$z declined ride requests."
-                    }
                 }
             }
 
@@ -111,6 +73,23 @@ fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin:
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        OutlinedButton(
+                            onClick = { navController.navigate("roleSelection/$uid") },
+                            modifier = Modifier.size(buttonSize),
+                            shape = MaterialTheme.shapes.medium,
+                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Role Selection",
+                                tint = iconColor,
+                                modifier = Modifier.size(iconSize)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Role\nSelection", textAlign = TextAlign.Center)
+                    }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         OutlinedButton(
@@ -129,24 +108,6 @@ fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin:
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Ride\nHistory", textAlign = TextAlign.Center)
                     }
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        OutlinedButton(
-                            onClick = { navController.navigate("roleSelection/$uid") },
-                            modifier = Modifier.size(buttonSize),
-                            shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Role Selection",
-                                tint = iconColor,
-                                modifier = Modifier.size(iconSize)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Role\nSelection", textAlign = TextAlign.Center)
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -155,6 +116,24 @@ fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin:
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        OutlinedButton(
+                            onClick = { navController.navigate("preferredLocations/$uid") },
+                            modifier = Modifier.size(buttonSize),
+                            shape = MaterialTheme.shapes.medium,
+                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Preferred Locations",
+                                tint = iconColor,
+                                modifier = Modifier.size(iconSize)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Preferred\nLocations", textAlign = TextAlign.Center)
+                    }
+
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         OutlinedButton(
                             onClick = { navController.navigate("updateDetails/$uid") },
@@ -172,31 +151,10 @@ fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin:
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Update\nDetails", textAlign = TextAlign.Center)
                     }
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        OutlinedButton(
-                            onClick = {
-                                navController.navigate("preferredLocations/$uid")
-                            },
-                            modifier = Modifier.size(buttonSize),
-                            shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Preferred Locations",
-                                tint = iconColor,
-                                modifier = Modifier.size(iconSize)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Preferred\nLocations", textAlign = TextAlign.Center)
-                    }
                 }
             }
 
-            // --- Popup Dialog ---
-            if (showDialog && dialogMessage != null) {
+            if (showDialog) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -217,45 +175,6 @@ fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin:
 
                             Button(onClick = {
                                 hasShownDialog = true
-
-                                coroutineScope.launch {
-                                    val requestRepo =
-                                        RepositoryProvider.provideRideRequestRepository()
-
-                                    updateResult?.newAcceptedRequestsAsPassenger?.forEach { request ->
-                                        if (!request.passengerSawApprovedRequest) {
-                                            val updated =
-                                                requestRepo.updatePassengerSawApprovedRequest(
-                                                    rideId = request.rideId,
-                                                    requestId = request.requestId,
-                                                    approved = true
-                                                )
-                                            if (!updated) {
-                                                Log.w(
-                                                    "ApprovalUpdate",
-                                                    "⚠ Failed to update approval for ${request.requestId}"
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    updateResult?.newDeclinedRequestsAsPassenger?.forEach { request ->
-                                        if (!request.passengerSawDeclinedRequest) {
-                                            val updated =
-                                                requestRepo.updatePassengerSawDeclinedRequest(
-                                                    rideId = request.rideId,
-                                                    requestId = request.requestId,
-                                                    declined = true
-                                                )
-                                            if (!updated) {
-                                                Log.w(
-                                                    "ApprovalUpdate",
-                                                    "⚠ Failed to update approval for ${request.requestId}"
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
                             }) {
                                 Text("OK")
                             }
@@ -289,7 +208,6 @@ fun IntermediateScreen(navController: NavController, uid: String, cameFromLogin:
                     Text("Logout", color = MaterialTheme.colorScheme.error)
                 }
             }
-
         }
     }
 }
