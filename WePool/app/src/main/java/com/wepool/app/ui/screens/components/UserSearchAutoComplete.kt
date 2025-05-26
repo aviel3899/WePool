@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -71,86 +73,89 @@ fun UserSearchAutoComplete(
         }
     }
 
-    Column(modifier = modifier) {
-        OutlinedTextField(
-            value = nameInput,
-            onValueChange = {
-                nameInput = it
-                lastEditedField = "name"
-                filterByName(it)
-                autoExpanded = it.isNotBlank()
-            },
-            label = { Text("Search by name") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            trailingIcon = {
-                IconButton(onClick = {
-                    nameInput = ""
-                    emailInput = ""
-                    autoExpanded = false
-                    onClear()
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Clear fields"
-                    )
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Column(modifier = modifier) {
+            OutlinedTextField(
+                value = nameInput,
+                onValueChange = {
+                    nameInput = it
+                    lastEditedField = "name"
+                    filterByName(it)
+                    autoExpanded = it.isNotBlank()
+                },
+                label = { Text("Search by name") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = {
+                        nameInput = ""
+                        emailInput = ""
+                        autoExpanded = false
+                        onClear()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Clear fields"
+                        )
+                    }
                 }
-            }
-        )
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = emailInput,
-            onValueChange = {
-                emailInput = it
-                lastEditedField = "email"
-                filterByEmail(it)
-                autoExpanded = it.isNotBlank()
-            },
-            label = { Text("Search by email") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-            maxLines = 2,
-            trailingIcon = {
-                IconButton(onClick = {
-                    nameInput = ""
-                    emailInput = ""
-                    autoExpanded = false
-                    onClear()
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Clear fields"
-                    )
-                }
-            }
-        )
-
-        if (autoExpanded && hrSuggestions.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            Card(
+            OutlinedTextField(
+                value = emailInput,
+                onValueChange = {
+                    emailInput = it
+                    lastEditedField = "email"
+                    filterByEmail(it)
+                    autoExpanded = it.isNotBlank()
+                },
+                label = { Text("Search by email") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 200.dp)
-            ) {
-                LazyColumn {
-                    items(hrSuggestions) { suggestion ->
-                        ListItem(
-                            headlineContent = { Text(suggestion) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    val (uid, name, email) = suggestionMap[suggestion] ?: return@clickable
-                                    nameInput = name
-                                    emailInput = email
-                                    onUserSelected(uid, suggestion)
-                                    autoExpanded = false
-                                }
-                                .padding(8.dp)
+                    .padding(horizontal = 4.dp),
+                maxLines = 2,
+                trailingIcon = {
+                    IconButton(onClick = {
+                        nameInput = ""
+                        emailInput = ""
+                        autoExpanded = false
+                        onClear()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Clear fields"
                         )
+                    }
+                }
+            )
+
+            if (autoExpanded && hrSuggestions.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 200.dp)
+                ) {
+                    LazyColumn {
+                        items(hrSuggestions) { suggestion ->
+                            ListItem(
+                                headlineContent = { Text(suggestion) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        val (uid, name, email) = suggestionMap[suggestion]
+                                            ?: return@clickable
+                                        nameInput = name
+                                        emailInput = email
+                                        onUserSelected(uid, suggestion)
+                                        autoExpanded = false
+                                    }
+                                    .padding(8.dp)
+                            )
+                        }
                     }
                 }
             }

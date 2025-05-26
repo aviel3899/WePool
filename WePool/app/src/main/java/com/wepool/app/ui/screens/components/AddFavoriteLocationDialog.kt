@@ -11,7 +11,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.infrastructure.RepositoryProvider
@@ -36,94 +38,102 @@ fun AddLocationDialog(
     val focusRequester = remember { FocusRequester() }
     var textFieldSize by remember { mutableStateOf(IntSize.Zero) }
 
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            selectedLocation?.let { newLocation ->
-                                val user = userRepository.getUser(uid)
-                                val existingLocations = user?.favoriteLocations ?: emptyList()
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                selectedLocation?.let { newLocation ->
+                                    val user = userRepository.getUser(uid)
+                                    val existingLocations = user?.favoriteLocations ?: emptyList()
 
-                                val alreadyExists = existingLocations.any { it.placeId == newLocation.placeId }
+                                    val alreadyExists =
+                                        existingLocations.any { it.placeId == newLocation.placeId }
 
-                                if (alreadyExists) {
-                                    // תוכל להחליף ב־Snackbar אם יש לך סביבה מתאימה
-                                    println("Location already exists")
-                                } else {
-                                    userRepository.addFavoriteLocation(uid, newLocation)
-                                    val updatedUser = userRepository.getUser(uid)
-                                    onLocationAdded(updatedUser?.favoriteLocations ?: emptyList())
-                                    onDismiss()
+                                    if (alreadyExists) {
+                                        // תוכל להחליף ב־Snackbar אם יש לך סביבה מתאימה
+                                        println("Location already exists")
+                                    } else {
+                                        userRepository.addFavoriteLocation(uid, newLocation)
+                                        val updatedUser = userRepository.getUser(uid)
+                                        onLocationAdded(
+                                            updatedUser?.favoriteLocations ?: emptyList()
+                                        )
+                                        onDismiss()
+                                    }
                                 }
                             }
-                        }
-                    },
-                    enabled = selectedLocation != null
-                ) {
-                    Text("Add")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-            },
-            title = { Text("Add New Location") },
-            text = {
-                Column {
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = addressInput,
-                            onValueChange = {
-                                addressInput = it
-                                coroutineScope.launch {
-                                    suggestions = mapsService.getAddressSuggestions(it)
-                                    autoExpanded = suggestions.isNotEmpty()
-                                }
-                            },
-                            label = { Text("Search Address") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .onGloballyPositioned { coordinates ->
-                                    textFieldSize = coordinates.size
-                                }
-                                .focusRequester(focusRequester),
-                            singleLine = true
-                        )
-
-                        if (autoExpanded && suggestions.isNotEmpty()) {
-                            Card(
+                        },
+                        enabled = selectedLocation != null
+                    ) {
+                        Text("Add")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                },
+                title = { Text("Add New Location") },
+                text = {
+                    Column {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                value = addressInput,
+                                onValueChange = {
+                                    addressInput = it
+                                    coroutineScope.launch {
+                                        suggestions = mapsService.getAddressSuggestions(it)
+                                        autoExpanded = suggestions.isNotEmpty()
+                                    }
+                                },
+                                label = { Text("Search Address") },
                                 modifier = Modifier
-                                    .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
-                                    .padding(top = with(LocalDensity.current) { textFieldSize.height.toDp() })
-                                    .heightIn(max = 200.dp)
-                            ) {
-                                LazyColumn {
-                                    items(suggestions) { suggestion ->
-                                        ListItem(
-                                            headlineContent = { Text(suggestion) },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    addressInput = suggestion
-                                                    autoExpanded = false
-                                                    coroutineScope.launch {
-                                                        selectedLocation = mapsService.getCoordinatesFromAddress(suggestion)
+                                    .fillMaxWidth()
+                                    .onGloballyPositioned { coordinates ->
+                                        textFieldSize = coordinates.size
+                                    }
+                                    .focusRequester(focusRequester),
+                                singleLine = true
+                            )
+
+                            if (autoExpanded && suggestions.isNotEmpty()) {
+                                Card(
+                                    modifier = Modifier
+                                        .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
+                                        .padding(top = with(LocalDensity.current) { textFieldSize.height.toDp() })
+                                        .heightIn(max = 200.dp)
+                                ) {
+                                    LazyColumn {
+                                        items(suggestions) { suggestion ->
+                                            ListItem(
+                                                headlineContent = { Text(suggestion) },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        addressInput = suggestion
+                                                        autoExpanded = false
+                                                        coroutineScope.launch {
+                                                            selectedLocation =
+                                                                mapsService.getCoordinatesFromAddress(
+                                                                    suggestion
+                                                                )
+                                                        }
+                                                        focusRequester.requestFocus()
                                                     }
-                                                    focusRequester.requestFocus()
-                                                }
-                                                .padding(8.dp)
-                                        )
+                                                    .padding(8.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-        )
+            )
+        }
     }
 }

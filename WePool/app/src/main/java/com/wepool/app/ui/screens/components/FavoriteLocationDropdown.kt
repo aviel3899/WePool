@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.wepool.app.data.model.common.LocationData
 
@@ -30,78 +32,80 @@ fun FavoriteLocationDropdown(
     var isSuggestionsExpanded by remember { mutableStateOf(false) }
     var textFieldSize by remember { mutableStateOf(IntSize.Zero) }
 
-    Box(modifier = modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = locationData.name,
-            onValueChange = {
-                onTextChanged(it)
-                isSuggestionsExpanded = true
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coordinates ->
-                    textFieldSize = coordinates.size
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Box(modifier = modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = locationData.name,
+                onValueChange = {
+                    onTextChanged(it)
+                    isSuggestionsExpanded = true
                 },
-            label = { Text(label) },
-            trailingIcon = {
-                IconButton(onClick = {
-                    isFavoritesExpanded = !isFavoritesExpanded
-                    isSuggestionsExpanded = false
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Select from favorites",
-                        tint = Color(0xFFDAA520)
-                    )
-                }
-            },
-            singleLine = true
-        )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates ->
+                        textFieldSize = coordinates.size
+                    },
+                label = { Text(label) },
+                trailingIcon = {
+                    IconButton(onClick = {
+                        isFavoritesExpanded = !isFavoritesExpanded
+                        isSuggestionsExpanded = false
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Select from favorites",
+                            tint = Color(0xFFDAA520)
+                        )
+                    }
+                },
+                singleLine = true
+            )
 
-        // תפריט מיקומים מועדפים
-        DropdownMenu(
-            expanded = isFavoritesExpanded,
-            onDismissRequest = { isFavoritesExpanded = false },
-            modifier = Modifier
-                .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
-                .heightIn(max = 200.dp)
-        ) {
-            if (favoriteLocations.isEmpty()) {
-                DropdownMenuItem(text = { Text("No saved locations") }, onClick = {})
-            } else {
-                favoriteLocations.forEach { location ->
-                    DropdownMenuItem(
-                        text = { Text(location.name) },
-                        onClick = {
-                            onLocationSelected(location)
-                            isFavoritesExpanded = false
-                            isSuggestionsExpanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-        // תפריט Autocomplete של Google
-        if (suggestions.isNotEmpty() && isSuggestionsExpanded) {
-            Card(
+            // תפריט מיקומים מועדפים
+            DropdownMenu(
+                expanded = isFavoritesExpanded,
+                onDismissRequest = { isFavoritesExpanded = false },
                 modifier = Modifier
                     .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
-                    .padding(top = with(LocalDensity.current) { textFieldSize.height.toDp() })
                     .heightIn(max = 200.dp)
             ) {
-                LazyColumn {
-                    items(suggestions) { suggestion ->
-                        ListItem(
-                            headlineContent = { Text(suggestion) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onTextChanged(suggestion)
-                                    isSuggestionsExpanded = false
-                                }
-                                .padding(8.dp)
+                if (favoriteLocations.isEmpty()) {
+                    DropdownMenuItem(text = { Text("No saved locations") }, onClick = {})
+                } else {
+                    favoriteLocations.forEach { location ->
+                        DropdownMenuItem(
+                            text = { Text(location.name) },
+                            onClick = {
+                                onLocationSelected(location)
+                                isFavoritesExpanded = false
+                                isSuggestionsExpanded = false
+                            }
                         )
+                    }
+                }
+            }
+
+            // תפריט Autocomplete של Google
+            if (suggestions.isNotEmpty() && isSuggestionsExpanded) {
+                Card(
+                    modifier = Modifier
+                        .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
+                        .padding(top = with(LocalDensity.current) { textFieldSize.height.toDp() })
+                        .heightIn(max = 200.dp)
+                ) {
+                    LazyColumn {
+                        items(suggestions) { suggestion ->
+                            ListItem(
+                                headlineContent = { Text(suggestion) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onTextChanged(suggestion)
+                                        isSuggestionsExpanded = false
+                                    }
+                                    .padding(8.dp)
+                            )
+                        }
                     }
                 }
             }

@@ -18,7 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -87,7 +89,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 rides =
                     filterRides(allRides, startDate, endDate, startTime, endTime, selectedDirection)
             } catch (e: Exception) {
-                error = "❌ שגיאה בטעינת נסיעות: ${e.message}"
+                error = "❌ Error loading rides: ${e.message}"
             } finally {
                 loading = false
             }
@@ -201,7 +203,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 isActionInProgress = true
                 if (!locationPermissionState.status.isGranted) {
                     locationPermissionState.launchPermissionRequest()
-                    error = "📍 נדרש לאשר גישה למיקום"
+                    error = "📍 need to approve location access"
                     isActionInProgress = false
                     return@launch
                 }
@@ -278,24 +280,26 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
 
     // --- Too Late Dialog ---
     if (showTooLateDialog || innerTooLateDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showTooLateDialog = false
-                innerTooLateDialog = false
-            },
-            title = { Text("Too Late") },
-            text = {
-                Text("This action is not allowed. You cannot cancel a ride less than $threshold minutes before departure time.")
-            },
-            confirmButton = {
-                Button(onClick = {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            AlertDialog(
+                onDismissRequest = {
                     showTooLateDialog = false
                     innerTooLateDialog = false
-                }) {
-                    Text("OK")
+                },
+                title = { Text("Too Late") },
+                text = {
+                    Text("This action is not allowed. You cannot cancel a ride less than $threshold minutes before departure time.")
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        showTooLateDialog = false
+                        innerTooLateDialog = false
+                    }) {
+                        Text("OK")
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
 
@@ -329,103 +333,136 @@ fun DriverActiveRidesContent(
     onPassengerDetailsClicked: (Ride) -> Unit
 ) {
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 96.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = "Your Active Rides",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 96.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "Your Active Rides",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
 
-            ActiveRidesFilterCard(
-                startDate = startDate,
-                endDate = endDate,
-                startTime = startTime,
-                endTime = endTime,
-                selectedDirection = selectedDirection,
-                directionMenuExpanded = directionMenuExpanded,
-                directionOptions = directionOptions,
-                onShowDateRangePicker = showDateRangePicker,
-                onShowTimeRangePicker = showTimeRangePicker,
-                onClearDateRange = onClearDateRange,
-                onClearTimeRange = onClearTimeRange,
-                onClearDirection = onClearDirection,
-                onDirectionSelected = onDirectionSelected,
-                onDirectionMenuExpand = onDirectionMenuExpand,
-                onDirectionMenuDismiss = onDirectionMenuDismiss,
-                onApplyFilter = onRefreshClicked
-            )
+                ActiveRidesFilterCard(
+                    startDate = startDate,
+                    endDate = endDate,
+                    startTime = startTime,
+                    endTime = endTime,
+                    selectedDirection = selectedDirection,
+                    directionMenuExpanded = directionMenuExpanded,
+                    directionOptions = directionOptions,
+                    onShowDateRangePicker = showDateRangePicker,
+                    onShowTimeRangePicker = showTimeRangePicker,
+                    onClearDateRange = onClearDateRange,
+                    onClearTimeRange = onClearTimeRange,
+                    onClearDirection = onClearDirection,
+                    onDirectionSelected = onDirectionSelected,
+                    onDirectionMenuExpand = onDirectionMenuExpand,
+                    onDirectionMenuDismiss = onDirectionMenuDismiss,
+                    onApplyFilter = onRefreshClicked
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            when {
-                loading -> CircularProgressIndicator()
-                error != null -> Text(error, color = MaterialTheme.colorScheme.error)
-                rides.isEmpty() -> Text("Click 'Apply Filter' to search for active rides.")
-                else -> {
-                    val filteredRides = if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
+                when {
+                    loading -> CircularProgressIndicator()
+                    error != null -> Text(error, color = MaterialTheme.colorScheme.error)
+                    rides.isEmpty() -> Text("Click 'Apply Filter' to search for active rides.")
+                    else -> {
+                        val filteredRides =
+                            if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
 
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(filteredRides) { ride ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = MaterialTheme.shapes.medium,
-                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text("From: ${ride.startLocation.name}")
-                                    Text("To: ${ride.destination.name}")
-                                    Text("Date: ${ride.date}")
-                                    Text("Departure Time: ${ride.departureTime}")
-                                    Text("Arrival Time: ${ride.arrivalTime}")
-                                    Text("Stops on the way: ${ride.pickupStops.size}")
-                                    Spacer(modifier = Modifier.height(8.dp))
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(filteredRides) { ride ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.medium,
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text("From: ${ride.startLocation.name}")
+                                        Text("To: ${ride.destination.name}")
+                                        Text("Date: ${ride.date}")
+                                        Text("Departure Time: ${ride.departureTime}")
+                                        Text("Arrival Time: ${ride.arrivalTime}")
+                                        Text("Stops on the way: ${ride.pickupStops.size}")
+                                        Spacer(modifier = Modifier.height(8.dp))
 
-                                    Column(
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        listOf(
-                                            Triple("Start", Icons.Default.PlayArrow, Color(0xFF2E7D32)) to { onStartRideClicked(ride) },
-                                            Triple("Cancel", Icons.Default.Cancel, Color(0xFFC62828)) to { onCancelRideClicked(ride) },
-                                            Triple("Map", Icons.Default.Map, Color(0xFF039BE5)) to { onShowMapClicked(ride) },
-                                            Triple("Passengers", Icons.Default.Person, Color(0xFFFBC02D)) to { onPassengerDetailsClicked(ride) }
-                                        ).chunked(2).forEach { rowButtons ->
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
-                                            ) {
-                                                rowButtons.forEach { (data, action) ->
-                                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                        OutlinedButton(
-                                                            onClick = action,
-                                                            modifier = Modifier
-                                                                .width(160.dp)
-                                                                .height(100.dp),
-                                                            shape = MaterialTheme.shapes.large,
-                                                            border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-                                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = data.third)
-                                                        ) {
-                                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                                Icon(
-                                                                    imageVector = data.second,
-                                                                    contentDescription = data.first,
-                                                                    tint = data.third,
-                                                                    modifier = Modifier.size(48.dp)
+                                        Column(
+                                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            listOf(
+                                                Triple(
+                                                    "Start",
+                                                    Icons.Default.PlayArrow,
+                                                    Color(0xFF2E7D32)
+                                                ) to { onStartRideClicked(ride) },
+                                                Triple(
+                                                    "Cancel",
+                                                    Icons.Default.Cancel,
+                                                    Color(0xFFC62828)
+                                                ) to { onCancelRideClicked(ride) },
+                                                Triple(
+                                                    "Map",
+                                                    Icons.Default.Map,
+                                                    Color(0xFF039BE5)
+                                                ) to { onShowMapClicked(ride) },
+                                                Triple(
+                                                    "Passengers",
+                                                    Icons.Default.Person,
+                                                    Color(0xFFFBC02D)
+                                                ) to { onPassengerDetailsClicked(ride) }
+                                            ).chunked(2).forEach { rowButtons ->
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(
+                                                        16.dp,
+                                                        Alignment.CenterHorizontally
+                                                    )
+                                                ) {
+                                                    rowButtons.forEach { (data, action) ->
+                                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                            OutlinedButton(
+                                                                onClick = action,
+                                                                modifier = Modifier
+                                                                    .width(160.dp)
+                                                                    .height(100.dp),
+                                                                shape = MaterialTheme.shapes.large,
+                                                                border = ButtonDefaults.outlinedButtonBorder(
+                                                                    enabled = true
+                                                                ),
+                                                                colors = ButtonDefaults.outlinedButtonColors(
+                                                                    contentColor = data.third
                                                                 )
-                                                                Spacer(modifier = Modifier.height(4.dp))
-                                                                Text(data.first, style = MaterialTheme.typography.labelSmall)
+                                                            ) {
+                                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                                    Icon(
+                                                                        imageVector = data.second,
+                                                                        contentDescription = data.first,
+                                                                        tint = data.third,
+                                                                        modifier = Modifier.size(48.dp)
+                                                                    )
+                                                                    Spacer(
+                                                                        modifier = Modifier.height(
+                                                                            4.dp
+                                                                        )
+                                                                    )
+                                                                    Text(
+                                                                        data.first,
+                                                                        style = MaterialTheme.typography.labelSmall
+                                                                    )
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -439,26 +476,26 @@ fun DriverActiveRidesContent(
                     }
                 }
             }
-        }
 
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
-            tonalElevation = 4.dp,
-            shadowElevation = 4.dp,
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            BottomNavigationButtons(
-                uid = uid,
-                rideId = rideId,
-                navController = navController,
+            Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                showBackButton = true,
-                showHomeButton = true
-            )
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                tonalElevation = 4.dp,
+                shadowElevation = 4.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                BottomNavigationButtons(
+                    uid = uid,
+                    rideId = rideId,
+                    navController = navController,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    showBackButton = true,
+                    showHomeButton = true
+                )
+            }
         }
     }
 }

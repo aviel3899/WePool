@@ -37,6 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wepool.app.data.model.enums.RideDirection
 import android.util.Log
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import com.wepool.app.data.model.ride.Ride
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -64,179 +67,187 @@ fun ActiveRidesFilterCard(
 ) {
     var filterExpanded by remember { mutableStateOf(true) }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                IconButton(
-                    onClick = { filterExpanded = !filterExpanded },
-                    modifier = Modifier.align(Alignment.TopEnd)
-                ) {
-                    Icon(
-                        imageVector = if (filterExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                        contentDescription = if (filterExpanded) "Collapse Filter" else "Expand Filter"
-                    )
-                }
-
-                Text(
-                    text = "Filter Your Rides",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            if (filterExpanded) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start,
-                    modifier = Modifier.fillMaxWidth(0.9f)
-                ) {
-                    OutlinedButton(
-                        onClick = onShowDateRangePicker,
-                        modifier = Modifier.weight(1f).height(56.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    IconButton(
+                        onClick = { filterExpanded = !filterExpanded },
+                        modifier = Modifier.align(Alignment.TopEnd)
                     ) {
-                        Text("Date Range", fontSize = 18.sp, maxLines = 1)
+                        Icon(
+                            imageVector = if (filterExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                            contentDescription = if (filterExpanded) "Collapse Filter" else "Expand Filter"
+                        )
                     }
 
-                    if (startDate.isNotBlank() || endDate.isNotBlank()) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(onClick = onClearDateRange, modifier = Modifier.size(48.dp)) {
-                            Icon(Icons.Default.Delete, contentDescription = "Clear date range")
-                        }
-                    }
-                }
-
-                if (startDate.isNotBlank() && endDate.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "From $startDate to $endDate",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        text = "Filter Your Rides",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                if (filterExpanded) {
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start,
-                    modifier = Modifier.fillMaxWidth(0.9f)
-                ) {
-                    OutlinedButton(
-                        onClick = onShowTimeRangePicker,
-                        modifier = Modifier.weight(1f).height(56.dp)
-                    ) {
-                        Text("Time Range", fontSize = 18.sp, maxLines = 1)
-                    }
-
-                    if (startTime.isNotBlank() || endTime.isNotBlank()) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(onClick = onClearTimeRange, modifier = Modifier.size(48.dp)) {
-                            Icon(Icons.Default.Delete, contentDescription = "Clear time range")
-                        }
-                    }
-                }
-
-                if (startTime.isNotBlank() || endTime.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "From $startTime to $endTime",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
                         modifier = Modifier.fillMaxWidth(0.9f)
                     ) {
                         OutlinedButton(
-                            onClick = onDirectionMenuExpand,
+                            onClick = onShowDateRangePicker,
                             modifier = Modifier.weight(1f).height(56.dp)
                         ) {
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                Text(
-                                    text = directionOptions.firstOrNull { it.first == selectedDirection }?.second
-                                        ?: "Select Direction",
-                                    modifier = Modifier.align(Alignment.Center),
-                                    fontSize = 18.sp,
-                                    maxLines = 1
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDropDown,
-                                    contentDescription = null,
-                                    modifier = Modifier.align(Alignment.CenterEnd).size(28.dp)
-                                )
-                            }
+                            Text("Date Range", fontSize = 18.sp, maxLines = 1)
                         }
 
-                        if (selectedDirection != null) {
+                        if (startDate.isNotBlank() || endDate.isNotBlank()) {
                             Spacer(modifier = Modifier.width(8.dp))
                             IconButton(
-                                onClick = onClearDirection,
+                                onClick = onClearDateRange,
                                 modifier = Modifier.size(48.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Clear direction"
+                                Icon(Icons.Default.Delete, contentDescription = "Clear date range")
+                            }
+                        }
+                    }
+
+                    if (startDate.isNotBlank() && endDate.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "From $startDate to $endDate",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
+                        modifier = Modifier.fillMaxWidth(0.9f)
+                    ) {
+                        OutlinedButton(
+                            onClick = onShowTimeRangePicker,
+                            modifier = Modifier.weight(1f).height(56.dp)
+                        ) {
+                            Text("Time Range", fontSize = 18.sp, maxLines = 1)
+                        }
+
+                        if (startTime.isNotBlank() || endTime.isNotBlank()) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(
+                                onClick = onClearTimeRange,
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Clear time range")
+                            }
+                        }
+                    }
+
+                    if (startTime.isNotBlank() || endTime.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "From $startTime to $endTime",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(0.9f)
+                        ) {
+                            OutlinedButton(
+                                onClick = onDirectionMenuExpand,
+                                modifier = Modifier.weight(1f).height(56.dp)
+                            ) {
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    Text(
+                                        text = directionOptions.firstOrNull { it.first == selectedDirection }?.second
+                                            ?: "Select Direction",
+                                        modifier = Modifier.align(Alignment.Center),
+                                        fontSize = 18.sp,
+                                        maxLines = 1
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        modifier = Modifier.align(Alignment.CenterEnd).size(28.dp)
+                                    )
+                                }
+                            }
+
+                            if (selectedDirection != null) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                IconButton(
+                                    onClick = onClearDirection,
+                                    modifier = Modifier.size(48.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Clear direction"
+                                    )
+                                }
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = directionMenuExpanded,
+                            onDismissRequest = onDirectionMenuDismiss,
+                            modifier = Modifier.fillMaxWidth(0.75f)
+                        ) {
+                            directionOptions.forEach { (direction, label) ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(label)
+                                        }
+                                    },
+                                    onClick = {
+                                        onDirectionSelected(direction)
+                                        onDirectionMenuDismiss()
+                                    }
                                 )
                             }
                         }
                     }
 
-                    DropdownMenu(
-                        expanded = directionMenuExpanded,
-                        onDismissRequest = onDirectionMenuDismiss,
-                        modifier = Modifier.fillMaxWidth(0.75f)
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = onApplyFilter,
+                        modifier = Modifier.fillMaxWidth(0.75f).height(48.dp)
                     ) {
-                        directionOptions.forEach { (direction, label) ->
-                            DropdownMenuItem(
-                                text = {
-                                    Box(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(label)
-                                    }
-                                },
-                                onClick = {
-                                    onDirectionSelected(direction)
-                                    onDirectionMenuDismiss()
-                                }
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Refresh",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Apply Filter")
                     }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = onApplyFilter,
-                    modifier = Modifier.fillMaxWidth(0.75f).height(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Refresh",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Apply Filter")
                 }
             }
         }

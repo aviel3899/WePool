@@ -15,40 +15,51 @@ import androidx.navigation.NavController
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
-fun BottomNavigationButtons(uid: String, rideId: String?, navController: NavController, modifier: Modifier = Modifier, showBackButton: Boolean = true,
-                            showHomeButton: Boolean = true) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (showBackButton) {
-            IconTextButton(
-                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                text = "Back",
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.weight(1f)
-            )
-        }
+fun BottomNavigationButtons(
+    uid: String,
+    rideId: String?,
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    showBackButton: Boolean = true,
+    showHomeButton: Boolean = true
+) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (showBackButton) {
+                IconTextButton(
+                    icon = Icons.AutoMirrored.Filled.ArrowBack,
+                    text = "Back",
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
-        if (showHomeButton) {
-            IconTextButton(
-                icon = Icons.Default.Home,
-                text = "Home",
-                onClick = {
-                    navController.navigate("intermediate/$uid?fromLogin=false") {
-                        popUpTo("intermediate/$rideId?fromLogin=false") { inclusive = false }
-                        launchSingleTop = true
-                    }
-                },
-                modifier = Modifier.weight(1f)
-            )
+            if (showHomeButton) {
+                IconTextButton(
+                    icon = Icons.Default.Home,
+                    text = "Home",
+                    onClick = {
+                        navController.navigate("intermediate/$uid?fromLogin=false") {
+                            popUpTo("intermediate/$rideId?fromLogin=false") { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }

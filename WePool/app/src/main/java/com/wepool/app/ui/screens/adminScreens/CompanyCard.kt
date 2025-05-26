@@ -225,7 +225,17 @@ fun CompanyCard(
         if (showDetails) {
             AlertDialog(
                 onDismissRequest = { showDetails = false },
-                title = { Text("Company Details") },
+                title = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Company Details",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                },
                 text = {
                     Column {
                         Text("Name: ${company.companyName}")
@@ -371,7 +381,17 @@ fun CompanyCard(
         if (showEmployees) {
             AlertDialog(
                 onDismissRequest = { showEmployees = false },
-                title = { Text("Employees") },
+                title = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Employees",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                },
                 text = {
                     Column {
                         Box(
@@ -399,4 +419,5 @@ fun CompanyCard(
             )
         }
     }
+
 }

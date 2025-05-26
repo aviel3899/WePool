@@ -13,6 +13,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -117,239 +119,258 @@ fun PassengerRequestsScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 96.dp)
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Ride Requests", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 96.dp)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Text("Ride Requests", style = MaterialTheme.typography.headlineMedium)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Text("Filter by status", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        OutlinedButton(
-                            onClick = { expanded = true },
-                            modifier = Modifier
-                                .fillMaxWidth(0.75f)
-                                .height(56.dp)
-                        ) {
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                Text(
-                                    text = selectedStatus,
-                                    modifier = Modifier.align(Alignment.Center),
-                                    fontSize = 18.sp
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDropDown,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .align(Alignment.CenterEnd)
-                                        .size(28.dp)
-                                )
-                            }
-                        }
-
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier.fillMaxWidth(0.75f)
-                        ) {
-                            requestStatuses.forEach { status ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Box(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(status)
-                                        }
-                                    },
-                                    onClick = {
-                                        selectedStatus = status
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Button(
-                        onClick = {
-                            hasSearched = true
-                            refresh()
-                        },
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth(0.75f)
-                            .height(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh",
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Refresh")
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            when {
-                !hasSearched -> {
-                    Text("Please select a filter and press Refresh to load your ride requests.")
-                }
-                loading -> CircularProgressIndicator()
-                error != null -> Text(
-                    error ?: "Unknown error",
-                    color = MaterialTheme.colorScheme.error
-                )
-
-                results.isEmpty() -> Text("No matching requests found.")
-                else -> LazyColumn(modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)) {
-                    items(results) { request ->
-                        val ride = rides[request.rideId]
-
-                        Card(modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp)) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                ride?.let { r ->
-                                    Text("Direction: ${if (r.direction == RideDirection.TO_HOME) "To Home" else "To Work"}")
-                                    val locationLabel =
-                                        if (r.direction == RideDirection.TO_WORK) "Pickup Location" else "Dropoff Location"
-                                    Text("$locationLabel: ${request.pickupLocation.name}")
-                                    val departureTime = if (r.direction == RideDirection.TO_WORK)
-                                        request.detourEvaluationResult.pickupLocation?.pickupTime else r.departureTime
-                                    val arrivalTime = if (r.direction == RideDirection.TO_HOME)
-                                        request.detourEvaluationResult.pickupLocation?.dropoffTime else r.arrivalTime
-                                    val departureLabel =
-                                        if (r.direction == RideDirection.TO_WORK) "Pickup" else "Departure"
-                                    val arrivalLabel =
-                                        if (r.direction == RideDirection.TO_HOME) "Dropoff" else "Arrival"
-                                    Text("Date: ${r.date} | $departureLabel: $departureTime | $arrivalLabel: $arrivalTime")
-                                }
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Filter by status", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                if (request.status == RequestStatus.PENDING) {
-                                    Button(
-                                        onClick = {
-                                            selectedRequest = request
-                                            showDialog = true
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(
-                                                0xFFFFC107
-                                            )
-                                        )
-                                    ) {
-                                        Text("PENDING")
-                                    }
-                                } else {
-                                    val statusColor = when (request.status) {
-                                        RequestStatus.ACCEPTED -> Color(0xFF4CAF50)
-                                        RequestStatus.DECLINED -> Color(0xFFF44336)
-                                        RequestStatus.CANCELLED -> Color(0xFF9E9E9E)
-                                        else -> Color.Gray
-                                    }
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            OutlinedButton(
+                                onClick = { expanded = true },
+                                modifier = Modifier
+                                    .fillMaxWidth(0.75f)
+                                    .height(56.dp)
+                            ) {
+                                Box(modifier = Modifier.fillMaxWidth()) {
                                     Text(
-                                        text = request.status.name,
-                                        color = statusColor,
-                                        style = MaterialTheme.typography.bodyLarge
+                                        text = selectedStatus,
+                                        modifier = Modifier.align(Alignment.Center),
+                                        fontSize = 18.sp
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterEnd)
+                                            .size(28.dp)
+                                    )
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false },
+                                modifier = Modifier.fillMaxWidth(0.75f)
+                            ) {
+                                requestStatuses.forEach { status ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Box(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(status)
+                                            }
+                                        },
+                                        onClick = {
+                                            selectedStatus = status
+                                            expanded = false
+                                        }
                                     )
                                 }
                             }
                         }
-                    }
-                }
-            }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
-            tonalElevation = 4.dp,
-            shadowElevation = 4.dp,
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            BottomNavigationButtons(
-                uid = uid,
-                rideId = null,
-                navController = navController,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                showBackButton = true,
-                showHomeButton = true
-            )
-        }
-    }
-
-    if (showDialog && selectedRequest != null) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Pending Request") },
-            text = {
-                Column {
-                    Text("Do you want to cancel this ride request?")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
                         Button(
                             onClick = {
-                                coroutineScope.launch {
-                                    val success = rideRepo.cancelRideRequest(
-                                        rideId = selectedRequest!!.rideId,
-                                        requestId = selectedRequest!!.requestId
-                                    )
-                                    if (success) refresh()
-                                    showDialog = false
-                                }
+                                hasSearched = true
+                                refresh()
                             },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
+                            modifier = Modifier
+                                .fillMaxWidth(0.75f)
+                                .height(48.dp)
                         ) {
-                            Text("Cancel\nRequest")
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Button(
-                            onClick = { showDialog = false },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBDBDBD))
-                        ) {
-                            Text("Back")
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Refresh",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Refresh")
                         }
                     }
                 }
-            },
-            confirmButton = {},
-            dismissButton = {}
-        )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                when {
+                    !hasSearched -> {
+                        Text("Please select a filter and press Refresh to load your ride requests.")
+                    }
+
+                    loading -> CircularProgressIndicator()
+                    error != null -> Text(
+                        error ?: "Unknown error",
+                        color = MaterialTheme.colorScheme.error
+                    )
+
+                    results.isEmpty() -> Text("No matching requests found.")
+                    else -> LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        items(results) { request ->
+                            val ride = rides[request.rideId]
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    ride?.let { r ->
+                                        Text("Direction: ${if (r.direction == RideDirection.TO_HOME) "To Home" else "To Work"}")
+                                        val locationLabel =
+                                            if (r.direction == RideDirection.TO_WORK) "Pickup Location" else "Dropoff Location"
+                                        Text("$locationLabel: ${request.pickupLocation.name}")
+                                        val departureTime =
+                                            if (r.direction == RideDirection.TO_WORK)
+                                                request.detourEvaluationResult.pickupLocation?.pickupTime else r.departureTime
+                                        val arrivalTime = if (r.direction == RideDirection.TO_HOME)
+                                            request.detourEvaluationResult.pickupLocation?.dropoffTime else r.arrivalTime
+                                        val departureLabel =
+                                            if (r.direction == RideDirection.TO_WORK) "Pickup" else "Departure"
+                                        val arrivalLabel =
+                                            if (r.direction == RideDirection.TO_HOME) "Dropoff" else "Arrival"
+                                        Text("Date: ${r.date} | $departureLabel: $departureTime | $arrivalLabel: $arrivalTime")
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    if (request.status == RequestStatus.PENDING) {
+                                        Button(
+                                            onClick = {
+                                                selectedRequest = request
+                                                showDialog = true
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(
+                                                    0xFFFFC107
+                                                )
+                                            )
+                                        ) {
+                                            Text("PENDING")
+                                        }
+                                    } else {
+                                        val statusColor = when (request.status) {
+                                            RequestStatus.ACCEPTED -> Color(0xFF4CAF50)
+                                            RequestStatus.DECLINED -> Color(0xFFF44336)
+                                            RequestStatus.CANCELLED -> Color(0xFF9E9E9E)
+                                            else -> Color.Gray
+                                        }
+                                        Text(
+                                            text = request.status.name,
+                                            color = statusColor,
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                tonalElevation = 4.dp,
+                shadowElevation = 4.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                BottomNavigationButtons(
+                    uid = uid,
+                    rideId = null,
+                    navController = navController,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    showBackButton = true,
+                    showHomeButton = true
+                )
+            }
+        }
+
+        if (showDialog && selectedRequest != null) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text("Pending Request") },
+                text = {
+                    Column {
+                        Text("Do you want to cancel this ride request?")
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        val success = rideRepo.cancelRideRequest(
+                                            rideId = selectedRequest!!.rideId,
+                                            requestId = selectedRequest!!.requestId
+                                        )
+                                        if (success) refresh()
+                                        showDialog = false
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(
+                                        0xFFF44336
+                                    )
+                                )
+                            ) {
+                                Text("Cancel\nRequest")
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Button(
+                                onClick = { showDialog = false },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(
+                                        0xFFBDBDBD
+                                    )
+                                )
+                            ) {
+                                Text("Back")
+                            }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {}
+            )
+        }
     }
 }
