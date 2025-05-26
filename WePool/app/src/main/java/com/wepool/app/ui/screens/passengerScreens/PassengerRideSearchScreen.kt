@@ -2,6 +2,7 @@ package com.wepool.app.ui.screens.passengerScreens
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -43,6 +44,7 @@ fun PassengerRideSearchScreen(
     var fixedLocation by remember { mutableStateOf<LocationData?>(null) }
     val title = if (isToHome) "Join a Homebound Ride" else "Join a Workbound Ride"
 
+    var companyId by remember { mutableStateOf("") }
     var locationInput by remember { mutableStateOf(LocationData()) }
     var locationSuggestions by remember { mutableStateOf<List<String>>(emptyList()) }
     var passengerNotes by remember { mutableStateOf("") }
@@ -69,11 +71,20 @@ fun PassengerRideSearchScreen(
             val user = userRepository.getUser(uid)
             favoriteLocations = user?.favoriteLocations ?: emptyList()
             val companyCode = user?.companyCode.orEmpty()
-            val location =
-                RepositoryProvider.provideCompanyRepository().getLocationByCompanyCode(companyCode)
-            fixedLocation = location
+
+            val company = RepositoryProvider.provideCompanyRepository().getCompanyByCode(companyCode)
+
+            if (company != null) {
+                companyId = company.companyId
+                val location = RepositoryProvider.provideCompanyRepository().getLocationByCompanyCode(companyId)
+                fixedLocation = location
+            } else {
+
+                Log.e("CompanyRepository", "❌ חברה לא נמצאה עבור קוד החברה: $companyCode")
+            }
         }
     }
+
 
     LaunchedEffect(locationInput.name, selectedDate, selectedTime) {
         isFormValid =
@@ -222,7 +233,7 @@ fun PassengerRideSearchScreen(
                             }
                             pickupStop = PickupStop(location = geo, passengerId = uid)
                             val availableRides = passengerRideFinder.getAvailableRidesForPassenger(
-                                companyId = "company123",
+                                companyId = companyId,
                                 direction = direction,
                                 passengerArrivalTime = if (!isToHome) selectedTime else "",
                                 passengerDepartureTime = if (isToHome) selectedTime else "",

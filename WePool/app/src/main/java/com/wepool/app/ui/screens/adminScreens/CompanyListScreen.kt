@@ -13,6 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -61,7 +64,8 @@ fun CompanyListScreen(uid: String, navController: NavController) {
                 loading = true
                 error = null
                 companies = companyRepository.getAllCompanies()
-                val queryWords = searchInput.trim().lowercase().split(" ").filter { it.isNotBlank() }
+                val queryWords =
+                    searchInput.trim().lowercase().split(" ").filter { it.isNotBlank() }
                 filteredCompanies = if (queryWords.isEmpty()) {
                     companies
                 } else {
@@ -80,186 +84,198 @@ fun CompanyListScreen(uid: String, navController: NavController) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Embedded Search Filter Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, start = 16.dp, end = 16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        IconButton(
-                            onClick = { filterExpanded = !filterExpanded },
-                            modifier = Modifier.align(Alignment.TopEnd)
-                        ) {
-                            Icon(
-                                imageVector = if (filterExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                                contentDescription = null
-                            )
-                        }
-
-                        Text(
-                            text = "Search Company",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-
-                    if (filterExpanded) {
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        OutlinedTextField(
-                            value = searchInput,
-                            onValueChange = {
-                                searchInput = it
-                                filterCompanies(it)
-                                autoExpanded = it.isNotBlank() && suggestions.isNotEmpty()
-                            },
-                            label = { Text("Enter company name") },
-                            modifier = Modifier.fillMaxWidth(0.85f),
-                            singleLine = true,
-                            trailingIcon = {
-                                if (searchInput.isNotBlank()) {
-                                    IconButton(onClick = {
-                                        searchInput = ""
-                                        suggestions = emptyList()
-                                        autoExpanded = false
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Clear",
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                }
-                            }
-                        )
-
-                        if (autoExpanded && suggestions.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.85f)
-                                    .heightIn(max = 200.dp)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            IconButton(
+                                onClick = { filterExpanded = !filterExpanded },
+                                modifier = Modifier.align(Alignment.TopEnd)
                             ) {
-                                LazyColumn {
-                                    items(suggestions) { suggestion ->
-                                        ListItem(
-                                            headlineContent = { Text(suggestion) },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    searchInput = suggestion
-                                                    suggestions = emptyList()
-                                                }
-                                                .padding(8.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Button(
-                            onClick = { refreshCompanies() },
-                            modifier = Modifier
-                                .fillMaxWidth(0.75f)
-                                .height(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Search",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Search")
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp)
-            ) {
-                error?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                when {
-                    !hasFilterBeenApplied -> Text(
-                        "Please enter a search and press Refresh.",
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-
-                    loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-
-                    filteredCompanies.isEmpty() -> Text(
-                        "No companies found.",
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-
-                    else -> {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(filteredCompanies) { company ->
-                                CompanyCard(
-                                    company = company,
-                                    onCompanyUpdated = { refreshCompanies() }
+                                Icon(
+                                    imageVector = if (filterExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                    contentDescription = null
                                 )
                             }
+
+                            Text(
+                                text = "Search Company",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+
+                        if (filterExpanded) {
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            OutlinedTextField(
+                                value = searchInput,
+                                onValueChange = {
+                                    searchInput = it
+                                    filterCompanies(it)
+                                    autoExpanded = it.isNotBlank() && suggestions.isNotEmpty()
+                                },
+                                label = {
+                                    Text(
+                                        text = "Enter company name",
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = TextAlign.Center
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth(0.85f),
+                                singleLine = false,
+                                maxLines = Int.MAX_VALUE,
+                                textStyle = LocalTextStyle.current.copy(
+                                    textAlign = TextAlign.Center
+                                ),
+                                trailingIcon = {
+                                    if (searchInput.isNotBlank()) {
+                                        IconButton(onClick = {
+                                            searchInput = ""
+                                            suggestions = emptyList()
+                                            autoExpanded = false
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Clear",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                            )
+
+                            if (autoExpanded && suggestions.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.85f)
+                                        .heightIn(max = 200.dp)
+                                ) {
+                                    LazyColumn {
+                                        items(suggestions) { suggestion ->
+                                            ListItem(
+                                                headlineContent = { Text(suggestion) },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        searchInput = suggestion
+                                                        suggestions = emptyList()
+                                                    }
+                                                    .padding(8.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Button(
+                                onClick = { refreshCompanies() },
+                                modifier = Modifier
+                                    .fillMaxWidth(0.75f)
+                                    .height(48.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Search",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Search")
+                            }
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)
+                ) {
+                    error?.let {
+                        Text(
+                            text = it,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    when {
+                        !hasFilterBeenApplied -> Text(
+                            "Please enter a search and press Refresh.",
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+
+                        loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+
+                        filteredCompanies.isEmpty() -> Text(
+                            "No companies found.",
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+
+                        else -> {
+                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                items(filteredCompanies) { company ->
+                                    CompanyCard(
+                                        company = company,
+                                        onCompanyUpdated = { refreshCompanies() }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                BottomNavigationButtons(
+                    uid = uid,
+                    rideId = null,
+                    navController = navController,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    showBackButton = true,
+                    showHomeButton = true
+                )
             }
 
             FloatingActionButton(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(end = 32.dp, bottom = 8.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 32.dp, bottom = 96.dp)
             ) {
                 Text("+", fontSize = 24.sp)
             }
 
-            BottomNavigationButtons(
-                uid = uid,
-                rideId = null,
-                navController = navController,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                showBackButton = true,
-                showHomeButton = true
-            )
-        }
-
-        if (showAddDialog) {
-            AdminAddCompanyDialog(
-                uid = uid,
-                showDialog = showAddDialog,
-                onDismiss = {
-                    showAddDialog = false
-                    refreshCompanies()
-                }
-            )
+            if (showAddDialog) {
+                AdminAddCompanyDialog(
+                    uid = uid,
+                    showDialog = showAddDialog,
+                    onDismiss = {
+                        showAddDialog = false
+                        refreshCompanies()
+                    }
+                )
+            }
         }
     }
 }

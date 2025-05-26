@@ -5,6 +5,7 @@ import android.app.TimePickerDialog
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.ride.Ride
+import com.wepool.app.data.model.ride.RideRequest
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.*
@@ -148,14 +150,49 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                 filteredRides.isEmpty() -> Text("No active rides found for selected criteria.")
                 else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(filteredRides.filter { rideId == null || it.rideId == rideId }) { ride ->
+                        val rideRequest by produceState<RideRequest?>(initialValue = null, ride) {
+                            value = try {
+                                requestRepository.getRequestsByPassenger(uid)
+                                    .firstOrNull { it.rideId == ride.rideId }
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+
+                        val passengerDropoffLocation = remember(ride.pickupStops, uid) {
+                            ride.pickupStops.firstOrNull { it.passengerId == uid }?.location?.name
+                        }
+
+                        val currentTime = Calendar.getInstance().timeInMillis
+                        val rideStartTime = ride.departureTime?.let {
+                            val rideTime = it.split(":")
+                            val rideCalendar = Calendar.getInstance().apply {
+                                set(Calendar.HOUR_OF_DAY, rideTime[0].toInt())
+                                set(Calendar.MINUTE, rideTime[1].toInt())
+                            }
+                            rideCalendar.timeInMillis
+                        }
+
+                        val canCancelRide = when (ride.direction) {
+                            RideDirection.TO_WORK -> rideStartTime?.let { currentTime + 3600000 < it } == true // at least 1 hour before TO_WORK
+                            RideDirection.TO_HOME -> rideStartTime?.let { currentTime + 600000 < it } == true // at least 10 minutes before TO_HOME
+                            else -> false
+                        }
+
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = MaterialTheme.shapes.medium,
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Text("From: ${ride.startLocation.name}")
-                                Text("To: ${ride.destination.name}")
+                                if (ride.direction == RideDirection.TO_WORK) {
+                                    Text("Pickup location: ${rideRequest?.pickupLocation?.name ?: "Loading..."}")
+                                    Text("To: ${ride.destination.name}")
+                                } else {
+                                    Text("From: ${ride.startLocation.name}")
+                                    Text("Dropoff location: ${passengerDropoffLocation ?: "Loading..."}")
+                                }
+
                                 Text("Date: ${ride.date}")
                                 if (ride.direction == RideDirection.TO_WORK) {
                                     Text("Arrival: ${ride.arrivalTime}")
@@ -172,23 +209,27 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                                 ) {
                                     Button(
                                         onClick = {
-                                            coroutineScope.launch {
-                                                try {
-                                                    rideRepository.removePassengerFromRide(ride.rideId, uid, false)
-                                                    requestRepository.getRequestsByPassenger(uid).firstOrNull {
-                                                        it.rideId == ride.rideId && it.status.name == "ACCEPTED"
-                                                    }?.let {
-                                                        rideRepository.cancelRideRequest(ride.rideId, it.requestId)
+                                            if (canCancelRide) {
+                                                coroutineScope.launch {
+                                                    try {
+                                                        rideRepository.removePassengerFromRide(ride.rideId, uid, false)
+                                                        requestRepository.getRequestsByPassenger(uid).firstOrNull {
+                                                            it.rideId == ride.rideId && it.status.name == "ACCEPTED"
+                                                        }?.let {
+                                                            rideRepository.cancelRideRequest(ride.rideId, it.requestId)
+                                                        }
+                                                        refreshRides()
+                                                    } catch (e: Exception) {
+                                                        Log.e("PassengerCancel", "Error: ${e.message}")
                                                     }
-                                                    refreshRides()
-                                                } catch (e: Exception) {
-                                                    Log.e("PassengerCancel", "Error: ${e.message}")
                                                 }
+                                            } else {
+                                                Toast.makeText(context, "Too late to cancel the ride", Toast.LENGTH_SHORT).show()
                                             }
                                         },
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFFC62828), // אדום כהה
+                                            containerColor = Color(0xFFC62828),
                                             contentColor = Color.White
                                         )
                                     ) {
@@ -205,8 +246,8 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                                         },
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF039BE5), // תכלת
-                                            contentColor = Color.White // טקסט לבן
+                                            containerColor = Color(0xFF039BE5),
+                                            contentColor = Color.White
                                         )
                                     ) {
                                         Text("Driver Details")
@@ -214,7 +255,6 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                                 }
                             }
                         }
-
                     }
                 }
             }
@@ -259,7 +299,7 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                     TextButton(
                         onClick = {
                             val intent = Intent(Intent.ACTION_DIAL).apply {
-                               data = Uri.parse("tel:${selectedDriver!!.phoneNumber}")
+                                data = Uri.parse("tel:${selectedDriver!!.phoneNumber}")
                             }
                             context.startActivity(intent)
                         }
@@ -287,5 +327,4 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
             }
         )
     }
-
 }

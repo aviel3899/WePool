@@ -14,7 +14,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.google.firebase.Timestamp
 import com.wepool.app.data.model.common.LocationData
@@ -48,120 +50,137 @@ fun AdminAddCompanyDialog(
     val density = LocalDensity.current
     var autoExpanded by remember { mutableStateOf(false) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    coroutineScope.launch {
-                        if (companyName.isBlank() || selectedLocation == null) {
-                            errorMessage = "Please fill all fields"
-                            return@launch
-                        }
-                        isSubmitting = true
-                        try {
-                            val generatedCode = companyRepository.generateRandomUniqueCompanyCode()
-                            val companyId = UUID.randomUUID().toString()
-                            val newCompany = Company(
-                                companyId = companyId,
-                                companyCode = generatedCode,
-                                companyName = companyName,
-                                location = selectedLocation,
-                                createdAt = Timestamp.now(),
-                                active = true
-                            )
-                            companyRepository.createOrUpdateCompany(newCompany)
-                            Toast.makeText(context, "✅ Company added successfully", Toast.LENGTH_SHORT).show()
-                            onDismiss()
-                        } catch (e: Exception) {
-                            errorMessage = "Error: ${e.message}"
-                        } finally {
-                            isSubmitting = false
-                        }
-                    }
-                },
-                enabled = !isSubmitting
-            ) {
-                Text(if (isSubmitting) "Saving..." else "Confirm")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-        title = { Text("Add Company") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = companyName,
-                    onValueChange = {
-                        companyName = it
-                        errorMessage = null
-                    },
-                    label = { Text("Company Name") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = addressInput,
-                        onValueChange = {
-                            addressInput = it
-                            selectedLocation = null
-                            coroutineScope.launch {
-                                suggestions = mapsService.getAddressSuggestions(it)
-                                autoExpanded = suggestions.isNotEmpty()
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            if (companyName.isBlank() || selectedLocation == null) {
+                                errorMessage = "Please fill all fields"
+                                return@launch
                             }
+                            isSubmitting = true
+                            try {
+                                val generatedCode =
+                                    companyRepository.generateRandomUniqueCompanyCode()
+                                val companyId = UUID.randomUUID().toString()
+                                val newCompany = Company(
+                                    companyId = companyId,
+                                    companyCode = generatedCode,
+                                    companyName = companyName,
+                                    location = selectedLocation,
+                                    createdAt = Timestamp.now(),
+                                    active = true
+                                )
+                                companyRepository.createOrUpdateCompany(newCompany)
+                                Toast.makeText(
+                                    context,
+                                    "✅ Company added successfully",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                onDismiss()
+                            } catch (e: Exception) {
+                                errorMessage = "Error: ${e.message}"
+                            } finally {
+                                isSubmitting = false
+                            }
+                        }
+                    },
+                    enabled = !isSubmitting
+                ) {
+                    Text(if (isSubmitting) "Saving..." else "Confirm")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            },
+            title = {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "Add Company",
+                        modifier = Modifier.align(Alignment.Center), // מרכז את הכותרת
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = companyName,
+                        onValueChange = {
+                            companyName = it
                             errorMessage = null
                         },
-                        label = { Text("Company Address") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onGloballyPositioned { coordinates ->
-                                textFieldSize = coordinates.size
-                            }
-                            .focusRequester(focusRequester),
-                        singleLine = true
+                        label = { Text("Company Name") },
+                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    if (autoExpanded && suggestions.isNotEmpty()) {
-                        Card(
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = addressInput,
+                            onValueChange = {
+                                addressInput = it
+                                selectedLocation = null
+                                coroutineScope.launch {
+                                    suggestions = mapsService.getAddressSuggestions(it)
+                                    autoExpanded = suggestions.isNotEmpty()
+                                }
+                                errorMessage = null
+                            },
+                            label = { Text("Company Address") },
                             modifier = Modifier
-                                .width(with(density) { textFieldSize.width.toDp() })
-                                .padding(top = with(density) { textFieldSize.height.toDp() })
-                                .heightIn(max = 200.dp)
-                        ) {
-                            LazyColumn {
-                                items(suggestions) { suggestion ->
-                                    ListItem(
-                                        headlineContent = { Text(suggestion) },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                addressInput = suggestion
-                                                autoExpanded = false
-                                                coroutineScope.launch {
-                                                    selectedLocation =
-                                                        mapsService.getCoordinatesFromAddress(suggestion)
+                                .fillMaxWidth()
+                                .onGloballyPositioned { coordinates ->
+                                    textFieldSize = coordinates.size
+                                }
+                                .focusRequester(focusRequester),
+                            singleLine = true
+                        )
+
+                        if (autoExpanded && suggestions.isNotEmpty()) {
+                            Card(
+                                modifier = Modifier
+                                    .width(with(density) { textFieldSize.width.toDp() })
+                                    .padding(top = with(density) { textFieldSize.height.toDp() })
+                                    .heightIn(max = 200.dp)
+                            ) {
+                                LazyColumn {
+                                    items(suggestions) { suggestion ->
+                                        ListItem(
+                                            headlineContent = { Text(suggestion) },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    addressInput = suggestion
+                                                    autoExpanded = false
+                                                    coroutineScope.launch {
+                                                        selectedLocation =
+                                                            mapsService.getCoordinatesFromAddress(
+                                                                suggestion
+                                                            )
+                                                    }
+                                                    focusRequester.requestFocus()
                                                 }
-                                                focusRequester.requestFocus()
-                                            }
-                                            .padding(8.dp)
-                                    )
+                                                .padding(8.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                errorMessage?.let {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error)
+                    errorMessage?.let {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(it, color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
-        }
-    )
+        )
+    }
 }

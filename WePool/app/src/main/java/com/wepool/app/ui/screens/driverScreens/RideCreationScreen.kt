@@ -35,6 +35,7 @@ fun RideCreationScreen(navController: NavController, uid: String, direction: Rid
     val isToWork = direction == RideDirection.TO_WORK
     val title = if (isToWork) "Create Workbound Ride" else "Create Homebound Ride"
 
+    var companyCode by remember { mutableStateOf("") }
     var startLocation by remember { mutableStateOf(LocationData()) }
     var destination by remember { mutableStateOf(LocationData()) }
     var seatsAvailable by remember { mutableStateOf(1) }
@@ -68,7 +69,7 @@ fun RideCreationScreen(navController: NavController, uid: String, direction: Rid
                 }
 
                 favoriteLocations = user.favoriteLocations ?: emptyList()
-                val companyCode = user.companyCode
+                companyCode = user.companyCode
                 if (companyCode.isBlank()) {
                     Log.e("RideCreation", "❌ Company code is blank")
                     return@launch
@@ -287,7 +288,7 @@ fun RideCreationScreen(navController: NavController, uid: String, direction: Rid
 
                             val success = rideRepository.planRideFromUserInput(
                                 driverId = uid,
-                                companyId = "company123",
+                                companyCode = companyCode,
                                 startAddress = startLocationData,
                                 destinationAddress = destinationData,
                                 arrivalTime = if (isToWork) selectedTime else "",

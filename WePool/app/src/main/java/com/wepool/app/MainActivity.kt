@@ -58,6 +58,7 @@ import com.wepool.app.ui.theme.WePoolTheme
 import kotlinx.coroutines.launch
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
+import com.wepool.app.ui.screens.adminScreens.UserListScreen
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
 
@@ -244,6 +245,10 @@ class MainActivity : AppCompatActivity() {
                         composable("hrManageCompany/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             HRManageCompanyScreen(uid = uid, navController = navController!!)
+                        }
+                        composable("userList/{uid}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: ""
+                            UserListScreen(uid = uid, navController = navController!!)
                         }
                     }
                 }

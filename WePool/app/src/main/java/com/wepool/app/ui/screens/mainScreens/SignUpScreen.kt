@@ -1,7 +1,10 @@
 package com.wepool.app.ui.screens.mainScreens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -9,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -17,8 +21,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
@@ -28,7 +30,9 @@ import kotlinx.coroutines.launch
 fun SignUpScreen(navController: NavController) {
     val authRepository = RepositoryProvider.provideAuthRepository()
     val userRepository = RepositoryProvider.provideUserRepository()
+    val companyRepository = RepositoryProvider.provideCompanyRepository()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -58,7 +62,6 @@ fun SignUpScreen(navController: NavController) {
     }
 
     Box(modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp)) {
-
         val scrollState = rememberScrollState()
 
         Column(
@@ -188,6 +191,7 @@ fun SignUpScreen(navController: NavController) {
 
                 coroutineScope.launch {
                     isRegistering = true
+
                     val user = User(
                         uid = "",
                         name = name,
@@ -197,17 +201,23 @@ fun SignUpScreen(navController: NavController) {
                         isBanned = false,
                         roles = chosenRoles
                     )
+
                     val result = authRepository.signUpWithEmailAndPassword(
                         email = email,
                         password = password,
                         user = user,
-                        userRepository = userRepository
+                        userRepository = userRepository,
+                        companyRepository = companyRepository
                     )
+
                     isRegistering = false
+
                     result.onSuccess {
-                        navController.navigate("login") { popUpTo("signUp") { inclusive = true } }
+                        navController.navigate("login") {
+                            popUpTo("signUp") { inclusive = true }
+                        }
                     }.onFailure {
-                        errorMessage = it.message
+                        Toast.makeText(context, it.message ?: "שגיאה בהרשמה", Toast.LENGTH_SHORT).show()
                     }
                 }
             }, enabled = !isRegistering, modifier = Modifier.fillMaxWidth()) {
@@ -249,11 +259,11 @@ fun CustomTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, textAlign = TextAlign.Start) }, // ✅ FIX: no fillMaxWidth()
+        label = { Text(label, textAlign = TextAlign.Start) },
         keyboardOptions = keyboardOptions,
         trailingIcon = trailingIcon,
         visualTransformation = visualTransformation,
         modifier = modifier,
-        singleLine=true
+        singleLine = true
     )
 }

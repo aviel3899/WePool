@@ -56,7 +56,7 @@ interface IRideRepository {
     ): DepartureCalculationResult
     suspend fun planRideFromUserInput(
         driverId: String,
-        companyId: String,
+        companyCode: String,
         startAddress: LocationData,
         destinationAddress: LocationData,
         arrivalTime: String = "",

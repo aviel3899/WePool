@@ -5,6 +5,7 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.User
+import com.wepool.app.data.repository.interfaces.ICompanyRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.infrastructure.config.AdminConfig
 import kotlinx.coroutines.Dispatchers
@@ -66,14 +67,20 @@ class AuthRepository(
         email: String,
         password: String,
         user: User,
-        userRepository: IUserRepository
+        userRepository: IUserRepository,
+        companyRepository: ICompanyRepository
     ): Result<String> {
         return try {
+            val company = companyRepository.getCompanyByCode(user.companyCode)
+                ?: return Result.failure(Exception("קוד חברה לא תקף"))
+
             val authResult = auth.createUserWithEmailAndPassword(email, password).await()
             val uid = authResult.user?.uid ?: return Result.failure(Exception("UID לא נוצר"))
 
             val newUser = user.copy(uid = uid, email = email, companyCode = user.companyCode)
             userRepository.createOrUpdateUser(newUser)
+
+            companyRepository.addEmployeeToCompany(company.companyId, uid)
 
             Log.d("AuthRepository", "🟢 הרשמה הצליחה | UID: $uid")
             Result.success(uid)
@@ -83,6 +90,7 @@ class AuthRepository(
             Result.failure(e)
         }
     }
+
 
     // איפוס סיסמה באמצעות מייל
     suspend fun resetPassword(email: String): Boolean = withContext(Dispatchers.IO) {

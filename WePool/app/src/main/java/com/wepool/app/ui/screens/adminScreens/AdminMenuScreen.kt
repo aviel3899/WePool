@@ -3,11 +3,14 @@ package com.wepool.app.ui.screens.adminScreens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.R
@@ -18,49 +21,61 @@ fun AdminMenuScreen(
     uid: String,
     navController: NavController
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Box(modifier = Modifier.fillMaxSize()) {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 32.dp)
-                .padding(bottom = 96.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Admin Dashboard", style = MaterialTheme.typography.headlineSmall)
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp)
+                    .padding(bottom = 96.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                DashboardButton(
-                    label = "Companies",
-                    iconRes = R.drawable.company_svgrepo_com,
-                    onClick = { navController.navigate("companyList/$uid") }
+                Text(
+                    "Admin Menu",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    DashboardButton(
+                        label = "Companies",
+                        iconRes = R.drawable.company_svgrepo_com,
+                        onClick = { navController.navigate("companyList/$uid") }
+                    )
+                    Spacer(modifier = Modifier.width(24.dp))
+                    DashboardButton(
+                        label = "Users",
+                        iconRes = R.drawable.users_young_svgrepo_com,
+                        onClick = { navController.navigate("userList/$uid") }
+                    )
+                }
+            }
+
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                tonalElevation = 4.dp,
+                shadowElevation = 4.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                BottomNavigationButtons(
+                    uid = uid,
+                    rideId = null,
+                    navController = navController,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    showBackButton = true,
+                    showHomeButton = true
                 )
             }
-        }
-
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
-            tonalElevation = 4.dp,
-            shadowElevation = 4.dp,
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            BottomNavigationButtons(
-                uid = uid,
-                rideId = null,
-                navController = navController,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                showBackButton = true,
-                showHomeButton = true
-            )
         }
     }
 }

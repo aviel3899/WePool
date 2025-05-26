@@ -26,7 +26,7 @@ class PassengerRideFinder(
     private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
     private val minDepartureDelayToWorkMinutes = 60L
-    private val minDepartureDelayToHomeMinutes = 5L
+    private val minDepartureDelayToHomeMinutes = 10L
 
     suspend fun getAvailableRidesForPassenger(
         companyId: String,
@@ -102,8 +102,8 @@ class PassengerRideFinder(
             val rideTime = LocalTime.parse(ride.departureTime?.trim(), timeFormatter)
             val rideDateTime = LocalDateTime.of(rideDate, rideTime)
             val futureEnough = when (direction) {
-                RideDirection.TO_WORK -> rideDateTime.isAfter(now.plusMinutes(minDepartureDelayToWorkMinutes)) // אי אפשר להצטרף לנסיעה שיוצאת עוד פחות משעה בכיוון לעבודה
-                RideDirection.TO_HOME -> rideDateTime.isAfter(now.plusMinutes(minDepartureDelayToHomeMinutes)) // אי אפשר להצטרף לנסיעה שיוצאת עוד פחות מ5 דקות בכיוון לבית
+                RideDirection.TO_WORK -> rideDateTime.isAfter(now.plusMinutes(minDepartureDelayToWorkMinutes)) // אי אפשר להצטרף לנסיעה שיוצאת עוד פחות משעה לעבודה
+                RideDirection.TO_HOME -> rideDateTime.isAfter(now.plusMinutes(minDepartureDelayToHomeMinutes)) // אי אפשר להצטרף לנסיעה שיוצאת עוד פחות מ10 דקות הביתה
             }
 
             val notHisOwnRide = ride.driverId != pickupPoint.passengerId

@@ -682,7 +682,7 @@ class RideRepository(
 
     override suspend fun planRideFromUserInput(
         driverId: String,
-        companyId: String,
+        companyCode: String,
         startAddress: LocationData,
         destinationAddress: LocationData,
         arrivalTime: String,
@@ -726,7 +726,7 @@ class RideRepository(
         val baseRide = Ride(
             rideId = rideId,
             driverId = driverId,
-            companyId = companyId,
+            companyCode = companyCode,
             startLocation = startAddress,
             destination = destinationAddress,
             direction = direction,

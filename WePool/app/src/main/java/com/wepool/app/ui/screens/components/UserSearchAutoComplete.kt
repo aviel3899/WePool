@@ -17,7 +17,8 @@ import kotlinx.coroutines.launch
 fun UserSearchAutoComplete(
     modifier: Modifier = Modifier,
     onUserSelected: (uid: String, display: String) -> Unit,
-    usersProvider: suspend () -> List<Pair<String, String>> // uid to "name (email)"
+    usersProvider: suspend () -> List<Pair<String, String>>, // uid to "name (email)"
+    onClear: () -> Unit = {}
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -87,6 +88,7 @@ fun UserSearchAutoComplete(
                     nameInput = ""
                     emailInput = ""
                     autoExpanded = false
+                    onClear()
                 }) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -116,6 +118,7 @@ fun UserSearchAutoComplete(
                     nameInput = ""
                     emailInput = ""
                     autoExpanded = false
+                    onClear()
                 }) {
                     Icon(
                         imageVector = Icons.Default.Delete,

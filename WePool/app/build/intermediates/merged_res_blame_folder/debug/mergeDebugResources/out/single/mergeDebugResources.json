@@ -20,12 +20,12 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xhdpi\\ic_launcher_round.webp"
     },
     {
-        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-xxxhdpi_ic_launcher.webp.flat",
-        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xxxhdpi\\ic_launcher.webp"
-    },
-    {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_ic_launcher_background.xml.flat",
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\ic_launcher_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-xxxhdpi\\ic_launcher.webp"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_seat_belt_svgrepo_com.xml.flat",
@@ -52,8 +52,12 @@
         "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\mipmap-hdpi\\ic_launcher_round.webp"
     },
     {
-        "merged": "com.wepool.app-debug-81:/drawable_folder_secret_svgrepo_com.xml.flat",
-        "source": "com.wepool.app-main-83:/drawable/folder_secret_svgrepo_com.xml"
+        "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_folder_secret_svgrepo_com.xml.flat",
+        "source": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-main-83:\\drawable\\folder_secret_svgrepo_com.xml"
+    },
+    {
+        "merged": "com.wepool.app-debug-81:/drawable_users_young_svgrepo_com.xml.flat",
+        "source": "com.wepool.app-main-83:/drawable/users_young_svgrepo_com.xml"
     },
     {
         "merged": "C:\\Users\\Administrator\\.gradle\\daemon\\8.13\\com.wepool.app-debug-81:\\drawable_ic_launcher_foreground.xml.flat",

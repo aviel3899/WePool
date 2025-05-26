@@ -7,7 +7,7 @@ import com.wepool.app.data.model.logic.DepartureCalculationResult
 data class Ride(
     val rideId: String = "",
     val driverId: String = "",
-    val companyId: String = "",
+    val companyCode: String = "",
     val startLocation: LocationData = LocationData(),
     val destination: LocationData = LocationData(),
     val direction: RideDirection? = null, // האם הנסיעה היא TO_WORK או TO_HOME

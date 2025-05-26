@@ -42,7 +42,6 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var selectedRoles by remember { mutableStateOf(setOf<UserRole>()) }
     var originalRoles by remember { mutableStateOf(setOf<UserRole>()) }
-    var companyCode by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -55,10 +54,9 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
             val loadedUser = userRepository.getUser(uid)
             if (loadedUser != null) {
                 user = loadedUser
-                phoneNumber = loadedUser.phoneNumber ?: ""
+                phoneNumber = loadedUser.phoneNumber
                 selectedRoles = loadedUser.roles.toSet()
                 originalRoles = loadedUser.roles.toSet()
-                companyCode = loadedUser.companyCode
             }
         } catch (e: Exception) {
             errorMessage = "Error loading user: ${e.message}"
@@ -93,15 +91,6 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = companyCode,
-            onValueChange = { companyCode = it },
-            label = { Text("Company Code") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         Text("Select Roles:", style = MaterialTheme.typography.titleMedium)
         listOf(UserRole.DRIVER, UserRole.PASSENGER).forEach { role ->
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -122,7 +111,6 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                 Text(readableName)
             }
         }
-
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -216,7 +204,6 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                         user?.let {
                             val updatedUser = it.copy(
                                 phoneNumber = phoneNumber,
-                                companyCode = companyCode,
                                 roles = selectedRoles.toList()
                             )
                             userRepository.createOrUpdateUser(updatedUser)
