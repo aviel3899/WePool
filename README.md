@@ -55,25 +55,17 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 
 **🛠️ Built With**
 
-      Technology                                Purpose
-
-      Kotlin + Jetpack Compose                  Android development & declarative UI
-
-      Firebase Firestore                        Cloud NoSQL database
-
-      Firebase Authentication                   User login and security
-
-      Firebase Cloud Functions                  Backend business logic & notifications
-
-      Firebase Cloud Messaging                  Push notifications
-
-      Firebase Storage                          Static map images and attachments
-
-      Google Maps SDK                           Map views, Directions, Navigation
-
-      Google Places API                         Address autocomplete & place details
-
-      Git & GitHub                              Version control and collaboration
+     | 🛠️ Technology              | 💡 Purpose                                |
+|----------------------------|-------------------------------------------|
+| Kotlin + Jetpack Compose  | Android development & declarative UI      |
+| Firebase Firestore        | Cloud NoSQL database                      |
+| Firebase Authentication   | User login and security                   |
+| Firebase Cloud Functions  | Backend business logic & notifications    |
+| Firebase Cloud Messaging  | Push notifications                        |
+| Firebase Storage          | Static map images and attachments         |
+| Google Maps SDK           | Map views, Directions, Navigation         |
+| Google Places API         | Address autocomplete & place details      |
+| Git & GitHub              | Version control and collaboration         |
 
 
 **📁 Project Structure**
@@ -142,6 +134,7 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 |-------------|--------------|------------|
 | <a href="https://github.com/user-attachments/assets/8d8a9b44-e738-49e1-9e15-d0b6bbebd9cb"><img src="https://github.com/user-attachments/assets/8d8a9b44-e738-49e1-9e15-d0b6bbebd9cb" width="250"/></a> | <a href="https://github.com/user-attachments/assets/a042baad-5785-49e1-90d7-510a587ce8fb"><img src="https://github.com/user-attachments/assets/a042baad-5785-49e1-90d7-510a587ce8fb" width="250"/></a> | <a href="https://github.com/user-attachments/assets/8bfa36b8-5c46-4106-9f87-c392d8e7e5ec"><img src="https://github.com/user-attachments/assets/8bfa36b8-5c46-4106-9f87-c392d8e7e5ec" width="250"/></a> |
   
+
 
 👥 Contributors
 
