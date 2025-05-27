@@ -130,33 +130,50 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
    
 **📸 Screenshots**
   
-  Home Page
-  ![HomeScreen](https://github.com/user-attachments/assets/e0ae707e-1235-4a14-8aa1-8c223c17f430)
+  ### Home Page
+<a href="https://github.com/user-attachments/assets/e0ae707e-1235-4a14-8aa1-8c223c17f430" target="_blank">
+  <img src="https://github.com/user-attachments/assets/e0ae707e-1235-4a14-8aa1-8c223c17f430" width="300"/>
+</a>
 
-  Preferred Locations
-  ![PreferredLocation](https://github.com/user-attachments/assets/e22fc62f-0933-4414-b923-356782fb2cbf)
+### Preferred Locations
+<a href="https://github.com/user-attachments/assets/e22fc62f-0933-4414-b923-356782fb2cbf" target="_blank">
+  <img src="https://github.com/user-attachments/assets/e22fc62f-0933-4414-b923-356782fb2cbf" width="300"/>
+</a>
 
-  Role Selection
-  ![RoleSelection](https://github.com/user-attachments/assets/204f5a1c-ae4d-4f33-bd1f-cfc9b372896b)
+### Role Selection
+<a href="https://github.com/user-attachments/assets/204f5a1c-ae4d-4f33-bd1f-cfc9b372896b" target="_blank">
+  <img src="https://github.com/user-attachments/assets/204f5a1c-ae4d-4f33-bd1f-cfc9b372896b" width="300"/>
+</a>
 
-  Admin Menu
-  ![AdminMenu](https://github.com/user-attachments/assets/e31fb35d-e091-4f8c-b76a-e77b87709b49)
+### Admin Menu
+<a href="https://github.com/user-attachments/assets/e31fb35d-e091-4f8c-b76a-e77b87709b49" target="_blank">
+  <img src="https://github.com/user-attachments/assets/e31fb35d-e091-4f8c-b76a-e77b87709b49" width="300"/>
+</a>
 
-  Admin Ride View
-  ![AdminRideView](https://github.com/user-attachments/assets/27c948fc-fdfe-47ca-83b7-1b14467d5fc9)
+### Admin Ride View
+<a href="https://github.com/user-attachments/assets/27c948fc-fdfe-47ca-83b7-1b14467d5fc9" target="_blank">
+  <img src="https://github.com/user-attachments/assets/27c948fc-fdfe-47ca-83b7-1b14467d5fc9" width="300"/>
+</a>
 
-  Ride Creation
-  ![RideCreation](https://github.com/user-attachments/assets/58610b1e-7450-4bee-a79d-7b355afcd7d6)
+### Ride Creation
+<a href="https://github.com/user-attachments/assets/58610b1e-7450-4bee-a79d-7b355afcd7d6" target="_blank">
+  <img src="https://github.com/user-attachments/assets/58610b1e-7450-4bee-a79d-7b355afcd7d6" width="300"/>
+</a>
 
-  Join a Ride Request
-  ![JoinARideRequest](https://github.com/user-attachments/assets/8d8a9b44-e738-49e1-9e15-d0b6bbebd9cb)
+### Join a Ride Request
+<a href="https://github.com/user-attachments/assets/8d8a9b44-e738-49e1-9e15-d0b6bbebd9cb" target="_blank">
+  <img src="https://github.com/user-attachments/assets/8d8a9b44-e738-49e1-9e15-d0b6bbebd9cb" width="300"/>
+</a>
 
-  Active Rides
-  ![ActiveRides](https://github.com/user-attachments/assets/a042baad-5785-49e1-90d7-510a587ce8fb)
+### Active Rides
+<a href="https://github.com/user-attachments/assets/a042baad-5785-49e1-90d7-510a587ce8fb" target="_blank">
+  <img src="https://github.com/user-attachments/assets/a042baad-5785-49e1-90d7-510a587ce8fb" width="300"/>
+</a>
 
-  Dynamic Ride Route Map
-  ![DynamicRideRouteMap](https://github.com/user-attachments/assets/8bfa36b8-5c46-4106-9f87-c392d8e7e5ec)
-
+### Dynamic Ride Route Map
+<a href="https://github.com/user-attachments/assets/8bfa36b8-5c46-4106-9f87-c392d8e7e5ec" target="_blank">
+  <img src="https://github.com/user-attachments/assets/8bfa36b8-5c46-4106-9f87-c392d8e7e5ec" width="300"/>
+</a>
 
 
 👥 Contributors
