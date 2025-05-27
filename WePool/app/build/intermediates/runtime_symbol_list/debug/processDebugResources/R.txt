@@ -3063,6 +3063,7 @@ int drawable m3_tabs_background 0x7f0700bd
 int drawable m3_tabs_line_indicator 0x7f0700be
 int drawable m3_tabs_rounded_line_indicator 0x7f0700bf
 int drawable m3_tabs_transparent_background 0x7f0700c0
+int drawable map_svgrepo_com 0x7f07011a
 int drawable material_cursor_drawable 0x7f0700c1
 int drawable material_ic_calendar_black_24dp 0x7f0700c2
 int drawable material_ic_clear_black_24dp 0x7f0700c3

@@ -23,6 +23,7 @@ drawable ic_launcher_foreground
 drawable information_svgrepo_com
 drawable login_line_svgrepo_com
 drawable logout_svgrepo_com
+drawable map_svgrepo_com
 drawable seat_belt_svgrepo_com
 drawable smiling_face_with_halo_svgrepo_com
 drawable steering_wheel_car_svgrepo_com

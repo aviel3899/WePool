@@ -3,7 +3,6 @@ package com.wepool.app.ui.screens.adminScreens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,7 +18,11 @@ import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.ride.Ride
 
 @Composable
-fun RideCard(ride: Ride, selectedUserUid: String?) {
+fun RideCard(
+    ride: Ride,
+    selectedUserUid: String?,
+    onShowMapClicked: (Ride) -> Unit
+) {
     var showDetails by remember { mutableStateOf(false) }
 
     val roleIcon = when {
@@ -94,16 +97,58 @@ fun RideCard(ride: Ride, selectedUserUid: String?) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                IconButton(
-                    onClick = { showDetails = true },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(72.dp),
+                    horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Details",
-                        modifier = Modifier.size(32.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    IconButton(
+                        onClick = { /* TODO: Show driver info */ },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.steering_wheel_car_svgrepo_com),
+                            contentDescription = "Driver",
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { /* TODO: Show passenger info */ },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.seat_belt_svgrepo_com),
+                            contentDescription = "Passenger",
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { onShowMapClicked(ride) },
+                        modifier = Modifier.size(72.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.map_svgrepo_com),
+                            contentDescription = "Show Map",
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(56.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { showDetails = true },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Details",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
             }
         }

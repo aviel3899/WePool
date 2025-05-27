@@ -19,7 +19,7 @@ import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.components.UserSearchAutoComplete
-import com.wepool.app.ui.screens.adminScreens.RideCard
+import com.wepool.app.ui.screens.components.RideMapDialog
 import kotlinx.coroutines.launch
 
 @Composable
@@ -35,6 +35,7 @@ fun RidesListScreen(uid: String, navController: NavController) {
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var filterExpanded by remember { mutableStateOf(true) }
+    var rideForMapDialog by remember { mutableStateOf<Ride?>(null) }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
@@ -53,7 +54,7 @@ fun RidesListScreen(uid: String, navController: NavController) {
 
     fun applyFilter() {
         filteredRides = if (selectedUserUid.isNullOrEmpty()) {
-            rides // כל הנסיעות
+            rides
         } else {
             rides.filter { ride ->
                 ride.driverId == selectedUserUid || ride.pickupStops.any { it.passengerId == selectedUserUid }
@@ -157,12 +158,17 @@ fun RidesListScreen(uid: String, navController: NavController) {
                                 items(filteredRides) { ride ->
                                     RideCard(
                                         ride = ride,
-                                        selectedUserUid = if (selectedUserUid.isNullOrEmpty()) null else selectedUserUid
+                                        selectedUserUid = if (selectedUserUid.isNullOrEmpty()) null else selectedUserUid,
+                                        onShowMapClicked = { rideForMapDialog = it }
                                     )
                                 }
                             }
                         }
                     }
+                }
+
+                rideForMapDialog?.let {
+                    RideMapDialog(ride = it, onDismiss = { rideForMapDialog = null })
                 }
 
                 BottomNavigationButtons(

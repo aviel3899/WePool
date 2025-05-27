@@ -37,7 +37,6 @@ fun UserListScreen(uid: String, navController: NavController) {
             try {
                 loading = true
                 users = userRepository.getAllUsers()
-                filteredUsers = users
             } catch (e: Exception) {
                 error = "❌ Failed to load users: ${e.message}"
             } finally {
@@ -47,11 +46,11 @@ fun UserListScreen(uid: String, navController: NavController) {
     }
 
     fun applyFilter() {
-        selectedUserUid?.let { uid ->
-            val matched = users.find { it.uid == uid }
-            if (matched != null) {
-                filteredUsers = listOf(matched)
-            }
+        filteredUsers = if (selectedUserUid == null) {
+            users
+        } else {
+            val matched = users.find { it.uid == selectedUserUid }
+            if (matched != null) listOf(matched) else emptyList()
         }
     }
 
@@ -113,7 +112,6 @@ fun UserListScreen(uid: String, navController: NavController) {
 
                             Button(
                                 onClick = { applyFilter() },
-                                enabled = selectedUserUid != null,
                                 modifier = Modifier.widthIn(min = 100.dp)
                             ) {
                                 Text("Search")
