@@ -127,14 +127,13 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
   
     Run the app on an emulator or physical Android device (with Google Play Services).
 
+   
+**📸 Screenshots**
   
-**  📸 Screenshots**
+  Home Page
+  ![HomeScreen](https://github.com/user-attachments/assets/e0ae707e-1235-4a14-8aa1-8c223c17f430)
+
   
-  Role Selection
-  
-  Ride Creation
-  
-  Passenger Join Request
 
 
 
