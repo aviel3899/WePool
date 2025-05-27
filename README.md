@@ -55,17 +55,17 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 
 **🛠️ Built With**
 
-     | 🛠️ Technology              | 💡 Purpose                                |
-|----------------------------|-------------------------------------------|
-| Kotlin + Jetpack Compose  | Android development & declarative UI      |
-| Firebase Firestore        | Cloud NoSQL database                      |
-| Firebase Authentication   | User login and security                   |
-| Firebase Cloud Functions  | Backend business logic & notifications    |
-| Firebase Cloud Messaging  | Push notifications                        |
-| Firebase Storage          | Static map images and attachments         |
-| Google Maps SDK           | Map views, Directions, Navigation         |
-| Google Places API         | Address autocomplete & place details      |
-| Git & GitHub              | Version control and collaboration         |
+| 🛠️ Technology               | 💡 Purpose                                 |
+|-----------------------------|--------------------------------------------|
+| Kotlin + Jetpack Compose   | Android development & declarative UI       |
+| Firebase Firestore         | Cloud NoSQL database                       |
+| Firebase Authentication    | User login and security                    |
+| Firebase Cloud Functions   | Backend business logic & notifications     |
+| Firebase Cloud Messaging   | Push notifications                         |
+| Firebase Storage           | Static map images and attachments          |
+| Google Maps SDK            | Map views, Directions, Navigation          |
+| Google Places API          | Address autocomplete & place details       |
+| Git & GitHub               | Version control and collaboration          |
 
 
 **📁 Project Structure**
