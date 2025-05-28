@@ -244,9 +244,10 @@ class MainActivity : AppCompatActivity() {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             UserListScreen(uid = uid, navController = navController!!)
                         }
-                        composable("ridesList/{uid}") {
-                            val uid = it.arguments?.getString("uid") ?: return@composable
-                            RidesListScreen(uid = uid, navController = navController!!)
+                        composable("ridesList/{uid}?filter={filter}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid") ?: "admin"
+                            val filter = backStackEntry.arguments?.getString("filter")?.toBooleanStrictOrNull() ?: false
+                            RidesListScreen(uid = uid, navController = navController!!, filterByUid = filter)
                         }
                     }
                 }

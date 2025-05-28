@@ -144,7 +144,7 @@ fun UserCard(user: User, navController: NavController){
 
                         if (UserRole.DRIVER in user.roles || UserRole.PASSENGER in user.roles) {
                             IconButton(onClick = {
-                                navController.navigate("ridesList/${user.uid}")
+                                navController.navigate("ridesList/${user.uid}?filter=true")
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.History,

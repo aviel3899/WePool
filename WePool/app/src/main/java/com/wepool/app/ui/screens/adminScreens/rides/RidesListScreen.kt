@@ -1,5 +1,6 @@
 package com.wepool.app.ui.screens.adminScreens.rides
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,7 +24,7 @@ import com.wepool.app.ui.screens.components.RideMapDialog
 import kotlinx.coroutines.launch
 
 @Composable
-fun RidesListScreen(uid: String, navController: NavController) {
+fun RidesListScreen(uid: String, navController: NavController, filterByUid: Boolean = false){
     val userRepository = RepositoryProvider.provideUserRepository()
     val rideRepository = RepositoryProvider.provideRideRepository()
     val coroutineScope = rememberCoroutineScope()
@@ -38,6 +39,8 @@ fun RidesListScreen(uid: String, navController: NavController) {
     var rideForMapDialog by remember { mutableStateOf<Ride?>(null) }
 
     fun applyFilter() {
+        Log.d("RidesListScreen", "selectedUserUid = '$selectedUserUid'")
+        Log.d("RidesListScreen", "rides count = ${rides.size}")
         filteredRides = if (selectedUserUid.isNullOrEmpty()) {
             rides
         } else {
@@ -53,7 +56,7 @@ fun RidesListScreen(uid: String, navController: NavController) {
                 loading = true
                 users = userRepository.getAllUsers()
                 rides = rideRepository.getAllRides()
-                selectedUserUid = if (uid != "admin") uid else null
+                selectedUserUid = if (filterByUid) uid else null
                 applyFilter()
             } catch (e: Exception) {
                 error = "❌ Failed to load rides: ${e.message}"
@@ -65,7 +68,7 @@ fun RidesListScreen(uid: String, navController: NavController) {
 
     fun clearFilter() {
         selectedUserUid = null
-        filteredRides = emptyList()
+        applyFilter()
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -106,7 +109,7 @@ fun RidesListScreen(uid: String, navController: NavController) {
                             Spacer(modifier = Modifier.height(16.dp))
 
                             UserSearchAutoComplete(
-                                onUserSelected = { uid, _ -> selectedUserUid = uid },
+                                onUserSelected = { uid, _ -> selectedUserUid = uid.takeIf { it.isNotBlank() } },
                                 onClear = { clearFilter() },
                                 usersProvider = {
                                     try {
