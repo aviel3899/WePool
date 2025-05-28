@@ -5,17 +5,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.wepool.app.R
 import com.wepool.app.data.model.common.LocationData
 
 @Composable
@@ -40,22 +44,34 @@ fun FavoriteLocationDropdown(
                     onTextChanged(it)
                     isSuggestionsExpanded = true
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onGloballyPositioned { coordinates ->
+                modifier = Modifier.fillMaxWidth().onGloballyPositioned { coordinates ->
                         textFieldSize = coordinates.size
                     },
                 label = { Text(label) },
                 trailingIcon = {
-                    IconButton(onClick = {
-                        isFavoritesExpanded = !isFavoritesExpanded
-                        isSuggestionsExpanded = false
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Select from favorites",
-                            tint = Color(0xFFDAA520)
-                        )
+                    Row {
+                        if (locationData.name.isNotBlank()) {
+                            IconButton(onClick = {
+                                onTextChanged("")
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Clear field",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+
+                        IconButton(onClick = {
+                            isFavoritesExpanded = !isFavoritesExpanded
+                            isSuggestionsExpanded = false
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "Select from favorites",
+                                tint = Color(0xFFDAA520)
+                            )
+                        }
                     }
                 },
                 singleLine = true
@@ -74,7 +90,21 @@ fun FavoriteLocationDropdown(
                 } else {
                     favoriteLocations.forEach { location ->
                         DropdownMenuItem(
-                            text = { Text(location.name) },
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (location.note.equals("home", ignoreCase = true)) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.home_house_svgrepo_com),
+                                            contentDescription = "Home",
+                                            tint = Color.Unspecified,
+                                            modifier = Modifier.size(28.dp).padding(end = 8.dp)
+                                        )
+                                        Text("Home")
+                                    } else {
+                                        Text(location.name)
+                                    }
+                                }
+                            },
                             onClick = {
                                 onLocationSelected(location)
                                 isFavoritesExpanded = false

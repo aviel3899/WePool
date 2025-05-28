@@ -1,4 +1,4 @@
-package com.wepool.app.ui.screens.adminScreens
+package com.wepool.app.ui.screens.adminScreens.companies
 
 import android.content.Context
 import android.widget.Toast
@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.wepool.app.R
@@ -290,19 +291,19 @@ fun CompanyCard(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(bottom = 4.dp),
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    textAlign = TextAlign.Center
                                 )
                                 Text(
                                     text = "is the current HR manager",
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.fillMaxWidth(),
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    textAlign = TextAlign.Center
                                 )
                             } ?: Text(
                                 text = "No HR manager is currently assigned.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.fillMaxWidth(),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                textAlign = TextAlign.Center
                             )
                         }
                     },

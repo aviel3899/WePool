@@ -1,4 +1,4 @@
-package com.wepool.app.ui.screens.adminScreens
+package com.wepool.app.ui.screens.adminScreens.users
 
 import android.content.Intent
 import android.net.Uri
@@ -12,20 +12,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.wepool.app.R
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun UserCard(user: User) {
+fun UserCard(user: User, navController: NavController){
     val companyRepository = RepositoryProvider.provideCompanyRepository()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -107,7 +110,7 @@ fun UserCard(user: User) {
                                 painter = painterResource(id = R.drawable.information_svgrepo_com),
                                 contentDescription = "Details",
                                 modifier = Modifier.size(48.dp),
-                                tint = androidx.compose.ui.graphics.Color.Unspecified
+                                tint = Color.Unspecified
                             )
                         }
 
@@ -141,7 +144,7 @@ fun UserCard(user: User) {
 
                         if (UserRole.DRIVER in user.roles || UserRole.PASSENGER in user.roles) {
                             IconButton(onClick = {
-                                // TODO: Connect to passenger ride history screen
+                                navController.navigate("ridesList/${user.uid}")
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.History,
@@ -160,8 +163,8 @@ fun UserCard(user: User) {
     if (showDetails) {
         val formattedLastLogin = remember(user.lastLoginTimestamp) {
             user.lastLoginTimestamp?.let {
-                val date = java.util.Date(it)
-                val format = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                val date = Date(it)
+                val format = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
                 format.format(date)
             } ?: "Never"
         }

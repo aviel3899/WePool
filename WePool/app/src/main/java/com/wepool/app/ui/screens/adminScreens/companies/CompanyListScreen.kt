@@ -1,4 +1,4 @@
-package com.wepool.app.ui.screens.adminScreens
+package com.wepool.app.ui.screens.adminScreens.companies
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.company.Company
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.screens.adminScreens.AdminAddCompanyDialog
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import kotlinx.coroutines.launch
 

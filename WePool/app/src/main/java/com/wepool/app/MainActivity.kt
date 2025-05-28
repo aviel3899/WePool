@@ -33,9 +33,9 @@ import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.handleNotificationNavigation
 import com.wepool.app.notifications.NotificationHelper
 import com.wepool.app.ui.screens.adminScreens.AdminMenuScreen
-import com.wepool.app.ui.screens.adminScreens.CompanyListScreen
-import com.wepool.app.ui.screens.adminScreens.UserListScreen
-import com.wepool.app.ui.screens.adminScreens.RidesListScreen
+import com.wepool.app.ui.screens.adminScreens.companies.CompanyListScreen
+import com.wepool.app.ui.screens.adminScreens.users.UserListScreen
+import com.wepool.app.ui.screens.adminScreens.rides.RidesListScreen
 import com.wepool.app.ui.screens.driverScreens.DriverActiveRidesScreen
 import com.wepool.app.ui.screens.driverScreens.DriverCarDetailsScreen
 import com.wepool.app.ui.screens.driverScreens.DriverMenuScreen

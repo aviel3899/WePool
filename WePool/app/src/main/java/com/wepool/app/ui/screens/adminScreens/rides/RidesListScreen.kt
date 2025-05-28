@@ -1,4 +1,4 @@
-package com.wepool.app.ui.screens.adminScreens
+package com.wepool.app.ui.screens.adminScreens.rides
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,49 +14,58 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.components.UserSearchAutoComplete
+import com.wepool.app.ui.screens.components.RideMapDialog
 import kotlinx.coroutines.launch
 
 @Composable
-fun UserListScreen(uid: String, navController: NavController) {
+fun RidesListScreen(uid: String, navController: NavController) {
     val userRepository = RepositoryProvider.provideUserRepository()
+    val rideRepository = RepositoryProvider.provideRideRepository()
     val coroutineScope = rememberCoroutineScope()
 
     var users by remember { mutableStateOf<List<User>>(emptyList()) }
-    var filteredUsers by remember { mutableStateOf<List<User>>(emptyList()) }
+    var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
+    var filteredRides by remember { mutableStateOf<List<Ride>>(emptyList()) }
     var selectedUserUid by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var filterExpanded by remember { mutableStateOf(true) }
+    var rideForMapDialog by remember { mutableStateOf<Ride?>(null) }
+
+    fun applyFilter() {
+        filteredRides = if (selectedUserUid.isNullOrEmpty()) {
+            rides
+        } else {
+            rides.filter { ride ->
+                ride.driverId == selectedUserUid || ride.pickupStops.any { it.passengerId == selectedUserUid }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
                 loading = true
                 users = userRepository.getAllUsers()
+                rides = rideRepository.getAllRides()
+                selectedUserUid = if (uid != "admin") uid else null
+                applyFilter()
             } catch (e: Exception) {
-                error = "❌ Failed to load users: ${e.message}"
+                error = "❌ Failed to load rides: ${e.message}"
             } finally {
                 loading = false
             }
         }
     }
 
-    fun applyFilter() {
-        filteredUsers = if (selectedUserUid == null) {
-            users
-        } else {
-            val matched = users.find { it.uid == selectedUserUid }
-            if (matched != null) listOf(matched) else emptyList()
-        }
-    }
-
     fun clearFilter() {
         selectedUserUid = null
-        filteredUsers = users
+        filteredRides = emptyList()
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -87,7 +96,7 @@ fun UserListScreen(uid: String, navController: NavController) {
                             }
 
                             Text(
-                                text = "Search User",
+                                text = "Search Rides by User",
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.align(Alignment.Center)
                             )
@@ -138,19 +147,29 @@ fun UserListScreen(uid: String, navController: NavController) {
                             )
                         }
 
-                        filteredUsers.isEmpty() -> Text(
-                            "No users found.",
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
+                        filteredRides.isEmpty() -> {
+                            Text(
+                                "No rides found.",
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+                        }
 
                         else -> {
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items(filteredUsers) { user ->
-                                    UserCard(user = user)
+                                items(filteredRides) { ride ->
+                                    RideCard(
+                                        ride = ride,
+                                        selectedUserUid = if (selectedUserUid.isNullOrEmpty()) null else selectedUserUid,
+                                        onShowMapClicked = { rideForMapDialog = it }
+                                    )
                                 }
                             }
                         }
                     }
+                }
+
+                rideForMapDialog?.let {
+                    RideMapDialog(ride = it, onDismiss = { rideForMapDialog = null })
                 }
 
                 BottomNavigationButtons(

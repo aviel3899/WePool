@@ -8,14 +8,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -41,48 +42,43 @@ fun PassengerRideSearchScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
     val isToHome = direction == RideDirection.TO_HOME
-    var fixedLocation by remember { mutableStateOf<LocationData?>(null) }
     val title = if (isToHome) "Join a Homebound Ride" else "Join a Workbound Ride"
 
     var companyId by remember { mutableStateOf("") }
     var companyCode by remember { mutableStateOf("") }
+    var fixedLocation by remember { mutableStateOf<LocationData?>(null) }
     var locationInput by remember { mutableStateOf(LocationData()) }
     var locationSuggestions by remember { mutableStateOf<List<String>>(emptyList()) }
     var passengerNotes by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf("") }
+    var favoriteLocations by remember { mutableStateOf<List<LocationData>>(emptyList()) }
     var isFormValid by remember { mutableStateOf(false) }
-
     var isLoading by remember { mutableStateOf(false) }
     var rides by remember { mutableStateOf<List<RideCandidate>>(emptyList()) }
     var ridesFetched by remember { mutableStateOf(false) }
     var showDetails by remember { mutableStateOf(true) }
 
-    var pickupStop by remember { mutableStateOf(PickupStop()) }
     val mapsService = RepositoryProvider.mapsService
     val rideRepository = RepositoryProvider.provideRideRepository()
     val rideRequestRepository = RepositoryProvider.provideRideRequestRepository()
     val userRepository = RepositoryProvider.provideUserRepository()
     val passengerRideFinder = PassengerRideFinder(mapsService, RouteMatcher)
 
-    var favoriteLocations by remember { mutableStateOf<List<LocationData>>(emptyList()) }
+    var pickupStop by remember { mutableStateOf(PickupStop()) }
 
     LaunchedEffect(uid) {
         coroutineScope.launch {
             val user = userRepository.getUser(uid)
             favoriteLocations = user?.favoriteLocations ?: emptyList()
             companyCode = user?.companyCode.orEmpty()
-
             val company =
                 RepositoryProvider.provideCompanyRepository().getCompanyByCode(companyCode)
-
             if (company != null) {
                 companyId = company.companyId
-                val location = RepositoryProvider.provideCompanyRepository()
+                fixedLocation = RepositoryProvider.provideCompanyRepository()
                     .getLocationByCompanyCode(companyCode)
-                fixedLocation = location
             } else {
                 Log.e("CompanyRepository", "❌ No company found with code: $companyCode")
             }
@@ -160,88 +156,186 @@ fun PassengerRideSearchScreen(
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
-                        OutlinedTextField(
-                            value = passengerNotes,
-                            onValueChange = { passengerNotes = it },
-                            label = { Text("Notes for Driver (optional)") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 80.dp),
-                            singleLine = false,
-                            maxLines = 3
-                        )
 
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = {
-                            val calendar = Calendar.getInstance()
-                            DatePickerDialog(
-                                context,
-                                { _, year, month, day ->
-                                    val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                                    calendar.set(year, month, day)
-                                    selectedDate = sdf.format(calendar.time)
-                                },
-                                calendar.get(Calendar.YEAR),
-                                calendar.get(Calendar.MONTH),
-                                calendar.get(Calendar.DAY_OF_MONTH)
-                            ).apply {
-                                datePicker.minDate = calendar.timeInMillis
-                                show()
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = passengerNotes,
+                                onValueChange = { passengerNotes = it },
+                                label = { Text("Notes for Driver (optional)") },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 80.dp),
+                                singleLine = false,
+                                maxLines = 3
+                            )
+                            if (passengerNotes.isNotBlank()) {
+                                IconButton(onClick = { passengerNotes = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Clear Notes",
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
-                        }) {
-                            Text(if (selectedDate.isNotBlank()) "Selected Date: $selectedDate" else "Pick a Date")
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = {
-                            val now = Calendar.getInstance()
-                            TimePickerDialog(
-                                context,
-                                { _, hour, minute ->
-                                    val cal = Calendar.getInstance()
-                                    cal.set(Calendar.HOUR_OF_DAY, hour)
-                                    cal.set(Calendar.MINUTE, minute)
-                                    val todayStr = SimpleDateFormat(
-                                        "dd-MM-yyyy",
-                                        Locale.getDefault()
-                                    ).format(now.time)
-                                    if (selectedDate == todayStr && cal.before(now)) {
-                                        Toast.makeText(
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                OutlinedButton(
+                                    onClick = {
+                                        val calendar = Calendar.getInstance()
+                                        DatePickerDialog(
                                             context,
-                                            "❌ Please select a future time.",
-                                            Toast.LENGTH_SHORT
+                                            { _, y, m, d ->
+                                                calendar.set(y, m, d)
+                                                selectedDate =
+                                                    SimpleDateFormat(
+                                                        "dd-MM-yyyy",
+                                                        Locale.getDefault()
+                                                    )
+                                                        .format(calendar.time)
+                                            },
+                                            calendar.get(Calendar.YEAR),
+                                            calendar.get(Calendar.MONTH),
+                                            calendar.get(Calendar.DAY_OF_MONTH)
                                         ).show()
-                                    } else {
-                                        selectedTime = String.format("%02d:%02d", hour, minute)
+                                    },
+                                    modifier = Modifier.size(80.dp),
+                                    shape = MaterialTheme.shapes.medium,
+                                    border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.DateRange,
+                                        contentDescription = "Pick a Date",
+                                        tint = Color.Unspecified,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = if (selectedDate.isNotBlank()) selectedDate else "Pick a Date",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        modifier = Modifier.align(Alignment.Center)
+                                    )
+                                    if (selectedDate.isNotBlank()) {
+                                        IconButton(
+                                            onClick = { selectedDate = "" },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .offset(x = 40.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Clear Date",
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
                                     }
-                                },
-                                now.get(Calendar.HOUR_OF_DAY),
-                                now.get(Calendar.MINUTE),
-                                true
-                            ).show()
-                        }) {
-                            Text(if (selectedTime.isNotBlank()) "Selected Time: $selectedTime" else if (isToHome) "Pick a Departure Time" else "Pick an Arrival Time")
+                                }
+                            }
+
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                OutlinedButton(
+                                    onClick = {
+                                        val calendar = Calendar.getInstance()
+                                        TimePickerDialog(
+                                            context,
+                                            { _, h, m ->
+                                                selectedTime = String.format("%02d:%02d", h, m)
+                                            },
+                                            calendar.get(Calendar.HOUR_OF_DAY),
+                                            calendar.get(Calendar.MINUTE),
+                                            true
+                                        ).show()
+                                    },
+                                    modifier = Modifier.size(80.dp),
+                                    shape = MaterialTheme.shapes.medium,
+                                    border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccessTime,
+                                        contentDescription = "Pick a Time",
+                                        tint = Color.Unspecified,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = if (selectedTime.isNotBlank()) selectedTime
+                                        else if (!isToHome) "Pick an\narrival time"
+                                        else "Pick a\ndeparture time",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        modifier = Modifier.align(Alignment.Center),
+                                        textAlign = TextAlign.Center
+                                    )
+                                    if (selectedTime.isNotBlank()) {
+                                        IconButton(
+                                            onClick = { selectedTime = "" },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .offset(x = 40.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Clear Time",
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(onClick = {
-                        coroutineScope.launch {
-                            isLoading = true
-                            try {
-                                val geo = mapsService.getCoordinatesFromAddress(locationInput.name)
-                                if (geo == null) {
-                                    Toast.makeText(
-                                        context,
-                                        "❌ Address not found",
-                                        Toast.LENGTH_SHORT
-                                    )
-                                        .show()
-                                    return@launch
-                                }
-                                pickupStop = PickupStop(location = geo, passengerId = uid)
-                                val availableRides =
-                                    passengerRideFinder.getAvailableRidesForPassenger(
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            locationInput = LocationData()
+                            passengerNotes = ""
+                            selectedDate = ""
+                            selectedTime = ""
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = MaterialTheme.shapes.extraLarge
+                    ) {
+                        Text("Clear All Fields")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                isLoading = true
+                                try {
+                                    val geo = mapsService.getCoordinatesFromAddress(locationInput.name)
+                                    if (geo == null) {
+                                        Toast.makeText(
+                                            context,
+                                            "❌ Address not found",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        return@launch
+                                    }
+                                    pickupStop = PickupStop(location = geo, passengerId = uid)
+                                    val availableRides = passengerRideFinder.getAvailableRidesForPassenger(
                                         companyCode = companyCode,
                                         direction = direction,
                                         passengerArrivalTime = if (!isToHome) selectedTime else "",
@@ -251,21 +345,26 @@ fun PassengerRideSearchScreen(
                                         rideRepository = rideRepository,
                                         rideRequestRepository = rideRequestRepository
                                     )
-                                rides = availableRides
-                                ridesFetched = true
-                            } catch (e: Exception) {
-                                Toast.makeText(
-                                    context,
-                                    "❌ Error fetching rides",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
-                                e.printStackTrace()
-                            } finally {
-                                isLoading = false
+                                    rides = availableRides
+                                    ridesFetched = true
+                                } catch (e: Exception) {
+                                    Toast.makeText(
+                                        context,
+                                        "❌ Error fetching rides",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    e.printStackTrace()
+                                } finally {
+                                    isLoading = false
+                                }
                             }
-                        }
-                    }, enabled = isFormValid, modifier = Modifier.fillMaxWidth()) {
+                        },
+                        enabled = isFormValid,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = MaterialTheme.shapes.extraLarge
+                    ) {
                         if (isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
@@ -278,7 +377,6 @@ fun PassengerRideSearchScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
                     if (ridesFetched) {
                         if (rides.isEmpty()) {
                             Text(
@@ -314,7 +412,6 @@ fun PassengerRideSearchScreen(
                                             val timeLabelTitle =
                                                 if (direction == RideDirection.TO_WORK) "Pickup Time" else "Dropoff Time"
                                             Text("$timeLabelTitle: $timeLabel")
-
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Button(onClick = {
                                                 coroutineScope.launch {
