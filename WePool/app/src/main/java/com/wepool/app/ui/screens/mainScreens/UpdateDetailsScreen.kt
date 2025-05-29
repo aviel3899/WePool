@@ -17,14 +17,17 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
+import com.wepool.app.R
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.Driver
 import com.wepool.app.data.model.users.Passenger
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
+import com.wepool.app.ui.screens.components.RoleSelectionCard
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+
 
 @Composable
 fun UpdateDetailsScreen(navController: NavController, uid: String) {
@@ -97,24 +100,38 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text("Select Roles:", style = MaterialTheme.typography.titleMedium)
-                listOf(UserRole.DRIVER, UserRole.PASSENGER).forEach { role ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = selectedRoles.contains(role),
-                            onCheckedChange = {
-                                selectedRoles = if (it) {
-                                    selectedRoles + role
-                                } else {
-                                    selectedRoles - role
-                                }
-                            }
-                        )
-                        val readableName = role.name
-                            .lowercase()
-                            .replace("_", " ")
-                            .replaceFirstChar { it.uppercase() }
-                        Text(readableName)
-                    }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    RoleSelectionCard(
+                        role = UserRole.DRIVER,
+                        isSelected = selectedRoles.contains(UserRole.DRIVER),
+                        onClick = {
+                            selectedRoles = if (selectedRoles.contains(UserRole.DRIVER))
+                                selectedRoles - UserRole.DRIVER
+                            else
+                                selectedRoles + UserRole.DRIVER
+                        },
+                        iconResId = R.drawable.seat_belt_svgrepo_com,
+                        text = "Driver",
+                        modifier = Modifier.weight(1f)
+                    )
+                    RoleSelectionCard(
+                        role = UserRole.PASSENGER,
+                        isSelected = selectedRoles.contains(UserRole.PASSENGER),
+                        onClick = {
+                            selectedRoles = if (selectedRoles.contains(UserRole.PASSENGER))
+                                selectedRoles - UserRole.PASSENGER
+                            else
+                                selectedRoles + UserRole.PASSENGER
+                        },
+                        iconResId = R.drawable.steering_wheel_car_svgrepo_com,
+                        text = "Passenger",
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

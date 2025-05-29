@@ -7,6 +7,7 @@ interface ICompanyRepository {
     suspend fun getAllCompanies(): List<Company>
     suspend fun getCompanyById(companyId: String): Company?
     suspend fun getCompanyByCode(companyCode: String): Company?
+    suspend fun getCompanyByHrUid(hrUid: String): Company?
     suspend fun deleteCompanyById(companyId: String, hrManagerRepository: IHRManagerRepository)
     suspend fun generateRandomUniqueCompanyCode(): String
     suspend fun createOrUpdateCompany(company: Company)

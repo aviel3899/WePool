@@ -6,6 +6,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.wepool.app.data.model.enums.FilterField
 import com.wepool.app.data.model.enums.SortFields
 import com.wepool.app.data.model.ride.RideSearchFilters
+import com.wepool.app.data.model.users.User
 import com.wepool.app.ui.screens.components.filterFields.RideFilterDropdownButton
 import com.wepool.app.ui.screens.components.sortFields.RideSortDropdownButton
 
@@ -33,6 +35,9 @@ fun ExpandableSortCard(
     showCompanyName: Boolean = true,
     showUserName: Boolean = true,
     showUserEmail: Boolean = true,
+    showSort: Boolean = true,
+    showFilter: Boolean = true,
+    showCleanAllButton: Boolean = true,
     selectedSortFields: List<SortFields>,
     onSortFieldsChanged: (List<SortFields>) -> Unit,
     availableFilters: List<FilterField> = emptyList(),
@@ -40,6 +45,8 @@ fun ExpandableSortCard(
     onFiltersChanged: (RideSearchFilters) -> Unit,
     onSelectedFiltersChanged: (List<FilterField>) -> Unit,
     onSearchClicked: () -> Unit,
+    usersInCompany: List<User> = emptyList(),
+    limitUserSuggestionsToCompany: Boolean = false,
     additionalContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(initiallyExpanded) }
@@ -77,70 +84,98 @@ fun ExpandableSortCard(
                 if (expanded) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
 
-                        RideFilterDropdownButton(
-                            availableFilters = availableFilters,
-                            selectedFilters = selectedFilters,
-                            onFiltersChanged = onSelectedFiltersChanged,
-                            onCompanyNameChanged = {
-                                filters = filters.copy(companyName = it)
-                                onFiltersChanged(filters)
-                            },
-                            onUserQueryChanged = {
-                                filters = filters.copy(userNameOrEmail = it)
-                                onFiltersChanged(filters)
-                            },
-                            onDateFromChanged = {
-                                filters = filters.copy(dateFrom = it)
-                                onFiltersChanged(filters)
-                            },
-                            onDateToChanged = {
-                                filters = filters.copy(dateTo = it)
-                                onFiltersChanged(filters)
-                            },
-                            onTimeFromChanged = {
-                                filters = filters.copy(timeFrom = it)
-                                onFiltersChanged(filters)
-                            },
-                            onTimeToChanged = {
-                                filters = filters.copy(timeTo = it)
-                                onFiltersChanged(filters)
-                            },
-                            onDirectionChanged = {
-                                filters = filters.copy(direction = it)
-                                onFiltersChanged(filters)
-                            },
-                        )
+                        if (showFilter) {
+                            RideFilterDropdownButton(
+                                availableFilters = availableFilters,
+                                selectedFilters = selectedFilters,
+                                onFiltersChanged = onSelectedFiltersChanged,
+                                onCompanyNameChanged = {
+                                    filters = filters.copy(companyName = it)
+                                    onFiltersChanged(filters)
+                                },
+                                onUserQueryChanged = {
+                                    filters = filters.copy(userNameOrEmail = it)
+                                    onFiltersChanged(filters)
+                                },
+                                onDateFromChanged = {
+                                    filters = filters.copy(dateFrom = it)
+                                    onFiltersChanged(filters)
+                                },
+                                onDateToChanged = {
+                                    filters = filters.copy(dateTo = it)
+                                    onFiltersChanged(filters)
+                                },
+                                onTimeFromChanged = {
+                                    filters = filters.copy(timeFrom = it)
+                                    onFiltersChanged(filters)
+                                },
+                                onTimeToChanged = {
+                                    filters = filters.copy(timeTo = it)
+                                    onFiltersChanged(filters)
+                                },
+                                onDirectionChanged = {
+                                    filters = filters.copy(direction = it)
+                                    onFiltersChanged(filters)
+                                },
+                                onClearField = { field ->
+                                    filters = when (field) {
+                                        FilterField.COMPANY_NAME -> filters.copy(companyName = null)
+                                        FilterField.USER_NAME -> filters.copy(userNameOrEmail = null)
+                                        FilterField.DATE_RANGE -> filters.copy(
+                                            dateFrom = null,
+                                            dateTo = null
+                                        )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                                        FilterField.TIME_RANGE -> filters.copy(
+                                            timeFrom = null,
+                                            timeTo = null
+                                        )
 
-                        RideSortDropdownButton(
-                            selectedSortFields = selectedSortFields,
-                            onSortFieldsChanged = onSortFieldsChanged,
-                            showDate = showDate,
-                            showDepartureTime = showDepartureTime,
-                            showArrivalTime = showArrivalTime,
-                            showAvailableSeats = showAvailableSeats,
-                            showCompanyName = showCompanyName,
-                            showUserName = showUserName,
-                        )
+                                        FilterField.DIRECTION -> filters.copy(direction = null)
+                                        FilterField.PHONE -> filters.copy(userNameOrEmail = null)
+                                    }
+                                    onFiltersChanged(filters)
+                                },
+                                usersInCompany = usersInCompany,
+                                limitUserSuggestionsToCompany = limitUserSuggestionsToCompany
+                            )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+
+                        if (showSort) {
+                            RideSortDropdownButton(
+                                selectedSortFields = selectedSortFields,
+                                onSortFieldsChanged = onSortFieldsChanged,
+                                showDate = showDate,
+                                showDepartureTime = showDepartureTime,
+                                showArrivalTime = showArrivalTime,
+                                showAvailableSeats = showAvailableSeats,
+                                showCompanyName = showCompanyName,
+                                showUserName = showUserName,
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+
                         additionalContent()
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        OutlinedButton(
-                            onClick = {
-                                filters = RideSearchFilters()
-                                onFiltersChanged(filters)
-                                onSelectedFiltersChanged(emptyList())
-                                onSortFieldsChanged(emptyList())
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Clean All")
-                        }
+                        if (showCleanAllButton) {
+                            OutlinedButton(
+                                onClick = {
+                                    filters = RideSearchFilters()
+                                    onFiltersChanged(filters)
+                                    onSelectedFiltersChanged(emptyList())
+                                    onSortFieldsChanged(emptyList())
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Clean All")
+                            }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                 }
 
@@ -162,6 +197,9 @@ fun ExpandableSortCard(
                             }
                             if (FilterField.DIRECTION in selectedFilters && filters.direction == null) {
                                 missingFields.add(FilterField.DIRECTION.displayName)
+                            }
+                            if (FilterField.PHONE in selectedFilters && filters.userNameOrEmail.isNullOrBlank()) {
+                                missingFields.add(FilterField.PHONE.displayName)
                             }
 
                             if (missingFields.isNotEmpty()) {

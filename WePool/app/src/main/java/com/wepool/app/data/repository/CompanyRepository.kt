@@ -54,6 +54,20 @@ class CompanyRepository(
         }
     }
 
+    override suspend fun getCompanyByHrUid(hrUid: String): Company? {
+        return try {
+            val snapshot = companiesCollection
+                .whereEqualTo("hrManagerUid", hrUid)
+                .get()
+                .await()
+
+            snapshot.documents.firstOrNull()?.toObject(Company::class.java)
+        } catch (e: Exception) {
+            Log.e("CompanyRepository", "❌ Failed to get company by HR UID", e)
+            null
+        }
+    }
+
     override suspend fun deleteCompanyById(
         companyId: String,
         hrManagerRepository: IHRManagerRepository

@@ -1,47 +1,28 @@
 package com.wepool.app.ui.screens.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.*
 import com.wepool.app.data.model.logic.PolylineDecoder
-import com.wepool.app.data.model.ride.Ride
-import com.google.maps.android.compose.Polyline
 import com.wepool.app.data.model.ride.PickupStop
-
+import com.wepool.app.data.model.ride.Ride
 
 enum class PointType { START, END, PICKUP_STOP, NONE }
 
 @Composable
-fun RideDynamicMap(ride: Ride, modifier: Modifier = Modifier) {
-    val startLatLng =
-        LatLng(ride.startLocation.geoPoint.latitude, ride.startLocation.geoPoint.longitude)
+fun RideDynamicMap(ride: Ride, extraPickupStop: PickupStop? = null, modifier: Modifier = Modifier) {
+    val startLatLng = LatLng(ride.startLocation.geoPoint.latitude, ride.startLocation.geoPoint.longitude)
     val endLatLng = LatLng(ride.destination.geoPoint.latitude, ride.destination.geoPoint.longitude)
     val centerLat = (startLatLng.latitude + endLatLng.latitude) / 2
     val centerLng = (startLatLng.longitude + endLatLng.longitude) / 2
@@ -86,15 +67,25 @@ fun RideDynamicMap(ride: Ride, modifier: Modifier = Modifier) {
                     }
                 )
 
-                ride.pickupStops.forEachIndexed { index, stop ->
-                    val pos =
-                        LatLng(stop.location.geoPoint.latitude, stop.location.geoPoint.longitude)
-                    val stopNumber = index + 1
+                val isWorkbound = ride.direction?.name == "TO_WORK"
+                val allStops = remember(ride.pickupStops to extraPickupStop) {
+                    val combined = ride.pickupStops.toMutableList()
+                    extraPickupStop?.let { combined.add(it) }
+                    combined.sortedWith(compareBy {
+                        if (isWorkbound) it.pickupTime ?: "" else it.dropoffTime ?: ""
+                    })
+                }
+
+                allStops.forEachIndexed { index, stop ->
+                    val pos = LatLng(stop.location.geoPoint.latitude, stop.location.geoPoint.longitude)
                     Marker(
                         state = MarkerState(pos),
-                        title = "Stop Number: $stopNumber",
+                        title = "Stop Number: ${index + 1}",
                         snippet = "Pickup Stop: ${stop.location.name}",
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED),
+                        icon = if (extraPickupStop == stop)
+                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+                        else
+                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED),
                         onClick = {
                             selectedStop = stop
                             selectedStopIndex = index
@@ -108,7 +99,6 @@ fun RideDynamicMap(ride: Ride, modifier: Modifier = Modifier) {
                 Polyline(PolylineDecoder.decodeAndSimplify(ride.encodedPolyline))
             }
 
-            // Custom InfoWindow UI
             if (showInfoWindow) {
                 val isWorkbound = ride.direction!!.name == "TO_WORK"
 
@@ -132,22 +122,18 @@ fun RideDynamicMap(ride: Ride, modifier: Modifier = Modifier) {
                                     Text("Dropoff Time: ${selectedStop!!.dropoffTime ?: "N/A"}")
                                 }
                             }
-
                             selectedPointType == PointType.START -> {
                                 Text("Start Location: ${ride.startLocation.name}")
                                 Text("Departure Time: ${ride.departureTime ?: "N/A"}")
                             }
-
                             selectedPointType == PointType.END -> {
                                 Text("Destination: ${ride.destination.name}")
                                 Text("Arrival Time: ${ride.arrivalTime ?: "N/A"}")
                             }
-
                             else -> {
                                 Text("No details available")
                             }
                         }
-
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(onClick = { showInfoWindow = false }) {
                             Text("Close")
@@ -158,6 +144,3 @@ fun RideDynamicMap(ride: Ride, modifier: Modifier = Modifier) {
         }
     }
 }
-
-
-

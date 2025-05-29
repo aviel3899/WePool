@@ -21,10 +21,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wepool.app.R
 import com.wepool.app.data.model.enums.UserRole
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.screens.components.RoleSelectionCard
 import kotlinx.coroutines.launch
+
 
 @Composable
 fun SignUpScreen(navController: NavController) {
@@ -163,20 +166,30 @@ fun SignUpScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Text("Select Your Role(s)", style = MaterialTheme.typography.titleMedium)
-            availableRoles.forEach { role ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Checkbox(
-                        checked = selectedRoles[role] ?: false,
-                        onCheckedChange = { selectedRoles[role] = it }
-                    )
-                    val readableName =
-                        role.name.lowercase().replace("_", " ").replaceFirstChar { it.uppercase() }
-                    Text(readableName)
-                }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                RoleSelectionCard(
+                    role = UserRole.DRIVER,
+                    isSelected = selectedRoles[UserRole.DRIVER] ?: false,
+                    onClick = { selectedRoles[UserRole.DRIVER] = !(selectedRoles[UserRole.DRIVER] ?: false) },
+                    iconResId = R.drawable.seat_belt_svgrepo_com,
+                    text = "Driver",
+                    modifier = Modifier.weight(1f)
+                )
+                RoleSelectionCard(
+                    role = UserRole.PASSENGER,
+                    isSelected = selectedRoles[UserRole.PASSENGER] ?: false,
+                    onClick = { selectedRoles[UserRole.PASSENGER] = !(selectedRoles[UserRole.PASSENGER] ?: false) },
+                    iconResId = R.drawable.steering_wheel_car_svgrepo_com,
+                    text = "Passenger",
+                    modifier = Modifier.weight(1f)
+                )
             }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(onClick = {

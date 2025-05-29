@@ -3,9 +3,6 @@ package com.wepool.app.ui.screens.adminScreens.users
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,113 +11,114 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wepool.app.data.model.enums.FilterField
+import com.wepool.app.data.model.enums.SortFields
+import com.wepool.app.data.model.ride.RideSearchFilters
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
-import com.wepool.app.ui.screens.components.UserSearchAutoComplete
+import com.wepool.app.ui.screens.components.ExpandableSortCard
+import com.wepool.app.ui.screens.adminScreens.users.UserCard
 import kotlinx.coroutines.launch
+import com.wepool.app.data.model.company.Company
 
 @Composable
 fun UserListScreen(uid: String, navController: NavController) {
     val userRepository = RepositoryProvider.provideUserRepository()
+    val companyRepository = RepositoryProvider.provideCompanyRepository()
     val coroutineScope = rememberCoroutineScope()
 
     var users by remember { mutableStateOf<List<User>>(emptyList()) }
     var filteredUsers by remember { mutableStateOf<List<User>>(emptyList()) }
-    var selectedUserUid by remember { mutableStateOf<String?>(null) }
+    var companies by remember { mutableStateOf<List<Company>>(emptyList()) }
+    var companyMap by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var filters by remember { mutableStateOf(RideSearchFilters()) }
+    var selectedFilters by remember { mutableStateOf<List<FilterField>>(emptyList()) }
+    var searchTriggered by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var filterExpanded by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
                 loading = true
                 users = userRepository.getAllUsers()
+                companies = companyRepository.getAllCompanies()
+                companyMap = companies.associateBy({ it.companyCode }, { it.companyName })
+                filteredUsers = emptyList()
             } catch (e: Exception) {
-                error = "❌ Failed to load users: ${e.message}"
+                error = "\u274C Failed to load users or companies: ${e.message}"
             } finally {
                 loading = false
             }
         }
     }
 
-    fun applyFilter() {
-        filteredUsers = if (selectedUserUid == null) {
-            users
-        } else {
-            val matched = users.find { it.uid == selectedUserUid }
-            if (matched != null) listOf(matched) else emptyList()
-        }
-    }
-
-    fun clearFilter() {
-        selectedUserUid = null
-        filteredUsers = users
-    }
-
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 96.dp)
+            ) {
+                ExpandableSortCard(
+                    title = "Search User",
+                    selectedSortFields = filters.sortFields,
+                    onSortFieldsChanged = { filters = filters.copy(sortFields = it) },
+                    availableFilters = listOf(
+                        FilterField.USER_NAME,
+                        FilterField.COMPANY_NAME,
+                        FilterField.PHONE
+                    ),
+                    selectedFilters = selectedFilters,
+                    onSelectedFiltersChanged = { selectedFilters = it },
+                    onFiltersChanged = { filters = it },
+                    onSearchClicked = {
+                        searchTriggered = true
+                        val query = filters.userNameOrEmail.orEmpty().trim()
+                        val companyQuery = filters.companyName.orEmpty().trim()
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp, start = 16.dp, end = 16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            IconButton(
-                                onClick = { filterExpanded = !filterExpanded },
-                                modifier = Modifier.align(Alignment.TopEnd)
-                            ) {
-                                Icon(
-                                    imageVector = if (filterExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                                    contentDescription = null
-                                )
-                            }
+                        filteredUsers = users.filter { user ->
+                            val matchesQuery = query.isBlank() ||
+                                    user.name.contains(query, ignoreCase = true) ||
+                                    user.email.contains(query, ignoreCase = true) ||
+                                    "${user.name} (${user.email})".contains(
+                                        query,
+                                        ignoreCase = true
+                                    ) ||
+                                    user.phoneNumber.contains(query)
 
-                            Text(
-                                text = "Search User",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
+                            val companyName = companyMap[user.companyCode].orEmpty()
+                            val matchesCompany = companyQuery.isBlank() ||
+                                    companyName.contains(companyQuery, ignoreCase = true)
 
-                        if (filterExpanded) {
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            UserSearchAutoComplete(
-                                onUserSelected = { uid, _ -> selectedUserUid = uid },
-                                onClear = { clearFilter() },
-                                usersProvider = {
-                                    try {
-                                        users.map { user -> user.uid to "${user.name} (${user.email})" }
-                                    } catch (e: Exception) {
-                                        emptyList()
-                                    }
+                            matchesQuery && matchesCompany
+                        }.let { result ->
+                            when (filters.sortFields.firstOrNull()) {
+                                SortFields.USER -> result.sortedByDescending { it.name }
+                                SortFields.COMPANY_NAME -> result.sortedByDescending {
+                                    companyMap[it.companyCode].orEmpty()
                                 }
-                            )
 
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Button(
-                                onClick = { applyFilter() },
-                                modifier = Modifier.widthIn(min = 100.dp)
-                            ) {
-                                Text("Search")
+                                else -> result
                             }
                         }
-                    }
-                }
+                    },
+                    showDate = false,
+                    showDepartureTime = false,
+                    showArrivalTime = false,
+                    showAvailableSeats = false,
+                    showCompanyName = true,
+                    showUserName = true,
+                    showUserEmail = true,
+                    showSort = true,
+                    showFilter = true,
+                    showCleanAllButton = false,
+                    usersInCompany = users,
+                    limitUserSuggestionsToCompany = false,
+                )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Column(
                     modifier = Modifier
@@ -130,42 +128,45 @@ fun UserListScreen(uid: String, navController: NavController) {
                     when {
                         loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
 
-                        error != null -> {
-                            Text(
-                                text = error ?: "",
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                        }
+                        error != null -> Text(
+                            text = error ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+
+                        !searchTriggered -> Text(
+                            "Please enter a search and press Search.",
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
 
                         filteredUsers.isEmpty() -> Text(
                             "No users found.",
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
 
-                        else -> {
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items(filteredUsers) { user ->
-                                    UserCard(user = user, navController = navController)
-                                }
+                        else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            items(filteredUsers) { user ->
+                                UserCard(user = user, navController = navController)
                             }
                         }
                     }
                 }
+            }
 
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    tonalElevation = 4.dp,
-                    shadowElevation = 4.dp,
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    BottomNavigationButtons(
-                        uid = uid,
-                        navController = navController,
-                        showBackButton = true,
-                        showHomeButton = true,
-                    )
-                }
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                tonalElevation = 4.dp,
+                shadowElevation = 4.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                BottomNavigationButtons(
+                    uid = uid,
+                    navController = navController,
+                    showBackButton = true,
+                    showHomeButton = true,
+                )
             }
         }
     }

@@ -12,6 +12,7 @@ import androidx.navigation.NavController
 import com.wepool.app.data.model.enums.FilterField
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideSearchFilters
+import com.wepool.app.data.model.users.User
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.components.ExpandableSortCard
 import com.wepool.app.ui.screens.adminScreens.rides.RideCard
@@ -27,8 +28,10 @@ fun RidesListScreen(
     filterByUid: Boolean = false
 ) {
     val rideRepository = RepositoryProvider.provideRideRepository()
+    val userRepository = RepositoryProvider.provideUserRepository()
     val coroutineScope = rememberCoroutineScope()
 
+    var allUsers by remember { mutableStateOf<List<User>>(emptyList()) }
     var allRides by remember { mutableStateOf<List<Ride>>(emptyList()) }
     var filteredRides by remember { mutableStateOf<List<Ride>>(emptyList()) }
     var filters by remember { mutableStateOf(RideSearchFilters()) }
@@ -39,6 +42,7 @@ fun RidesListScreen(
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
+            allUsers = userRepository.getAllUsers()
             val rides = rideRepository.getAllRides()
             allRides = if (filterByUid) {
                 rides.filter {
@@ -96,7 +100,12 @@ fun RidesListScreen(
                             userMap,
                             companyNameMap
                         )
-                    }
+                    },
+                    showSort = true,
+                    showFilter = true,
+                    showCleanAllButton = true,
+                    usersInCompany = allUsers,
+                    limitUserSuggestionsToCompany = false,
                 )
 
                 if (searchTriggered) {

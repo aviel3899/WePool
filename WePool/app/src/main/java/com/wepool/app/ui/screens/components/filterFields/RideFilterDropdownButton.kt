@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.wepool.app.data.model.enums.FilterField
 import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -40,7 +41,10 @@ fun RideFilterDropdownButton(
     onDateToChanged: (String?) -> Unit,
     onTimeFromChanged: (String?) -> Unit,
     onTimeToChanged: (String?) -> Unit,
-    onDirectionChanged: (RideDirection?) -> Unit
+    onDirectionChanged: (RideDirection?) -> Unit,
+    onClearField: (FilterField) -> Unit,
+    limitUserSuggestionsToCompany: Boolean = false,
+    usersInCompany: List<User> = emptyList()
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -68,6 +72,9 @@ fun RideFilterDropdownButton(
 
     var selectedDirection by remember { mutableStateOf<RideDirection?>(null) }
     var showDirectionField by remember { mutableStateOf(false) }
+
+    var selectedPhone by remember { mutableStateOf("") }
+    var showPhoneField by remember { mutableStateOf(false) }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
 
@@ -135,7 +142,7 @@ fun RideFilterDropdownButton(
                     )
                     TextButton(onClick = {
                         selectedCompanyName = ""
-                        onCompanyNameChanged(null)
+                        onClearField(FilterField.COMPANY_NAME)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
@@ -185,10 +192,11 @@ fun RideFilterDropdownButton(
                     FilterChip(
                         selected = showUserField,
                         onClick = { showUserField = !showUserField },
+                        modifier = Modifier.widthIn(max = 220.dp),
                         label = {
                             Column {
                                 Text(
-                                    text = "User: $selectedUserQuery",
+                                    text = "User: ${selectedUserQuery.takeIf { it.isNotBlank() } ?: ""}",
                                     maxLines = 2,
                                     softWrap = true,
                                     style = MaterialTheme.typography.bodySmall
@@ -198,14 +206,14 @@ fun RideFilterDropdownButton(
                     )
                     TextButton(onClick = {
                         selectedUserQuery = ""
-                        onUserQueryChanged(null)
+                        onClearField(FilterField.USER_NAME)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
                     IconButton(onClick = {
                         selectedUserQuery = ""
                         showUserField = false
-                        onUserQueryChanged(null)
+                        onClearField(FilterField.USER_NAME)
                         onFiltersChanged(selectedFilters - FilterField.USER_NAME)
                     }) {
                         Icon(
@@ -218,23 +226,83 @@ fun RideFilterDropdownButton(
 
                 FilterWithTextFieldAndSuggestions(
                     visible = showUserField,
-                    label = "User",
+                    label = "Search by name or email",
                     value = selectedUserQuery,
                     suggestions = userSuggestions,
                     onValueChanged = {
                         selectedUserQuery = it
-                        onUserQueryChanged(it)
                         coroutineScope.launch {
-                            val users = userRepository.getAllUsers()
-                            userSuggestions = users.map { u -> "${u.name} (${u.email})" }
-                                .filter { label -> label.contains(it, true) }
+                            val usersToFilter = if (limitUserSuggestionsToCompany) {
+                                usersInCompany
+                            } else {
+                                userRepository.getAllUsers()
+                            }
+
+                            userSuggestions = usersToFilter
+                                .filter { user ->
+                                    user.name.contains(it, ignoreCase = true) ||
+                                            user.email.contains(it, ignoreCase = true)
+                                }
+                                .map { user -> "${user.name} (${user.email})" }
+                                .distinct()
                         }
                     },
                     onSuggestionSelected = {
                         selectedUserQuery = it
                         onUserQueryChanged(it)
-                        userSuggestions = emptyList()
                         showUserField = false
+                        userSuggestions = emptyList()
+                    }
+                )
+            }
+
+            if (FilterField.PHONE in selectedFilters) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    FilterChip(
+                        selected = showPhoneField,
+                        onClick = { showPhoneField = !showPhoneField },
+                        label = {
+                            Text("Phone: ${selectedPhone.takeIf { it.isNotBlank() } ?: ""}",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
+                    )
+                    TextButton(onClick = {
+                        selectedPhone = ""
+                        onClearField(FilterField.PHONE)
+                    }) {
+                        Text("Clean", style = MaterialTheme.typography.labelSmall)
+                    }
+                    IconButton(onClick = {
+                        selectedPhone = ""
+                        showPhoneField = false
+                        onClearField(FilterField.PHONE)
+                        onFiltersChanged(selectedFilters - FilterField.PHONE)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Remove",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
+                FilterWithTextFieldAndSuggestions(
+                    visible = showPhoneField,
+                    label = "Phone",
+                    value = selectedPhone,
+                    suggestions = emptyList(),
+                    onValueChanged = {
+                        selectedPhone = it
+                        onUserQueryChanged(it)
+                    },
+                    onSuggestionSelected = {
+                        selectedPhone = it
+                        onUserQueryChanged(it)
+                        showPhoneField = false
                     }
                 )
             }
@@ -259,21 +327,18 @@ fun RideFilterDropdownButton(
                             }
                         }
                     )
+
                     TextButton(onClick = {
+                        onClearField(FilterField.DATE_RANGE)
                         dateFrom = ""
                         dateTo = ""
-                        onDateFromChanged(null)
-                        onDateToChanged(null)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
+
                     IconButton(onClick = {
-                        dateFrom = ""
-                        dateTo = ""
+                        onClearField(FilterField.DATE_RANGE)
                         showDateRange = false
-                        onDateFromChanged(null)
-                        onDateToChanged(null)
-                        onFiltersChanged(selectedFilters - FilterField.DATE_RANGE)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -309,7 +374,8 @@ fun RideFilterDropdownButton(
                             { _, y, m, d ->
                                 val value = "%04d-%02d-%02d".format(y, m + 1, d)
                                 if (dateFrom.isNotBlank()) {
-                                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                                    val sdf =
+                                        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                                     val fromDate = sdf.parse(dateFrom)
                                     val toDate = sdf.parse(value)
                                     if (toDate!!.before(fromDate)) {
@@ -352,21 +418,18 @@ fun RideFilterDropdownButton(
                             }
                         }
                     )
+
                     TextButton(onClick = {
+                        onClearField(FilterField.TIME_RANGE)
                         timeFrom = ""
                         timeTo = ""
-                        onTimeFromChanged(null)
-                        onTimeToChanged(null)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
+
                     IconButton(onClick = {
-                        timeFrom = ""
-                        timeTo = ""
+                        onClearField(FilterField.TIME_RANGE)
                         showTimeRange = false
-                        onTimeFromChanged(null)
-                        onTimeToChanged(null)
-                        onFiltersChanged(selectedFilters - FilterField.TIME_RANGE)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -383,33 +446,46 @@ fun RideFilterDropdownButton(
                     toValue = timeTo,
                     onFromClick = {
                         val calendar = Calendar.getInstance()
-                        TimePickerDialog(context, { _, hour, minute ->
-                            val value = "%02d:%02d".format(hour, minute)
-                            timeFrom = value
-                            onTimeFromChanged(value)
-                        }, calendar[Calendar.HOUR_OF_DAY], calendar[Calendar.MINUTE], true).show()
+                        TimePickerDialog(
+                            context,
+                            { _, hour, minute ->
+                                val value = "%02d:%02d".format(hour, minute)
+                                timeFrom = value
+                                onTimeFromChanged(value)
+                            },
+                            calendar[Calendar.HOUR_OF_DAY],
+                            calendar[Calendar.MINUTE],
+                            true
+                        ).show()
                     },
                     onToClick = {
                         val calendar = Calendar.getInstance()
-                        TimePickerDialog(context, { _, hour, minute ->
-                            val value = "%02d:%02d".format(hour, minute)
-                            if (timeFrom.isNotBlank()) {
-                                val (fromHour, fromMin) = timeFrom.split(":").map { it.toInt() }
-                                val fromTotal = fromHour * 60 + fromMin
-                                val toTotal = hour * 60 + minute
-                                if (toTotal < fromTotal) {
-                                    Toast.makeText(
-                                        context,
-                                        "\u23F0 'To' must be after 'From'",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    return@TimePickerDialog
+                        TimePickerDialog(
+                            context,
+                            { _, hour, minute ->
+                                val value = "%02d:%02d".format(hour, minute)
+                                if (timeFrom.isNotBlank()) {
+                                    val (fromHour, fromMin) = timeFrom.split(":")
+                                        .map { it.toInt() }
+                                    val fromTotal = fromHour * 60 + fromMin
+                                    val toTotal = hour * 60 + minute
+                                    if (toTotal < fromTotal) {
+                                        Toast.makeText(
+                                            context,
+                                            "\u23F0 'To' must be after 'From'",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        return@TimePickerDialog
+                                    }
                                 }
-                            }
-                            timeTo = value
-                            onTimeToChanged(value)
-                        }, calendar[Calendar.HOUR_OF_DAY], calendar[Calendar.MINUTE], true).show()
-                    },
+                                timeTo = value
+                                onTimeToChanged(value)
+                            },
+                            calendar[Calendar.HOUR_OF_DAY],
+                            calendar[Calendar.MINUTE],
+                            true
+                        ).show()
+                    }
                 )
             }
 
@@ -435,15 +511,14 @@ fun RideFilterDropdownButton(
                     )
                     TextButton(onClick = {
                         selectedDirection = null
-                        onDirectionChanged(null)
+                        onClearField(FilterField.DIRECTION)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
                     IconButton(onClick = {
                         selectedDirection = null
                         showDirectionField = false
-                        onDirectionChanged(null)
-                        onFiltersChanged(selectedFilters - FilterField.DIRECTION)
+                        onClearField(FilterField.DIRECTION)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Delete,

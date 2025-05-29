@@ -19,11 +19,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.enums.RequestStatus
 import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.model.ride.RideRequest
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
+import com.wepool.app.ui.screens.components.RideMapDialog
 import kotlinx.coroutines.launch
 
 @Composable
@@ -44,6 +46,7 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
     var selectedRequest by remember { mutableStateOf<RideRequest?>(null) }
     var selectedRideDirection by remember { mutableStateOf<RideDirection?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    var rideForMapDialog by remember { mutableStateOf<Pair<Ride, PickupStop?>?>(null) }
     var hasSearched by remember { mutableStateOf(false) }
 
     fun refresh() {
@@ -305,6 +308,12 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                 shadowElevation = 4.dp,
                 color = MaterialTheme.colorScheme.surface
             ) {
+                rideForMapDialog?.let { (ride, stop) ->
+                    RideMapDialog(
+                        ride = ride,
+                        extraPickupStop = stop,
+                        onDismiss = { rideForMapDialog = null })
+                }
                 BottomNavigationButtons(
                     uid = uid,
                     navController = navController,
@@ -321,6 +330,8 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
         val dropoffTime = selectedRequest!!.detourEvaluationResult.pickupLocation?.dropoffTime
         val updatedRefTime = selectedRequest!!.detourEvaluationResult.updatedReferenceTime
 
+        val stop = selectedRequest!!.detourEvaluationResult.pickupLocation
+
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
@@ -330,10 +341,30 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                         Text(if (isToWork) "Pickup Time: $pickupTime" else "Dropoff Time: $dropoffTime")
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(if (isToWork) "New Departure Time: $updatedRefTime" else "New Arrival Time: $updatedRefTime")
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    val ride = rideRepo.getRide(selectedRequest!!.rideId)
+                                    if (ride != null) {
+                                        rideForMapDialog = ride to stop
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03A9F4))
+                        ) {
+                            Text("Map")
+                        }
                     }
                 },
                 confirmButton = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Button(
                             onClick = {
                                 coroutineScope.launch {
@@ -360,29 +391,20 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                                         )
 
                                         if (success) {
-                                            Log.d(
-                                                "RideApproval",
-                                                "\u2705 Approved request ${selectedRequest!!.requestId}"
-                                            )
+                                            Log.d("RideApproval", "✅ Approved request ${selectedRequest!!.requestId}")
                                             refresh()
                                         } else {
-                                            Log.w(
-                                                "RideApproval",
-                                                "\u26a0 Approval failed for ${selectedRequest!!.requestId}"
-                                            )
+                                            Log.w("RideApproval", "⚠ Approval failed for ${selectedRequest!!.requestId}")
                                         }
                                     } catch (e: Exception) {
-                                        Log.e(
-                                            "RideApproval",
-                                            "\u274C Error during approval: ${e.message}",
-                                            e
-                                        )
+                                        Log.e("RideApproval", "❌ Error during approval: ${e.message}", e)
                                     } finally {
                                         showDialog = false
                                     }
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text("Approve")
                         }
@@ -398,29 +420,20 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                                             requestId = selectedRequest!!.requestId
                                         )
                                         if (success) {
-                                            Log.d(
-                                                "RideDecline",
-                                                "\u2705 Declined and removed request ${selectedRequest!!.requestId}"
-                                            )
+                                            Log.d("RideDecline", "✅ Declined request ${selectedRequest!!.requestId}")
                                             refresh()
                                         } else {
-                                            Log.w(
-                                                "RideDecline",
-                                                "\u26a0 Failed to decline request ${selectedRequest!!.requestId}"
-                                            )
+                                            Log.w("RideDecline", "⚠ Decline failed for ${selectedRequest!!.requestId}")
                                         }
                                     } catch (e: Exception) {
-                                        Log.e(
-                                            "RideDecline",
-                                            "\u274C Error during decline: ${e.message}",
-                                            e
-                                        )
+                                        Log.e("RideDecline", "❌ Error during decline: ${e.message}", e)
                                     } finally {
                                         showDialog = false
                                     }
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336)),
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text("Decline")
                         }

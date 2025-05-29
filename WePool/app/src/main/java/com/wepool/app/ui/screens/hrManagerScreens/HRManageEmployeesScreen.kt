@@ -1,43 +1,155 @@
 package com.wepool.app.ui.screens.hrManagerScreens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wepool.app.data.model.enums.FilterField
+import com.wepool.app.data.model.enums.SortFields
+import com.wepool.app.data.model.ride.RideSearchFilters
+import com.wepool.app.data.model.users.User
+import com.wepool.app.data.model.company.Company
+import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
+import com.wepool.app.ui.screens.components.ExpandableSortCard
+import com.wepool.app.ui.screens.adminScreens.users.UserCard
+import kotlinx.coroutines.launch
 
 @Composable
 fun HRManageEmployeesScreen(uid: String, navController: NavController) {
+    val userRepository = RepositoryProvider.provideUserRepository()
+    val companyRepository = RepositoryProvider.provideCompanyRepository()
+    val coroutineScope = rememberCoroutineScope()
+
+    var users by remember { mutableStateOf<List<User>>(emptyList()) }
+    var filteredUsers by remember { mutableStateOf<List<User>>(emptyList()) }
+    var company by remember { mutableStateOf<Company?>(null) }
+    var filters by remember { mutableStateOf(RideSearchFilters()) }
+    var selectedFilters by remember { mutableStateOf<List<FilterField>>(emptyList()) }
+    var searchTriggered by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            try {
+                loading = true
+                company = companyRepository.getCompanyByHrUid(uid)
+                users = company?.let { userRepository.getUsersByCompany(it.companyCode) } ?: emptyList()
+                filteredUsers = emptyList()
+            } catch (e: Exception) {
+                error = "\u274C Failed to load employees or company info: ${e.message}"
+            } finally {
+                loading = false
+            }
+        }
+    }
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Scaffold(
-            bottomBar = {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 96.dp)
+            ) {
+                ExpandableSortCard(
+                    title = "Search Employees",
+                    selectedSortFields = filters.sortFields,
+                    onSortFieldsChanged = { filters = filters.copy(sortFields = it) },
+                    availableFilters = listOf(
+                        FilterField.USER_NAME,
+                        FilterField.PHONE
+                    ),
+                    selectedFilters = selectedFilters,
+                    onSelectedFiltersChanged = { selectedFilters = it },
+                    onFiltersChanged = { filters = it },
+                    onSearchClicked = {
+                        searchTriggered = true
+                        val query = filters.userNameOrEmail.orEmpty().trim()
+
+                        suggestions = users.map { it.name + " (${it.email})" }.filter {
+                            it.contains(query, ignoreCase = true)
+                        }.take(5)
+
+                        filteredUsers = users.filter { user ->
+                            query.isBlank() ||
+                                    user.name.contains(query, ignoreCase = true) ||
+                                    user.email.contains(query, ignoreCase = true) ||
+                                    "${user.name} (${user.email})".contains(query, ignoreCase = true) ||
+                                    user.phoneNumber.contains(query)
+                        }.let { result ->
+                            when (filters.sortFields.firstOrNull()) {
+                                SortFields.USER -> result.sortedByDescending { it.name }
+                                else -> result
+                            }
+                        }
+                    },
+                    showDate = false,
+                    showDepartureTime = false,
+                    showArrivalTime = false,
+                    showAvailableSeats = false,
+                    showCompanyName = false,
+                    showUserName = true,
+                    showUserEmail = true,
+                    showSort = true,
+                    showFilter = true,
+                    showCleanAllButton = false,
+                    usersInCompany = users,
+                    limitUserSuggestionsToCompany = true,
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)
+                ) {
+                    when {
+                        loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                        error != null -> Text(
+                            text = error ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                        !searchTriggered -> Text(
+                            "Please enter a search and press Search.",
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                        filteredUsers.isEmpty() -> Text(
+                            "No employees found.",
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                        else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            items(filteredUsers) { user ->
+                                UserCard(user = user, navController = navController)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                tonalElevation = 4.dp,
+                shadowElevation = 4.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
                 BottomNavigationButtons(
                     uid = uid,
                     navController = navController,
                     showBackButton = true,
                     showHomeButton = true
-                )
-            }
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(32.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Manage Employees", style = MaterialTheme.typography.headlineSmall)
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    "Here you can view, add or remove employees from your company.",
-                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }

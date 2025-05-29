@@ -11,11 +11,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.data.model.ride.Ride
 
 @Composable
 fun RideMapDialog(
     ride: Ride,
+    extraPickupStop: PickupStop? = null,
     onDismiss: () -> Unit
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -35,6 +37,7 @@ fun RideMapDialog(
                 Column {
                     RideDynamicMap(
                         ride = ride,
+                        extraPickupStop = extraPickupStop,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(300.dp)
@@ -87,6 +90,21 @@ fun RideMapDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Pickup Stops")
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .background(
+                                    color = Color(0xFFFFA500),
+                                    shape = MaterialTheme.shapes.small
+                                )
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Potential pickup stop")
                     }
                 }
             }
