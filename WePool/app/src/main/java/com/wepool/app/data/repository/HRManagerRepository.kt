@@ -94,7 +94,7 @@ class HRManagerRepository(
     override suspend fun addEmployeeToCompany(companyId: String, userUid: String) {
         try {
             companyRepository.addEmployeeToCompany(companyId, userUid)
-            userRepository.activateUser(userUid)
+            //userRepository.activateUser(userUid)
             Log.d("HRManagerRepository", "✅ Added and activated employee $userUid to company $companyId")
         } catch (e: Exception) {
             Log.e("HRManagerRepository", "❌ Failed to add and activate employee", e)

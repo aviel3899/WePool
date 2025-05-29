@@ -12,5 +12,6 @@ data class RideSearchFilters(
     val timeFrom: String? = null,
     val timeTo: String? = null,
     val direction: RideDirection? = null,
-    val sortFields: List<SortFields> = emptyList()
+    val sortFields: List<SortFields> = emptyList(),
+    val isActiveRide: Boolean? = null,
 )

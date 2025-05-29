@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.company.Company
-import com.wepool.app.data.model.enums.FilterField
+import com.wepool.app.data.model.enums.FilterFields
 import com.wepool.app.data.model.ride.RideSearchFilters
 import com.wepool.app.data.model.users.User
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
@@ -33,7 +33,7 @@ fun CompanyListScreen(uid: String, navController: NavController) {
     var companies by remember { mutableStateOf<List<Company>>(emptyList()) }
     var filteredCompanies by remember { mutableStateOf<List<Company>>(emptyList()) }
     var filters by remember { mutableStateOf(RideSearchFilters()) }
-    var selectedFilters by remember { mutableStateOf<List<FilterField>>(emptyList()) }
+    var selectedFilters by remember { mutableStateOf<List<FilterFields>>(emptyList()) }
     var hasFilterBeenApplied by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -56,11 +56,20 @@ fun CompanyListScreen(uid: String, navController: NavController) {
 
                 val all = companyRepository.getAllCompanies()
                 companies = all
-                filteredCompanies = all.filter {
-                    filters.companyName?.let { name ->
-                        it.companyName.contains(name, ignoreCase = true)
-                    } ?: true
+
+                val nameQuery = filters.companyName.orEmpty().trim()
+
+                val filtered = if (selectedFilters.isEmpty()) {
+                    all
+                } else {
+                    all.filter { company ->
+                        if (FilterFields.COMPANY_NAME in selectedFilters) {
+                            nameQuery.isBlank() || company.companyName.contains(nameQuery, ignoreCase = true)
+                        } else true
+                    }
                 }
+
+                filteredCompanies = filtered
                 hasFilterBeenApplied = true
             } catch (e: Exception) {
                 error = "\u274C Error loading companies: ${e.message}"
@@ -76,9 +85,10 @@ fun CompanyListScreen(uid: String, navController: NavController) {
 
                 ExpandableSortCard(
                     title = "Search Company",
+                    filters = filters,
                     selectedSortFields = filters.sortFields,
                     onSortFieldsChanged = { filters = filters.copy(sortFields = it) },
-                    availableFilters = listOf(FilterField.COMPANY_NAME),
+                    availableFilters = listOf(FilterFields.COMPANY_NAME),
                     selectedFilters = selectedFilters,
                     onSelectedFiltersChanged = { selectedFilters = it },
                     onFiltersChanged = { filters = it },
@@ -91,9 +101,22 @@ fun CompanyListScreen(uid: String, navController: NavController) {
                     showUserName = false,
                     showSort = false,
                     showFilter = true,
-                    showCleanAllButton = false,
+                    showCleanAllButton = true,
                     usersInCompany = users,
                     limitUserSuggestionsToCompany = false,
+                    onSearchTriggeredChanged = { hasFilterBeenApplied = false },
+                    onCleanAllClicked = {
+                        filters = RideSearchFilters()
+                        selectedFilters = emptyList()
+                        hasFilterBeenApplied = true
+                        filteredCompanies = companies
+
+                        coroutineScope.launch {
+                            hasFilterBeenApplied = false
+                            kotlinx.coroutines.delay(50)
+                            hasFilterBeenApplied = true
+                        }
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))

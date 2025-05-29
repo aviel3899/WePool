@@ -14,6 +14,7 @@ drawable car_svgrepo_com
 drawable company_svgrepo_com
 drawable contact_details_svgrepo_com
 drawable crying_face_svgrepo_com
+drawable edit_svgrepo_com
 drawable employees_svgrepo_com
 drawable folder_secret_svgrepo_com
 drawable home_house_svgrepo_com
@@ -21,6 +22,7 @@ drawable hr_manager_svgrepo_com
 drawable ic_launcher_background
 drawable ic_launcher_foreground
 drawable information_svgrepo_com
+drawable location_pin_svgrepo_com
 drawable login_line_svgrepo_com
 drawable logout_svgrepo_com
 drawable map_svgrepo_com

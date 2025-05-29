@@ -1,6 +1,6 @@
 package com.wepool.app.data.model.enums
 
-enum class FilterField(val displayName: String) {
+enum class FilterFields(val displayName: String) {
     COMPANY_NAME("Company Name"),
     USER_NAME("User Name"),
     PHONE("Phone"),

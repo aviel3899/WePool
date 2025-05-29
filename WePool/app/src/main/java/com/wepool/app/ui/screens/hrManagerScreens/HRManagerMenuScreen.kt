@@ -21,7 +21,6 @@ fun HRManagerMenuScreen(
     uid: String,
     navController: NavController
 ) {
-
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -49,6 +48,19 @@ fun HRManagerMenuScreen(
                         label = "Manage Company",
                         iconRes = R.drawable.company_svgrepo_com,
                         onClick = { navController.navigate("hrManageCompany/$uid") }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    DashboardButton(
+                        label = "Manage Rides",
+                        iconRes = R.drawable.car_svgrepo_com,
+                        onClick = { navController.navigate("hrManagerRides/$uid") }
                     )
                 }
             }

@@ -6,7 +6,6 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
@@ -16,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.wepool.app.data.model.enums.FilterField
+import com.wepool.app.data.model.enums.FilterFields
 import com.wepool.app.data.model.enums.SortFields
 import com.wepool.app.data.model.ride.RideSearchFilters
 import com.wepool.app.data.model.users.User
@@ -34,23 +33,26 @@ fun ExpandableSortCard(
     showAvailableSeats: Boolean = true,
     showCompanyName: Boolean = true,
     showUserName: Boolean = true,
-    showUserEmail: Boolean = true,
     showSort: Boolean = true,
     showFilter: Boolean = true,
     showCleanAllButton: Boolean = true,
+    filters: RideSearchFilters,
     selectedSortFields: List<SortFields>,
     onSortFieldsChanged: (List<SortFields>) -> Unit,
-    availableFilters: List<FilterField> = emptyList(),
-    selectedFilters: List<FilterField> = emptyList(),
+    availableFilters: List<FilterFields> = emptyList(),
+    selectedFilters: List<FilterFields> = emptyList(),
     onFiltersChanged: (RideSearchFilters) -> Unit,
-    onSelectedFiltersChanged: (List<FilterField>) -> Unit,
+    onSearchTriggeredChanged: () -> Unit = {},
+    onCleanAllClicked: () -> Unit = {},
+    onSelectedFiltersChanged: (List<FilterFields>) -> Unit,
     onSearchClicked: () -> Unit,
     usersInCompany: List<User> = emptyList(),
     limitUserSuggestionsToCompany: Boolean = false,
+    ridesInCompanyOnly: Boolean = false,
+    companyCode: String? = null,
     additionalContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(initiallyExpanded) }
-    var filters by remember { mutableStateOf(RideSearchFilters()) }
     val context = LocalContext.current
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -90,54 +92,47 @@ fun ExpandableSortCard(
                                 selectedFilters = selectedFilters,
                                 onFiltersChanged = onSelectedFiltersChanged,
                                 onCompanyNameChanged = {
-                                    filters = filters.copy(companyName = it)
-                                    onFiltersChanged(filters)
+                                    val updated = filters.copy(companyName = it)
+                                    onFiltersChanged(updated)
                                 },
                                 onUserQueryChanged = {
-                                    filters = filters.copy(userNameOrEmail = it)
-                                    onFiltersChanged(filters)
+                                    val updated = filters.copy(userNameOrEmail = it)
+                                    onFiltersChanged(updated)
                                 },
                                 onDateFromChanged = {
-                                    filters = filters.copy(dateFrom = it)
-                                    onFiltersChanged(filters)
+                                    val updated = filters.copy(dateFrom = it)
+                                    onFiltersChanged(updated)
                                 },
                                 onDateToChanged = {
-                                    filters = filters.copy(dateTo = it)
-                                    onFiltersChanged(filters)
+                                    val updated = filters.copy(dateTo = it)
+                                    onFiltersChanged(updated)
                                 },
                                 onTimeFromChanged = {
-                                    filters = filters.copy(timeFrom = it)
-                                    onFiltersChanged(filters)
+                                    val updated = filters.copy(timeFrom = it)
+                                    onFiltersChanged(updated)
                                 },
                                 onTimeToChanged = {
-                                    filters = filters.copy(timeTo = it)
-                                    onFiltersChanged(filters)
+                                    val updated = filters.copy(timeTo = it)
+                                    onFiltersChanged(updated)
                                 },
                                 onDirectionChanged = {
-                                    filters = filters.copy(direction = it)
-                                    onFiltersChanged(filters)
+                                    val updated = filters.copy(direction = it)
+                                    onFiltersChanged(updated)
                                 },
                                 onClearField = { field ->
-                                    filters = when (field) {
-                                        FilterField.COMPANY_NAME -> filters.copy(companyName = null)
-                                        FilterField.USER_NAME -> filters.copy(userNameOrEmail = null)
-                                        FilterField.DATE_RANGE -> filters.copy(
-                                            dateFrom = null,
-                                            dateTo = null
-                                        )
-
-                                        FilterField.TIME_RANGE -> filters.copy(
-                                            timeFrom = null,
-                                            timeTo = null
-                                        )
-
-                                        FilterField.DIRECTION -> filters.copy(direction = null)
-                                        FilterField.PHONE -> filters.copy(userNameOrEmail = null)
+                                    val updated = when (field) {
+                                        FilterFields.COMPANY_NAME -> filters.copy(companyName = null)
+                                        FilterFields.USER_NAME -> filters.copy(userNameOrEmail = null)
+                                        FilterFields.DATE_RANGE -> filters.copy(dateFrom = null, dateTo = null)
+                                        FilterFields.TIME_RANGE -> filters.copy(timeFrom = null, timeTo = null)
+                                        FilterFields.DIRECTION -> filters.copy(direction = null)
+                                        FilterFields.PHONE -> filters.copy(userNameOrEmail = null)
                                     }
-                                    onFiltersChanged(filters)
+                                    onFiltersChanged(updated)
                                 },
                                 usersInCompany = usersInCompany,
-                                limitUserSuggestionsToCompany = limitUserSuggestionsToCompany
+                                limitUserSuggestionsToCompany = limitUserSuggestionsToCompany,
+                                filters = filters,
                             )
 
                             Spacer(modifier = Modifier.height(12.dp))
@@ -160,46 +155,58 @@ fun ExpandableSortCard(
 
                         additionalContent()
                         Spacer(modifier = Modifier.height(16.dp))
-
-                        if (showCleanAllButton) {
-                            OutlinedButton(
-                                onClick = {
-                                    filters = RideSearchFilters()
-                                    onFiltersChanged(filters)
-                                    onSelectedFiltersChanged(emptyList())
-                                    onSortFieldsChanged(emptyList())
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Clean All")
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
                     }
                 }
 
                 Column(modifier = Modifier.padding(16.dp)) {
+                    if (showCleanAllButton) {
+                        OutlinedButton(
+                            onClick = {
+                                onFiltersChanged(
+                                    RideSearchFilters(
+                                        companyName = null,
+                                        userNameOrEmail = null,
+                                        dateFrom = null,
+                                        dateTo = null,
+                                        timeFrom = null,
+                                        timeTo = null,
+                                        direction = null,
+                                        sortFields = emptyList()
+                                    )
+                                )
+                                onSelectedFiltersChanged(emptyList())
+                                onSortFieldsChanged(emptyList())
+                                onSearchTriggeredChanged()
+                                onCleanAllClicked()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Clean All")
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
                     Button(
                         onClick = {
                             val missingFields = mutableListOf<String>()
-                            if (FilterField.COMPANY_NAME in selectedFilters && filters.companyName.isNullOrBlank()) {
-                                missingFields.add(FilterField.COMPANY_NAME.displayName)
+                            if (FilterFields.COMPANY_NAME in selectedFilters && filters.companyName.isNullOrBlank()) {
+                                missingFields.add(FilterFields.COMPANY_NAME.displayName)
                             }
-                            if (FilterField.USER_NAME in selectedFilters && filters.userNameOrEmail.isNullOrBlank()) {
-                                missingFields.add(FilterField.USER_NAME.displayName)
+                            if (FilterFields.USER_NAME in selectedFilters && filters.userNameOrEmail.isNullOrBlank()) {
+                                missingFields.add(FilterFields.USER_NAME.displayName)
                             }
-                            if (FilterField.DATE_RANGE in selectedFilters && (filters.dateFrom.isNullOrBlank() || filters.dateTo.isNullOrBlank())) {
-                                missingFields.add(FilterField.DATE_RANGE.displayName)
+                            if (FilterFields.DATE_RANGE in selectedFilters && (filters.dateFrom.isNullOrBlank() || filters.dateTo.isNullOrBlank())) {
+                                missingFields.add(FilterFields.DATE_RANGE.displayName)
                             }
-                            if (FilterField.TIME_RANGE in selectedFilters && (filters.timeFrom.isNullOrBlank() || filters.timeTo.isNullOrBlank())) {
-                                missingFields.add(FilterField.TIME_RANGE.displayName)
+                            if (FilterFields.TIME_RANGE in selectedFilters && (filters.timeFrom.isNullOrBlank() || filters.timeTo.isNullOrBlank())) {
+                                missingFields.add(FilterFields.TIME_RANGE.displayName)
                             }
-                            if (FilterField.DIRECTION in selectedFilters && filters.direction == null) {
-                                missingFields.add(FilterField.DIRECTION.displayName)
+                            if (FilterFields.DIRECTION in selectedFilters && filters.direction == null) {
+                                missingFields.add(FilterFields.DIRECTION.displayName)
                             }
-                            if (FilterField.PHONE in selectedFilters && filters.userNameOrEmail.isNullOrBlank()) {
-                                missingFields.add(FilterField.PHONE.displayName)
+                            if (FilterFields.PHONE in selectedFilters && filters.userNameOrEmail.isNullOrBlank()) {
+                                missingFields.add(FilterFields.PHONE.displayName)
                             }
 
                             if (missingFields.isNotEmpty()) {
@@ -209,6 +216,12 @@ fun ExpandableSortCard(
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 return@Button
+                            }
+
+                            if (ridesInCompanyOnly && !companyCode.isNullOrBlank()) {
+                                onFiltersChanged(filters.copy(companyName = companyCode))
+                            } else {
+                                onFiltersChanged(filters)
                             }
 
                             onSearchClicked()

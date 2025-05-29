@@ -207,7 +207,6 @@ class CompanyRepository(
         }
     }
 
-
     override suspend fun updateLogoUrl(companyId: String, newLogoUrl: String?) {
         try {
             companiesCollection.document(companyId)
@@ -279,25 +278,28 @@ class CompanyRepository(
     override suspend fun setHrManager(
         companyId: String,
         hrManagerUid: String,
-        hrManagerRepository: IHRManagerRepository // ← נוסף כאן
+        hrManagerRepository: IHRManagerRepository
     ) {
         try {
             val companyDoc = companiesCollection.document(companyId).get().await()
             val company = companyDoc.toObject(Company::class.java)
             val previousHrUid = company?.hrManagerUid
 
-            // עדכון החברה עם HR החדש
             companiesCollection.document(companyId)
                 .update("hrManagerUid", hrManagerUid)
                 .await()
 
-            // הוספת תפקיד למשתמש החדש
             userRepository.addRoleToUser(hrManagerUid, UserRole.HR_MANAGER.name)
 
-            // הסרת HR קודם (אם קיים והוא שונה)
             if (previousHrUid != null && previousHrUid != hrManagerUid) {
                 userRepository.removeRoleFromUser(previousHrUid, UserRole.HR_MANAGER.name)
                 hrManagerRepository.deleteHRManager(previousHrUid)
+            }
+
+            val hrUser = userRepository.getUser(hrManagerUid)
+            if (hrUser != null && !hrUser.active) {
+                userRepository.activateUser(hrManagerUid)
+                Log.d("CompanyRepository", "✅ HR Manager $hrManagerUid was re-activated")
             }
 
             Log.d("CompanyRepository", "🏢 HR manager updated: $hrManagerUid (prev: $previousHrUid) for $companyId")

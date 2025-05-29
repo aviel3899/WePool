@@ -2,6 +2,8 @@ package com.wepool.app.ui.screens.mainScreens
 
 import android.app.Activity
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -27,7 +29,6 @@ import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.components.RoleSelectionCard
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
 
 @Composable
 fun UpdateDetailsScreen(navController: NavController, uid: String) {
@@ -79,9 +80,11 @@ fun UpdateDetailsScreen(navController: NavController, uid: String) {
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Box(modifier = Modifier.fillMaxSize()) {
+            val scrollState = rememberScrollState()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(scrollState)
                     .padding(horizontal = 32.dp)
                     .padding(bottom = 160.dp),
                 verticalArrangement = Arrangement.Center,

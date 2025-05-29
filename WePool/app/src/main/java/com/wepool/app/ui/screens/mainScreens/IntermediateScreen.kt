@@ -1,7 +1,7 @@
 package com.wepool.app.ui.screens.mainScreens
 
-import android.app.Activity
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -25,10 +25,15 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import com.wepool.app.R
+import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.users.User
 
 @Composable
 fun IntermediateScreen(navController: NavController, uid: String) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    var user by remember { mutableStateOf<User?>(null) }
 
     var hasShownDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf<String?>(null) }
@@ -39,17 +44,14 @@ fun IntermediateScreen(navController: NavController, uid: String) {
     LaunchedEffect(Unit) {
         try {
             val userRepo = RepositoryProvider.provideUserRepository()
-            val user = userRepo.getUser(uid)
+            user = userRepo.getUser(uid)
 
-            if (user != null) {
-                if (user.lastLoginTimestamp == null) {
-                    dialogMessage =
-                        "Hello ${user.name}!\nWe are glad to see you for the first time!"
+            user?.let {
+                if (it.lastLoginTimestamp == null) {
+                    dialogMessage = "Hello ${it.name}!\nWe are glad to see you for the first time!"
                 }
+                userRepo.updateLastLoginTimestamp(uid, System.currentTimeMillis())
             }
-
-            userRepo.updateLastLoginTimestamp(uid, System.currentTimeMillis())
-
         } catch (e: Exception) {
             Log.e("IntermediateScreen", "❌ Error loading welcome data: ${e.message}", e)
         }
@@ -57,6 +59,7 @@ fun IntermediateScreen(navController: NavController, uid: String) {
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Box(modifier = Modifier.fillMaxSize()) {
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -78,10 +81,21 @@ fun IntermediateScreen(navController: NavController, uid: String) {
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         OutlinedButton(
-                            onClick = { navController.navigate("roleSelection/$uid") },
+                            onClick = {
+                                val isAdmin = user?.roles?.contains(UserRole.ADMIN) == true
+                                if (user?.active == true || isAdmin) {
+                                    navController.navigate("roleSelection/$uid")
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "The user is not active. Please contact your HR Manager",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
                             modifier = Modifier.size(buttonSize),
                             shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                            border = ButtonDefaults.outlinedButtonBorder(enabled = true),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Person,
@@ -96,10 +110,21 @@ fun IntermediateScreen(navController: NavController, uid: String) {
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         OutlinedButton(
-                            onClick = { navController.navigate("rideHistory/$uid") },
+                            onClick = {
+                                val isAdmin = user?.roles?.contains(UserRole.ADMIN) == true
+                                if (user?.active == true || isAdmin) {
+                                    navController.navigate("rideHistory/$uid")
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Access to ride history is only allowed for active users",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
                             modifier = Modifier.size(buttonSize),
                             shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                            border = ButtonDefaults.outlinedButtonBorder(enabled = true),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.History,

@@ -154,7 +154,7 @@ class UserRepository(
 
     override suspend fun banUser(uid: String) {
         try {
-            usersCollection.document(uid).update("isBanned", true).await()
+            usersCollection.document(uid).update("banned", true).await()
         } catch (e: Exception) {
             logException("banUser", e)
         }
@@ -162,7 +162,7 @@ class UserRepository(
 
     override suspend fun unbanUser(uid: String) {
         try {
-            usersCollection.document(uid).update("isBanned", false).await()
+            usersCollection.document(uid).update("banned", false).await()
         } catch (e: Exception) {
             logException("unbanUser", e)
         }
@@ -171,7 +171,7 @@ class UserRepository(
     override suspend fun activateUser(uid: String) {
         try {
             usersCollection.document(uid)
-                .update("isActive", true)
+                .update("active", true)
                 .await()
             Log.d("UserRepository", "✅ המשתמש $uid הופעל מחדש")
         } catch (e: Exception) {
@@ -182,7 +182,7 @@ class UserRepository(
     override suspend fun unActivateUser(uid: String) {
         try {
             usersCollection.document(uid)
-                .update("isActive", false)
+                .update("active", false)
                 .await()
             Log.d("UserRepository", "🚫 המשתמש $uid הפך ללא פעיל")
         } catch (e: Exception) {

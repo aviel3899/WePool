@@ -56,6 +56,7 @@ import com.wepool.app.ui.screens.passengerScreens.PassengerRideSearchScreen
 import com.wepool.app.ui.screens.hrManagerScreens.HRManagerMenuScreen
 import com.wepool.app.ui.screens.hrManagerScreens.HRManageEmployeesScreen
 import com.wepool.app.ui.screens.hrManagerScreens.HRManageCompanyScreen
+import com.wepool.app.ui.screens.hrManagerScreens.HRManagerRidesScreen
 import com.wepool.app.ui.theme.WePoolTheme
 import kotlinx.coroutines.launch
 
@@ -72,7 +73,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 📦 שמירה ל-SharedPreferences כדי שLoginScreen ידע מה הייתה ההתראה
         val screen = intent?.getStringExtra("screen")
         val rideId = intent?.getStringExtra("rideId")
         val fromNotification = intent?.getStringExtra("fromNotification") == "true"
@@ -235,18 +235,22 @@ class MainActivity : AppCompatActivity() {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             HRManageEmployeesScreen(uid = uid, navController = navController!!)
                         }
-
                         composable("hrManageCompany/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             HRManageCompanyScreen(uid = uid, navController = navController!!)
+                        }
+                        composable("hrManagerRides/{uid}?filter={filter}") { backStackEntry ->
+                            val uid = backStackEntry.arguments?.getString("uid").orEmpty()
+                            val filter = backStackEntry.arguments?.getString("filter") == "true"
+                            HRManagerRidesScreen(uid = uid, navController = navController!!, filterByUid = filter)
                         }
                         composable("userList/{uid}") {
                             val uid = it.arguments?.getString("uid") ?: return@composable
                             UserListScreen(uid = uid, navController = navController!!)
                         }
                         composable("ridesList/{uid}?filter={filter}") { backStackEntry ->
-                            val uid = backStackEntry.arguments?.getString("uid") ?: "admin"
-                            val filter = backStackEntry.arguments?.getString("filter")?.toBooleanStrictOrNull() ?: false
+                            val uid = backStackEntry.arguments?.getString("uid").orEmpty()
+                            val filter = backStackEntry.arguments?.getString("filter") == "true"
                             RidesListScreen(uid = uid, navController = navController!!, filterByUid = filter)
                         }
                     }

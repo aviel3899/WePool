@@ -11,7 +11,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.wepool.app.data.model.enums.FilterField
+import com.wepool.app.data.model.enums.FilterFields
 import com.wepool.app.data.model.enums.SortFields
 import com.wepool.app.data.model.ride.RideSearchFilters
 import com.wepool.app.data.model.users.User
@@ -32,11 +32,36 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
     var filteredUsers by remember { mutableStateOf<List<User>>(emptyList()) }
     var company by remember { mutableStateOf<Company?>(null) }
     var filters by remember { mutableStateOf(RideSearchFilters()) }
-    var selectedFilters by remember { mutableStateOf<List<FilterField>>(emptyList()) }
+    var selectedFilters by remember { mutableStateOf<List<FilterFields>>(emptyList()) }
     var searchTriggered by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    fun applySearch(allUsers: List<User>) {
+        val query = filters.userNameOrEmail.orEmpty().trim()
+
+        val filtered = if (selectedFilters.isEmpty()) {
+            allUsers
+        } else {
+            allUsers.filter { user ->
+                val matchesUser =
+                    if (FilterFields.USER_NAME in selectedFilters || FilterFields.PHONE in selectedFilters) {
+                        query.isBlank() ||
+                                user.name.contains(query, ignoreCase = true) ||
+                                user.email.contains(query, ignoreCase = true) ||
+                                "${user.name} (${user.email})".contains(query, ignoreCase = true) ||
+                                user.phoneNumber.contains(query)
+                    } else true
+
+                matchesUser
+            }
+        }
+
+        filteredUsers = when (filters.sortFields.firstOrNull()) {
+            SortFields.USER -> filtered.sortedByDescending { it.name }
+            else -> filtered
+        }
+    }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
@@ -55,42 +80,22 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 96.dp)
-            ) {
+            Column(modifier = Modifier.fillMaxSize().padding(bottom = 96.dp)) {
                 ExpandableSortCard(
                     title = "Search Employees",
+                    filters = filters,
                     selectedSortFields = filters.sortFields,
                     onSortFieldsChanged = { filters = filters.copy(sortFields = it) },
                     availableFilters = listOf(
-                        FilterField.USER_NAME,
-                        FilterField.PHONE
+                        FilterFields.USER_NAME,
+                        FilterFields.PHONE
                     ),
                     selectedFilters = selectedFilters,
                     onSelectedFiltersChanged = { selectedFilters = it },
                     onFiltersChanged = { filters = it },
                     onSearchClicked = {
                         searchTriggered = true
-                        val query = filters.userNameOrEmail.orEmpty().trim()
-
-                        suggestions = users.map { it.name + " (${it.email})" }.filter {
-                            it.contains(query, ignoreCase = true)
-                        }.take(5)
-
-                        filteredUsers = users.filter { user ->
-                            query.isBlank() ||
-                                    user.name.contains(query, ignoreCase = true) ||
-                                    user.email.contains(query, ignoreCase = true) ||
-                                    "${user.name} (${user.email})".contains(query, ignoreCase = true) ||
-                                    user.phoneNumber.contains(query)
-                        }.let { result ->
-                            when (filters.sortFields.firstOrNull()) {
-                                SortFields.USER -> result.sortedByDescending { it.name }
-                                else -> result
-                            }
-                        }
+                        applySearch(users)
                     },
                     showDate = false,
                     showDepartureTime = false,
@@ -98,39 +103,42 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
                     showAvailableSeats = false,
                     showCompanyName = false,
                     showUserName = true,
-                    showUserEmail = true,
                     showSort = true,
                     showFilter = true,
-                    showCleanAllButton = false,
+                    showCleanAllButton = true,
                     usersInCompany = users,
                     limitUserSuggestionsToCompany = true,
+                    onSearchTriggeredChanged = { searchTriggered = false },
+                    onCleanAllClicked = {
+                        filters = RideSearchFilters()
+                        selectedFilters = emptyList()
+                        filteredUsers = emptyList()
+                        searchTriggered = false
+                        coroutineScope.launch { kotlinx.coroutines.delay(50) }
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 16.dp)
-                ) {
+                Column(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
                     when {
                         loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                        error != null -> Text(
-                            text = error ?: "",
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
-                        !searchTriggered -> Text(
-                            "Please enter a search and press Search.",
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
-                        filteredUsers.isEmpty() -> Text(
-                            "No employees found.",
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
+                        error != null -> Text(text = error ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.CenterHorizontally))
+                        !searchTriggered -> Text("Please enter a search and press Search.", modifier = Modifier.align(Alignment.CenterHorizontally))
+                        filteredUsers.isEmpty() -> Text("No employees found.", modifier = Modifier.align(Alignment.CenterHorizontally))
                         else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
                             items(filteredUsers) { user ->
-                                UserCard(user = user, navController = navController)
+                                UserCard(
+                                    user = user,
+                                    navController = navController,
+                                    onUserStatusChanged = {
+                                        coroutineScope.launch {
+                                            users = company?.let { userRepository.getUsersByCompany(it.companyCode) } ?: emptyList()
+                                            applySearch(users)
+                                        }
+                                    },
+                                    fromScreen = "HRManageEmployees"
+                                )
                             }
                         }
                     }

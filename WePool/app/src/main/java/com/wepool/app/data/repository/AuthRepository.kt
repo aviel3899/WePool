@@ -29,14 +29,9 @@ class AuthRepository(
             val user: User = userRepository.getUser(uid)
                 ?: return Result.failure(Exception("המשתמש לא נמצא במסד הנתונים"))
 
-            if (user.isBanned) {
+            if (user.banned) {
                 Log.w("AuthRepository", "🚫 המשתמש חסום | UID: $uid")
                 return Result.failure(Exception("המשתמש חסום על ידי המערכת"))
-            }
-
-            if (!user.isActive) {
-                Log.w("AuthRepository", "⚠️ המשתמש אינו פעיל | UID: $uid")
-                return Result.failure(Exception("המשתמש אינו פעיל במערכת"))
             }
 
             // הוספת תפקיד ADMIN למיילים המורשים אם עדיין לא קיים
@@ -46,6 +41,7 @@ class AuthRepository(
                 val updatedUser = user.copy(roles = user.roles + UserRole.ADMIN)
                 userRepository.createOrUpdateUser(updatedUser)
                 Log.d("AuthRepository", "👑 נוסף תפקיד ADMIN למשתמש עם UID: $uid")
+                userRepository.activateUser(uid)
             }
 
             userRepository.uploadFcmTokenForCurrentUser()

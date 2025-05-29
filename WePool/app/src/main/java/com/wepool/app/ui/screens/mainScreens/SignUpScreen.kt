@@ -194,16 +194,16 @@ fun SignUpScreen(navController: NavController) {
 
             Button(onClick = {
                 if (!isInputValid()) {
-                    errorMessage = "אנא מלא את כל השדות"
+                    errorMessage = "Please fill all fields"
                     return@Button
                 }
                 if (password != confirmPassword) {
-                    errorMessage = "הסיסמאות לא תואמות"
+                    errorMessage = "Password doesn't match"
                     return@Button
                 }
                 val chosenRoles = selectedRoles.filterValues { it }.keys.toList()
                 if (chosenRoles.isEmpty()) {
-                    errorMessage = "בחר לפחות תפקיד אחד"
+                    errorMessage = "Pick at least one role"
                     return@Button
                 }
                 showTermsDialog = true
@@ -254,7 +254,8 @@ fun SignUpScreen(navController: NavController) {
                     email = email,
                     phoneNumber = phoneNumber,
                     companyCode = companyCode,
-                    isBanned = false,
+                    banned = false,
+                    active = false,
                     roles = selectedRoles.filterValues { it }.keys.toList()
                 )
 

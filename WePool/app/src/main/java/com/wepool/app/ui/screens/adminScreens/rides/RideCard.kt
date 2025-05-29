@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.wepool.app.R
 import com.wepool.app.data.model.enums.RideDirection
 import com.wepool.app.data.model.ride.Ride
+import com.wepool.app.ui.screens.components.StatusLabel
 
 @Composable
 fun RideCard(
@@ -52,19 +53,11 @@ fun RideCard(
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
 
-                Text(
-                    text = if (ride.isActive) "Active" else "Passed",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
+                StatusLabel(
+                    active = ride.isActive,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
-                        .background(
-                            color = if (ride.isActive) Color(0xFF2E7D32) else Color.Red,
-                            shape = MaterialTheme.shapes.small
-                        )
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
                 )
 
                 Column(

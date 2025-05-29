@@ -3020,6 +3020,7 @@ drawable design_ic_visibility
 drawable design_ic_visibility_off
 drawable design_password_eye
 drawable design_snackbar_background
+drawable edit_svgrepo_com
 drawable employees_svgrepo_com
 drawable folder_secret_svgrepo_com
 drawable googleg_disabled_color_18
@@ -3051,6 +3052,7 @@ drawable ic_password
 drawable ic_search_black_24
 drawable indeterminate_static
 drawable information_svgrepo_com
+drawable location_pin_svgrepo_com
 drawable login_line_svgrepo_com
 drawable logout_svgrepo_com
 drawable m3_avd_hide_password
