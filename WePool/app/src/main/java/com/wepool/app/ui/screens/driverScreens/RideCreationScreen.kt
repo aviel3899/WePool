@@ -334,6 +334,25 @@ fun RideCreationScreen(navController: NavController, uid: String, direction: Rid
 
                     Button(onClick = {
                         coroutineScope.launch {
+                            val calendar = Calendar.getInstance()
+                            val formatter = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault())
+                            val fullDateTime = "$selectedDate $selectedTime"
+                            val rideTime = try {
+                                formatter.parse(fullDateTime)?.time ?: 0L
+                            } catch (e: Exception) {
+                                0L
+                            }
+
+                            val now = System.currentTimeMillis()
+                            val timeDiffMinutes = (rideTime - now) / 60000
+
+                            val isValidTime = if (isToWork) timeDiffMinutes >= 120 else timeDiffMinutes >= 10
+
+                            if (!isValidTime) {
+                                Toast.makeText(context, "Select later time.", Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+
                             val start = mapsService.getCoordinatesFromAddress(startLocation.name)
                                 ?: return@launch
                             val end = mapsService.getCoordinatesFromAddress(destination.name)
@@ -355,6 +374,7 @@ fun RideCreationScreen(navController: NavController, uid: String, direction: Rid
                             )
 
                             if (success) {
+                                Toast.makeText(context, "Ride created successfully", Toast.LENGTH_SHORT).show()
                                 navController.navigate("driverMenu/$uid") {
                                     popUpTo("rideCreation/$uid/${direction.name}") {
                                         inclusive = true

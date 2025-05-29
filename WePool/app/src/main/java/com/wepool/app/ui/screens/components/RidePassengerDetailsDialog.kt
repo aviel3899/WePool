@@ -178,7 +178,7 @@ fun RidePassengerDetailsDialog(
                                             rideCalendar.timeInMillis - now.timeInMillis
                                         val diffMinutes = diffMillis / (60 * 1000)
 
-                                        threshold = if (isWorkbound) 180 else 60
+                                        threshold = if (isWorkbound) 60 else 10
                                         if (diffMinutes < threshold) {
                                             innerTooLateDialog = true
                                             return@launch

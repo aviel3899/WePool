@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Person
@@ -32,6 +33,8 @@ fun IntermediateScreen(navController: NavController, uid: String) {
     var hasShownDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf<String?>(null) }
     val showDialog = !hasShownDialog && dialogMessage != null
+
+    var showTermsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         try {
@@ -182,6 +185,22 @@ fun IntermediateScreen(navController: NavController, uid: String) {
                     }
                 }
             }
+
+            FloatingActionButton(
+                onClick = { showTermsDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 24.dp, bottom = 96.dp),
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Default.Info, contentDescription = "Terms Info")
+            }
+
+            TermsAndConditionsDialog(
+                showDialog = showTermsDialog,
+                onDismissRequest = { showTermsDialog = false },
+                showCheckbox = false
+            )
 
             Box(
                 modifier = Modifier

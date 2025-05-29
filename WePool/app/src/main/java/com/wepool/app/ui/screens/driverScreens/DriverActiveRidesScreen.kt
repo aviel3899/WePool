@@ -229,7 +229,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                     val diffMillis = rideCalendar.timeInMillis - now.timeInMillis
                     val diffMinutes = diffMillis / (60 * 1000)
 
-                    threshold = if (ride.direction == RideDirection.TO_WORK) 180 else 60
+                    threshold = if (ride.direction == RideDirection.TO_WORK) 60 else 10
                     if (diffMinutes < threshold) {
                         showTooLateDialog = true
                         return@launch

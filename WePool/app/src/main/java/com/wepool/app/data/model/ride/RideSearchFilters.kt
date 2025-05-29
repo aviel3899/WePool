@@ -1,0 +1,19 @@
+package com.wepool.app.data.model.ride
+
+import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.SortFields
+
+
+data class RideSearchFilters(
+    val companyName: String? = null,
+    val userNameOrEmail: String? = null,
+    val userDisplay: String? = null,
+    val dateFrom: String? = null, // פורמט: "yyyy-MM-dd"
+    val dateTo: String? = null,
+    val timeFrom: String? = null, // פורמט: "HH:mm"
+    val timeTo: String? = null,
+    val direction: RideDirection? = null,
+    val sortFields: List<SortFields> = emptyList()
+) {
+    fun reset(): RideSearchFilters = RideSearchFilters()
+}

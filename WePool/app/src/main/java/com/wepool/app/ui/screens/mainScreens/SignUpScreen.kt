@@ -44,6 +44,9 @@ fun SignUpScreen(navController: NavController) {
     var isRegistering by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var showTermsDialog by remember { mutableStateOf(false) }
+    var termsAccepted by remember { mutableStateOf(false) }
+    var termsError by remember { mutableStateOf(false) }
 
     val availableRoles = listOf(UserRole.DRIVER, UserRole.PASSENGER)
     val selectedRoles = remember {
@@ -61,7 +64,9 @@ fun SignUpScreen(navController: NavController) {
                 companyCode.isNotBlank()
     }
 
-    Box(modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp)) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .padding(horizontal = 32.dp)) {
         val scrollState = rememberScrollState()
 
         Column(
@@ -159,16 +164,16 @@ fun SignUpScreen(navController: NavController) {
 
             Text("Select Your Role(s)", style = MaterialTheme.typography.titleMedium)
             availableRoles.forEach { role ->
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Checkbox(
                         checked = selectedRoles[role] ?: false,
                         onCheckedChange = { selectedRoles[role] = it }
                     )
-                    val readableName = role.name
-                        .lowercase()
-                        .replace("_", " ")
-                        .replaceFirstChar { it.uppercase() }
-
+                    val readableName =
+                        role.name.lowercase().replace("_", " ").replaceFirstChar { it.uppercase() }
                     Text(readableName)
                 }
             }
@@ -188,45 +193,17 @@ fun SignUpScreen(navController: NavController) {
                     errorMessage = "בחר לפחות תפקיד אחד"
                     return@Button
                 }
-
-                coroutineScope.launch {
-                    isRegistering = true
-
-                    val user = User(
-                        uid = "",
-                        name = name,
-                        email = email,
-                        phoneNumber = phoneNumber,
-                        companyCode = companyCode,
-                        isBanned = false,
-                        roles = chosenRoles
-                    )
-
-                    val result = authRepository.signUpWithEmailAndPassword(
-                        email = email,
-                        password = password,
-                        user = user,
-                        userRepository = userRepository,
-                        companyRepository = companyRepository
-                    )
-
-                    isRegistering = false
-
-                    result.onSuccess {
-                        navController.navigate("login") {
-                            popUpTo("signUp") { inclusive = true }
-                        }
-                    }.onFailure {
-                        Toast.makeText(context, it.message ?: "שגיאה בהרשמה", Toast.LENGTH_SHORT).show()
-                    }
-                }
+                showTermsDialog = true
             }, enabled = !isRegistering, modifier = Modifier.fillMaxWidth()) {
                 Text("Register")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            TextButton(onClick = { navController.popBackStack() }, modifier = Modifier.fillMaxWidth()) {
+            TextButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Cancel", color = MaterialTheme.colorScheme.error)
             }
         }
@@ -244,6 +221,54 @@ fun SignUpScreen(navController: NavController) {
             text = { Text(errorMessage ?: "") }
         )
     }
+
+    TermsAndConditionsDialog(
+        showDialog = showTermsDialog,
+        onDismissRequest = { showTermsDialog = false },
+        showCheckbox = true,
+        termsAccepted = termsAccepted,
+        onTermsAcceptedChange = { termsAccepted = it; termsError = false },
+        termsError = termsError,
+        onAccepted = {
+            termsError = false
+            showTermsDialog = false
+            coroutineScope.launch {
+                isRegistering = true
+
+                val user = User(
+                    uid = "",
+                    name = name,
+                    email = email,
+                    phoneNumber = phoneNumber,
+                    companyCode = companyCode,
+                    isBanned = false,
+                    roles = selectedRoles.filterValues { it }.keys.toList()
+                )
+
+                val result = authRepository.signUpWithEmailAndPassword(
+                    email = email,
+                    password = password,
+                    user = user,
+                    userRepository = userRepository,
+                    companyRepository = companyRepository
+                )
+
+                isRegistering = false
+
+                result.onSuccess {
+                    navController.navigate("login") {
+                        popUpTo("signUp") { inclusive = true }
+                    }
+                }.onFailure {
+                    Toast.makeText(
+                        context,
+                        it.message ?: "שגיאה בהרשמה",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    )
 }
 
 @Composable
@@ -265,5 +290,66 @@ fun CustomTextField(
         visualTransformation = visualTransformation,
         modifier = modifier,
         singleLine = true
+    )
+}
+
+@Composable
+fun TermsAndConditionsDialog(
+    showDialog: Boolean,
+    onDismissRequest: () -> Unit,
+    showCheckbox: Boolean,
+    termsAccepted: Boolean = false,
+    onTermsAcceptedChange: ((Boolean) -> Unit)? = null,
+    termsError: Boolean = false,
+    onAccepted: (() -> Unit)? = null
+) {
+    if (!showDialog) return
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            TextButton(onClick = {
+                if (showCheckbox && !termsAccepted) {
+                    onTermsAcceptedChange?.invoke(false)
+                    return@TextButton
+                }
+                onAccepted?.invoke() ?: onDismissRequest()
+            }) {
+                Text("OK")
+            }
+        },
+        title = { Text("Terms and Conditions") },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    """
+                    • Drivers may create homebound rides with an arrival time at least 10 minutes ahead.
+                    • Drivers may create workbound rides with a departure time at least 2 hours ahead.
+                    • For homebound rides, drivers may cancel a ride (with passengers) or a passenger at least 10 minutes before departure.
+                    • For workbound rides, drivers may cancel a ride (with passengers) or a passenger at least 60 minutes before departure.
+                    • If there are no passengers, drivers may cancel anytime.
+
+                    • For homebound rides, passengers may join or cancel a ride at least 10 minutes before departure.
+                    • For workbound rides, passengers may join or cancel a ride at least 60 minutes before departure.
+                    """.trimIndent()
+                )
+                if (showCheckbox) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = termsAccepted,
+                            onCheckedChange = onTermsAcceptedChange
+                        )
+                        Text("I accept terms and conditions")
+                    }
+                    if (termsError) {
+                        Text(
+                            "please accept terms and conditions",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        }
     )
 }

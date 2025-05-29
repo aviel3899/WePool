@@ -153,12 +153,19 @@ fun UserListScreen(uid: String, navController: NavController) {
                     }
                 }
 
-                BottomNavigationButtons(
-                    uid = uid,
-                    navController = navController,
-                    showBackButton = true,
-                    showHomeButton = true
-                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    tonalElevation = 4.dp,
+                    shadowElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    BottomNavigationButtons(
+                        uid = uid,
+                        navController = navController,
+                        showBackButton = true,
+                        showHomeButton = true,
+                    )
+                }
             }
         }
     }

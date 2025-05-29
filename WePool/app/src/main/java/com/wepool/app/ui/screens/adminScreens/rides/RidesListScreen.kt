@@ -1,180 +1,125 @@
 package com.wepool.app.ui.screens.adminScreens.rides
 
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wepool.app.data.model.enums.FilterField
 import com.wepool.app.data.model.ride.Ride
-import com.wepool.app.data.model.users.User
-import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.data.model.ride.RideSearchFilters
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
-import com.wepool.app.ui.screens.components.UserSearchAutoComplete
-import com.wepool.app.ui.screens.components.RideMapDialog
+import com.wepool.app.ui.screens.components.ExpandableSortCard
+import com.wepool.app.ui.screens.adminScreens.rides.RideCard
+import com.wepool.app.ui.screens.components.RideDataProvider
+import com.wepool.app.ui.screens.components.sortFields.RideSortManager
 import kotlinx.coroutines.launch
+import com.wepool.app.infrastructure.RepositoryProvider
 
 @Composable
-fun RidesListScreen(uid: String, navController: NavController, filterByUid: Boolean = false){
-    val userRepository = RepositoryProvider.provideUserRepository()
+fun RidesListScreen(
+    uid: String,
+    navController: NavController,
+    filterByUid: Boolean = false
+) {
     val rideRepository = RepositoryProvider.provideRideRepository()
     val coroutineScope = rememberCoroutineScope()
 
-    var users by remember { mutableStateOf<List<User>>(emptyList()) }
-    var rides by remember { mutableStateOf<List<Ride>>(emptyList()) }
+    var allRides by remember { mutableStateOf<List<Ride>>(emptyList()) }
     var filteredRides by remember { mutableStateOf<List<Ride>>(emptyList()) }
-    var selectedUserUid by remember { mutableStateOf<String?>(null) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var filterExpanded by remember { mutableStateOf(true) }
-    var rideForMapDialog by remember { mutableStateOf<Ride?>(null) }
+    var filters by remember { mutableStateOf(RideSearchFilters()) }
+    var selectedFilters by remember { mutableStateOf<List<FilterField>>(emptyList()) }
+    var searchTriggered by remember { mutableStateOf(false) }
 
-    fun applyFilter() {
-        Log.d("RidesListScreen", "selectedUserUid = '$selectedUserUid'")
-        Log.d("RidesListScreen", "rides count = ${rides.size}")
-        filteredRides = if (selectedUserUid.isNullOrEmpty()) {
-            rides
-        } else {
-            rides.filter { ride ->
-                ride.driverId == selectedUserUid || ride.pickupStops.any { it.passengerId == selectedUserUid }
-            }
-        }
-    }
+    val availableFilters = FilterField.values().toList()
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
-            try {
-                loading = true
-                users = userRepository.getAllUsers()
-                rides = rideRepository.getAllRides()
-                selectedUserUid = if (filterByUid) uid else null
-                applyFilter()
-            } catch (e: Exception) {
-                error = "❌ Failed to load rides: ${e.message}"
-            } finally {
-                loading = false
-            }
+            val rides = rideRepository.getAllRides()
+            allRides = if (filterByUid) {
+                rides.filter {
+                    it.driverId == uid || it.pickupStops.any { stop -> stop.passengerId == uid }
+                }
+            } else rides
+            filteredRides = emptyList()
         }
     }
 
-    fun clearFilter() {
-        selectedUserUid = null
-        applyFilter()
-    }
-
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+    RideDataProvider { userMap, companyNameMap ->
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 96.dp)
+            ) {
+                ExpandableSortCard(
+                    selectedSortFields = filters.sortFields,
+                    onSortFieldsChanged = {
+                        filters = filters.copy(sortFields = it)
+                    },
+                    availableFilters = availableFilters,
+                    selectedFilters = selectedFilters,
+                    onSelectedFiltersChanged = { selectedFilters = it },
+                    onFiltersChanged = { updated -> filters = updated },
+                    onSearchClicked = {
+                        searchTriggered = true
+                        val filtered = allRides.filter { ride ->
+                            val matchesCompany = filters.companyName?.let { it == companyNameMap[ride.companyCode] } ?: true
+                            val matchesUser = filters.userNameOrEmail?.let { query ->
+                                val driverMatch = userMap[ride.driverId]?.let { user ->
+                                    user.name.contains(query, ignoreCase = true) || user.email.contains(query, ignoreCase = true)
+                                } ?: false
+                                val passengerMatch = ride.pickupStops.any { stop ->
+                                    userMap[stop.passengerId]?.let { user ->
+                                        user.name.contains(query, ignoreCase = true) || user.email.contains(query, ignoreCase = true)
+                                    } ?: false
+                                }
+                                driverMatch || passengerMatch
+                            } ?: true
+                            val matchesDirection = filters.direction?.let { it == ride.direction } ?: true
+                            val matchesDateStart = filters.dateFrom?.takeIf { it.isNotBlank() }?.let { ride.date >= it } ?: true
+                            val matchesDateEnd = filters.dateTo?.takeIf { it.isNotBlank() }?.let { ride.date <= it } ?: true
+                            val matchesTimeStart = filters.timeFrom?.takeIf { it.isNotBlank() }?.let { ride.departureTime ?: "" >= it } ?: true
+                            val matchesTimeEnd = filters.timeTo?.takeIf { it.isNotBlank() }?.let { ride.departureTime ?: "" <= it } ?: true
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp, start = 16.dp, end = 16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            IconButton(
-                                onClick = { filterExpanded = !filterExpanded },
-                                modifier = Modifier.align(Alignment.TopEnd)
-                            ) {
-                                Icon(
-                                    imageVector = if (filterExpanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                                    contentDescription = null
-                                )
-                            }
-
-                            Text(
-                                text = "Search Rides by User",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
+                            matchesCompany && matchesUser && matchesDirection &&
+                                    matchesDateStart && matchesDateEnd && matchesTimeStart && matchesTimeEnd
                         }
 
-                        if (filterExpanded) {
-                            Spacer(modifier = Modifier.height(16.dp))
+                        filteredRides = RideSortManager.sortRides(
+                            filtered,
+                            filters.sortFields,
+                            userMap,
+                            companyNameMap
+                        )
+                    }
+                )
 
-                            UserSearchAutoComplete(
-                                onUserSelected = { uid, _ -> selectedUserUid = uid.takeIf { it.isNotBlank() } },
-                                onClear = { clearFilter() },
-                                usersProvider = {
-                                    try {
-                                        users.map { user -> user.uid to "${user.name} (${user.email})" }
-                                    } catch (e: Exception) {
-                                        emptyList()
-                                    }
-                                }
+                if (searchTriggered) {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(filteredRides) { ride ->
+                            RideCard(
+                                ride = ride,
+                                selectedUserUid = if (filterByUid) uid else null,
+                                onShowMapClicked = { /* Future logic */ }
                             )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Button(
-                                onClick = { applyFilter() },
-                                modifier = Modifier.widthIn(min = 100.dp)
-                            ) {
-                                Text("Search")
-                            }
                         }
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 16.dp)
-                ) {
-                    when {
-                        loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-
-                        error != null -> {
-                            Text(
-                                text = error ?: "",
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                        }
-
-                        filteredRides.isEmpty() -> {
-                            Text(
-                                "No rides found.",
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                        }
-
-                        else -> {
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items(filteredRides) { ride ->
-                                    RideCard(
-                                        ride = ride,
-                                        selectedUserUid = if (selectedUserUid.isNullOrEmpty()) null else selectedUserUid,
-                                        onShowMapClicked = { rideForMapDialog = it }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                rideForMapDialog?.let {
-                    RideMapDialog(ride = it, onDismiss = { rideForMapDialog = null })
-                }
-
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                tonalElevation = 4.dp,
+                shadowElevation = 4.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
                 BottomNavigationButtons(
                     uid = uid,
                     navController = navController,
