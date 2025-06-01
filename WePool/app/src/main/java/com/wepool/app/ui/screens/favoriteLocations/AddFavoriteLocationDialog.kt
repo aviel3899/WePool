@@ -54,7 +54,6 @@ fun AddLocationDialog(
                                         existingLocations.any { it.placeId == newLocation.placeId }
 
                                     if (alreadyExists) {
-                                        // תוכל להחליף ב־Snackbar אם יש לך סביבה מתאימה
                                         println("Location already exists")
                                     } else {
                                         userRepository.addFavoriteLocation(uid, newLocation)

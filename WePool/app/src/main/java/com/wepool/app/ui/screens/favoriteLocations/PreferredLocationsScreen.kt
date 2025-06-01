@@ -51,26 +51,26 @@ fun PreferredLocationsScreen(uid: String, navController: NavController) {
         }
     }
 
-    BackgroundWrapper {
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            Scaffold(
-                bottomBar = {
-                    BottomNavigationButtons(
-                        uid = uid,
-                        navController = navController,
-                        showBackButton = true,
-                        showHomeButton = false
-                    )
-                },
-                floatingActionButton = {
-                    FloatingActionButton(
-                        onClick = { showAddDialog = true },
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ) {
-                        Text("+", fontSize = 24.sp)
-                    }
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Scaffold(
+            bottomBar = {
+                BottomNavigationButtons(
+                    uid = uid,
+                    navController = navController,
+                    showBackButton = true,
+                    showHomeButton = false
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Text("+", fontSize = 24.sp)
                 }
-            ) { innerPadding ->
+            }
+        ) { innerPadding ->
+            BackgroundWrapper {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

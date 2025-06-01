@@ -77,7 +77,6 @@ fun FavoriteLocationDropdown(
                 singleLine = true
             )
 
-            // תפריט מיקומים מועדפים
             DropdownMenu(
                 expanded = isFavoritesExpanded,
                 onDismissRequest = { isFavoritesExpanded = false },
@@ -115,7 +114,6 @@ fun FavoriteLocationDropdown(
                 }
             }
 
-            // תפריט Autocomplete של Google
             if (suggestions.isNotEmpty() && isSuggestionsExpanded) {
                 Card(
                     modifier = Modifier
