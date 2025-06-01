@@ -154,6 +154,7 @@ fun RideFilterDropdownButton(
                     )
                     TextButton(onClick = {
                         selectedCompanyName = ""
+                        showCompanyField = true
                         onClearField(RideFilterFields.COMPANY_NAME)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
@@ -161,7 +162,7 @@ fun RideFilterDropdownButton(
                     IconButton(onClick = {
                         selectedCompanyName = ""
                         showCompanyField = false
-                        onCompanyNameChanged(null)
+                        onClearField(RideFilterFields.COMPANY_NAME)
                         onFiltersChanged(selectedFilters - RideFilterFields.COMPANY_NAME)
                     }) {
                         Icon(
@@ -218,6 +219,7 @@ fun RideFilterDropdownButton(
                     )
                     TextButton(onClick = {
                         selectedUserQuery = ""
+                        showUserField = true
                         onClearField(RideFilterFields.USER_NAME)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
@@ -278,12 +280,15 @@ fun RideFilterDropdownButton(
                         selected = showPhoneField,
                         onClick = { showPhoneField = !showPhoneField },
                         label = {
-                            Text("Phone: ${selectedPhone.takeIf { it.isNotBlank() } ?: ""}",
-                                style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                text = "Phone: ${selectedPhone.takeIf { it.isNotBlank() } ?: ""}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                     )
                     TextButton(onClick = {
                         selectedPhone = ""
+                        showPhoneField = true
                         onClearField(RideFilterFields.PHONE)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
@@ -331,11 +336,21 @@ fun RideFilterDropdownButton(
                         label = {
                             Column {
                                 Text(
-                                    text = "Date: $dateFrom - $dateTo",
-                                    maxLines = 2,
-                                    softWrap = true,
+                                    text = "Date:",
                                     style = MaterialTheme.typography.bodySmall
                                 )
+                                if (dateFrom.isNotBlank()) {
+                                    Text(
+                                        text = "From: $dateFrom",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                if (dateTo.isNotBlank()) {
+                                    Text(
+                                        text = "To:   $dateTo",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
                         }
                     )
@@ -344,6 +359,7 @@ fun RideFilterDropdownButton(
                         onClearField(RideFilterFields.DATE_RANGE)
                         dateFrom = ""
                         dateTo = ""
+                        showDateRange = true
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
@@ -351,6 +367,9 @@ fun RideFilterDropdownButton(
                     IconButton(onClick = {
                         onClearField(RideFilterFields.DATE_RANGE)
                         showDateRange = false
+                        dateFrom = ""
+                        dateTo = ""
+                        onFiltersChanged(selectedFilters - RideFilterFields.DATE_RANGE)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -386,8 +405,7 @@ fun RideFilterDropdownButton(
                             { _, y, m, d ->
                                 val value = "%04d-%02d-%02d".format(y, m + 1, d)
                                 if (dateFrom.isNotBlank()) {
-                                    val sdf =
-                                        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                                     val fromDate = sdf.parse(dateFrom)
                                     val toDate = sdf.parse(value)
                                     if (toDate!!.before(fromDate)) {
@@ -401,6 +419,7 @@ fun RideFilterDropdownButton(
                                 }
                                 dateTo = value
                                 onDateToChanged(value)
+                                showDateRange = false
                             },
                             calendar[Calendar.YEAR],
                             calendar[Calendar.MONTH],
@@ -421,12 +440,19 @@ fun RideFilterDropdownButton(
                         onClick = { showTimeRange = !showTimeRange },
                         label = {
                             Column {
-                                Text(
-                                    text = "Time: $timeFrom - $timeTo",
-                                    maxLines = 2,
-                                    softWrap = true,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                                Text(text = "Time:", style = MaterialTheme.typography.bodySmall)
+                                if (timeFrom.isNotBlank()) {
+                                    Text(
+                                        text = "From: $timeFrom",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                if (timeTo.isNotBlank()) {
+                                    Text(
+                                        text = "To: $timeTo",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
                         }
                     )
@@ -435,13 +461,17 @@ fun RideFilterDropdownButton(
                         onClearField(RideFilterFields.TIME_RANGE)
                         timeFrom = ""
                         timeTo = ""
+                        showTimeRange = true
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
 
                     IconButton(onClick = {
-                        onClearField(RideFilterFields.TIME_RANGE)
+                        timeFrom = ""
+                        timeTo = ""
                         showTimeRange = false
+                        onClearField(RideFilterFields.TIME_RANGE)
+                        onFiltersChanged(selectedFilters - RideFilterFields.TIME_RANGE)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -477,8 +507,7 @@ fun RideFilterDropdownButton(
                             { _, hour, minute ->
                                 val value = "%02d:%02d".format(hour, minute)
                                 if (timeFrom.isNotBlank()) {
-                                    val (fromHour, fromMin) = timeFrom.split(":")
-                                        .map { it.toInt() }
+                                    val (fromHour, fromMin) = timeFrom.split(":").map { it.toInt() }
                                     val fromTotal = fromHour * 60 + fromMin
                                     val toTotal = hour * 60 + minute
                                     if (toTotal < fromTotal) {
@@ -492,6 +521,7 @@ fun RideFilterDropdownButton(
                                 }
                                 timeTo = value
                                 onTimeToChanged(value)
+                                showTimeRange = false
                             },
                             calendar[Calendar.HOUR_OF_DAY],
                             calendar[Calendar.MINUTE],
@@ -524,6 +554,7 @@ fun RideFilterDropdownButton(
                     TextButton(onClick = {
                         selectedDirection = null
                         onClearField(RideFilterFields.DIRECTION)
+                        showDirectionField = true
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
@@ -531,6 +562,7 @@ fun RideFilterDropdownButton(
                         selectedDirection = null
                         showDirectionField = false
                         onClearField(RideFilterFields.DIRECTION)
+                        onFiltersChanged(selectedFilters - RideFilterFields.DIRECTION)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -569,6 +601,7 @@ fun RideFilterDropdownButton(
                     }
                 }
             }
+
         }
     }
 }

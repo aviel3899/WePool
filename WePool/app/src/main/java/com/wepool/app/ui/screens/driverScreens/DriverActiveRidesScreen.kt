@@ -26,17 +26,14 @@ import androidx.navigation.NavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.wepool.app.data.model.enums.ride.RideDirection
-import com.wepool.app.data.model.ride.PickupStop
-import com.wepool.app.data.model.ride.Ride
+import com.wepool.app.data.model.enums.ride.*
+import com.wepool.app.data.model.ride.*
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.RideNavigationServiceController
-import com.wepool.app.ui.screens.components.ActiveRidesFilterCard
-import com.wepool.app.ui.screens.components.BottomNavigationButtons
-import com.wepool.app.ui.screens.components.RideMapDialog
-import com.wepool.app.ui.screens.components.RidePassengerDetailsDialog
-import com.wepool.app.ui.screens.components.filterRides
+import com.wepool.app.ui.screens.adminScreens.rides.RideCard
+import com.wepool.app.ui.screens.components.*
+import com.wepool.app.ui.screens.components.sortFields.ride.RideSortManager
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -65,16 +62,28 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
     var threshold by remember { mutableStateOf(0) }
     var rideForMapDialog by remember { mutableStateOf<Ride?>(null) }
 
-    var showDateRangePicker by remember { mutableStateOf(false) }
-    var showTimeRangePicker by remember { mutableStateOf(false) }
-    var startDate by remember { mutableStateOf("") }
-    var endDate by remember { mutableStateOf("") }
-    var startTime by remember { mutableStateOf("") }
-    var endTime by remember { mutableStateOf("") }
-    var selectedDirection by remember { mutableStateOf<RideDirection?>(null) }
-    var directionMenuExpanded by remember { mutableStateOf(false) }
-    val directionOptions =
-        listOf(RideDirection.TO_HOME to "To Home", RideDirection.TO_WORK to "To Work")
+    val availableFilters = listOf(
+        RideFilterFields.DATE_RANGE,
+        RideFilterFields.TIME_RANGE,
+        RideFilterFields.DIRECTION
+    )
+    val availableSortFields = listOf(
+        RideSortFields.DATE,
+        RideSortFields.DEPARTURE_TIME,
+        RideSortFields.ARRIVAL_TIME
+    )
+
+    var filters by remember { mutableStateOf(RideSearchFilters(sortFields = emptyList())) }
+    var selectedFilters by remember { mutableStateOf(emptyList<RideFilterFields>()) }
+    var selectedSortFields by remember { mutableStateOf<List<RideSortFieldsWithOrder>>(emptyList()) }
+
+    val userMap by produceState<Map<String, User>>(initialValue = emptyMap()) {
+        value = RepositoryProvider.provideUserRepository().getAllUsers().associateBy { it.uid }
+    }
+    val companyNameMap by produceState<Map<String, String>>(initialValue = emptyMap()) {
+        value = RepositoryProvider.provideCompanyRepository().getAllCompanies()
+            .associateBy({ it.companyCode }, { it.companyName })
+    }
 
     fun refreshRides() {
         coroutineScope.launch {
@@ -82,8 +91,19 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 loading = true
                 error = null
                 val allRides = driverRepository.getActiveRidesForDriver(uid)
+                val filtered = allRides.filter {
+                    val matchesDirection =
+                        filters.direction?.let { dir -> it.direction == dir } ?: true
+                    val matchesDateStart = filters.dateFrom?.let { df -> it.date >= df } ?: true
+                    val matchesDateEnd = filters.dateTo?.let { dt -> it.date <= dt } ?: true
+                    val matchesTimeStart =
+                        filters.timeFrom?.let { tf -> (it.departureTime ?: "") >= tf } ?: true
+                    val matchesTimeEnd =
+                        filters.timeTo?.let { tt -> (it.departureTime ?: "") <= tt } ?: true
+                    matchesDirection && matchesDateStart && matchesDateEnd && matchesTimeStart && matchesTimeEnd
+                }
                 rides =
-                    filterRides(allRides, startDate, endDate, startTime, endTime, selectedDirection)
+                    RideSortManager.sortRides(filtered, filters.sortFields, userMap, companyNameMap)
             } catch (e: Exception) {
                 error = "❌Error loading Rides: ${e.message}"
             } finally {
@@ -94,68 +114,6 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
 
     val calendar = remember { Calendar.getInstance() }
 
-    LaunchedEffect(showDateRangePicker) {
-        if (showDateRangePicker) {
-            DatePickerDialog(
-                context,
-                { _, startYear, startMonth, startDay ->
-                    val proposedStart =
-                        String.format("%04d-%02d-%02d", startYear, startMonth + 1, startDay)
-                    DatePickerDialog(
-                        context,
-                        { _, endYear, endMonth, endDay ->
-                            val proposedEnd =
-                                String.format("%04d-%02d-%02d", endYear, endMonth + 1, endDay)
-                            if (proposedEnd >= proposedStart) {
-                                startDate = proposedStart
-                                endDate = proposedEnd
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "❗ End date must be after start date",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                startDate = ""
-                                endDate = ""
-                            }
-                            showDateRangePicker = false
-                        },
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH)
-                    ).show()
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            ).show()
-        }
-    }
-
-    LaunchedEffect(showTimeRangePicker) {
-        if (showTimeRangePicker) {
-            TimePickerDialog(
-                context,
-                { _, hour, minute ->
-                    startTime = String.format("%02d:%02d", hour, minute)
-                    TimePickerDialog(
-                        context,
-                        { _, hour2, minute2 ->
-                            endTime = String.format("%02d:%02d", hour2, minute2)
-                            showTimeRangePicker = false
-                        },
-                        calendar.get(Calendar.HOUR_OF_DAY),
-                        calendar.get(Calendar.MINUTE),
-                        true
-                    ).show()
-                },
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                true
-            ).show()
-        }
-    }
-
     DriverActiveRidesContent(
         uid = uid,
         rides = rides,
@@ -163,32 +121,17 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
         loading = loading,
         error = error,
         navController = navController,
-        startDate = startDate,
-        endDate = endDate,
-        startTime = startTime,
-        endTime = endTime,
-        selectedDirection = selectedDirection,
-        directionMenuExpanded = directionMenuExpanded,
-        directionOptions = directionOptions,
-        showDateRangePicker = { showDateRangePicker = true },
-        showTimeRangePicker = { showTimeRangePicker = true },
-        onClearDateRange = {
-            startDate = ""
-            endDate = ""
+        filters = filters,
+        selectedFilters = selectedFilters,
+        selectedSortFields = selectedSortFields,
+        availableFilters = availableFilters,
+        availableSortFields = availableSortFields,
+        onFiltersChanged = { filters = it },
+        onSelectedFiltersChanged = { selectedFilters = it },
+        onSortFieldsChanged = {
+            selectedSortFields = it
+            filters = filters.copy(sortFields = it)
         },
-        onClearTimeRange = {
-            startTime = ""
-            endTime = ""
-        },
-        onClearDirection = {
-            selectedDirection = null
-        },
-        onDirectionSelected = {
-            selectedDirection = it
-            directionMenuExpanded = false
-        },
-        onDirectionMenuExpand = { directionMenuExpanded = true },
-        onDirectionMenuDismiss = { directionMenuExpanded = false },
         onRefreshClicked = { refreshRides() },
         onStartRideClicked = { ride ->
             coroutineScope.launch {
@@ -214,7 +157,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 if (isActionInProgress) return@launch
                 isActionInProgress = true
                 try {
-                    val rideDateParts = ride.date.split("-").map { it.toInt() } // [dd, MM, yyyy]
+                    val rideDateParts = ride.date.split("-").map { it.toInt() }
                     val rideTimeParts = ride.departureTime!!.split(":").map { it.toInt() }
                     val rideCalendar = Calendar.getInstance().apply {
                         set(Calendar.DAY_OF_MONTH, rideDateParts[0])
@@ -228,7 +171,6 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                     val now = Calendar.getInstance()
                     val diffMillis = rideCalendar.timeInMillis - now.timeInMillis
                     val diffMinutes = diffMillis / (60 * 1000)
-
                     threshold = if (ride.direction == RideDirection.TO_WORK) 60 else 10
                     if (diffMinutes < threshold) {
                         showTooLateDialog = true
@@ -243,7 +185,7 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 }
             }
         },
-        onShowMapClicked = { ride -> rideForMapDialog = ride },
+        onShowMapClicked = { rideForMapDialog = it },
         onPassengerDetailsClicked = { ride ->
             selectedRide = ride
             coroutineScope.launch {
@@ -256,12 +198,19 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                 passengerNames = names
                 showDetailsDialog = true
             }
+        },
+        onCleanAllClicked = {
+            filters = RideSearchFilters(sortFields = emptyList())
+            selectedFilters = emptyList()
+            selectedSortFields = emptyList()
+            rides = emptyList()
+            coroutineScope.launch {
+                kotlinx.coroutines.delay(50)
+            }
         }
     )
 
-    rideForMapDialog?.let { ride ->
-        RideMapDialog(ride = ride, onDismiss = { rideForMapDialog = null })
-    }
+    rideForMapDialog?.let { RideMapDialog(ride = it, onDismiss = { rideForMapDialog = null }) }
 
     RidePassengerDetailsDialog(
         showDialog = showDetailsDialog,
@@ -313,28 +262,21 @@ fun DriverActiveRidesContent(
     loading: Boolean,
     error: String?,
     navController: NavController,
-    startDate: String,
-    endDate: String,
-    startTime: String,
-    endTime: String,
-    selectedDirection: RideDirection?,
-    directionMenuExpanded: Boolean,
-    directionOptions: List<Pair<RideDirection, String>>,
-    showDateRangePicker: () -> Unit,
-    showTimeRangePicker: () -> Unit,
-    onClearDateRange: () -> Unit,
-    onClearTimeRange: () -> Unit,
-    onClearDirection: () -> Unit,
-    onDirectionSelected: (RideDirection) -> Unit,
-    onDirectionMenuExpand: () -> Unit,
-    onDirectionMenuDismiss: () -> Unit,
+    filters: RideSearchFilters,
+    selectedFilters: List<RideFilterFields>,
+    selectedSortFields: List<RideSortFieldsWithOrder>,
+    availableFilters: List<RideFilterFields>,
+    availableSortFields: List<RideSortFields>,
+    onFiltersChanged: (RideSearchFilters) -> Unit,
+    onSelectedFiltersChanged: (List<RideFilterFields>) -> Unit,
+    onSortFieldsChanged: (List<RideSortFieldsWithOrder>) -> Unit,
     onRefreshClicked: () -> Unit,
     onStartRideClicked: (Ride) -> Unit,
     onCancelRideClicked: (Ride) -> Unit,
     onShowMapClicked: (Ride) -> Unit,
-    onPassengerDetailsClicked: (Ride) -> Unit
+    onPassengerDetailsClicked: (Ride) -> Unit,
+    onCleanAllClicked: () -> Unit
 ) {
-
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -353,23 +295,30 @@ fun DriverActiveRidesContent(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                ActiveRidesFilterCard(
-                    startDate = startDate,
-                    endDate = endDate,
-                    startTime = startTime,
-                    endTime = endTime,
-                    selectedDirection = selectedDirection,
-                    directionMenuExpanded = directionMenuExpanded,
-                    directionOptions = directionOptions,
-                    onShowDateRangePicker = showDateRangePicker,
-                    onShowTimeRangePicker = showTimeRangePicker,
-                    onClearDateRange = onClearDateRange,
-                    onClearTimeRange = onClearTimeRange,
-                    onClearDirection = onClearDirection,
-                    onDirectionSelected = onDirectionSelected,
-                    onDirectionMenuExpand = onDirectionMenuExpand,
-                    onDirectionMenuDismiss = onDirectionMenuDismiss,
-                    onApplyFilter = onRefreshClicked
+                ExpandableCard(
+                    filters = filters,
+                    selectedSortFields = selectedSortFields,
+                    onSortFieldsChanged = { onSortFieldsChanged(it.filterIsInstance<RideSortFieldsWithOrder>()) },
+                    availableFilters = availableFilters,
+                    selectedFilters = selectedFilters,
+                    onSelectedFiltersChanged = onSelectedFiltersChanged,
+                    onFiltersChanged = { updated ->
+                        if (updated is RideSearchFilters) {
+                            onFiltersChanged(updated)
+                        }
+                    },
+                    rideAvailableSortFields = availableSortFields,
+                    onSearchClicked = onRefreshClicked,
+                    onCleanAllClicked = onCleanAllClicked,
+                    showCompanyName = false,
+                    showUserName = false,
+                    showDate = true,
+                    showDepartureTime = true,
+                    showArrivalTime = true,
+                    showFilter = true,
+                    showSort = true,
+                    showCleanAllButton = true,
+                    title = "Filter Rides"
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -377,7 +326,7 @@ fun DriverActiveRidesContent(
                 when {
                     loading -> CircularProgressIndicator()
                     error != null -> Text(error, color = MaterialTheme.colorScheme.error)
-                    rides.isEmpty() -> Text("Click 'Apply Filter' to search for active rides.")
+                    rides.isEmpty() -> Text("Click 'Search' to see rides.")
                     else -> {
                         val filteredRides =
                             if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
@@ -387,92 +336,11 @@ fun DriverActiveRidesContent(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             items(filteredRides) { ride ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = MaterialTheme.shapes.medium,
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Text("From: ${ride.startLocation.name}")
-                                        Text("To: ${ride.destination.name}")
-                                        Text("Date: ${ride.date}")
-                                        Text("Departure Time: ${ride.departureTime}")
-                                        Text("Arrival Time: ${ride.arrivalTime}")
-                                        Text("Stops on the way: ${ride.pickupStops.size}")
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        Column(
-                                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            listOf(
-                                                Triple(
-                                                    "Start",
-                                                    Icons.Default.PlayArrow,
-                                                    Color(0xFF2E7D32)
-                                                ) to { onStartRideClicked(ride) },
-                                                Triple(
-                                                    "Cancel",
-                                                    Icons.Default.Cancel,
-                                                    Color(0xFFC62828)
-                                                ) to { onCancelRideClicked(ride) },
-                                                Triple(
-                                                    "Map",
-                                                    Icons.Default.Map,
-                                                    Color(0xFF039BE5)
-                                                ) to { onShowMapClicked(ride) },
-                                                Triple(
-                                                    "Passengers",
-                                                    Icons.Default.Person,
-                                                    Color(0xFFFBC02D)
-                                                ) to { onPassengerDetailsClicked(ride) }
-                                            ).chunked(2).forEach { rowButtons ->
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.spacedBy(
-                                                        16.dp,
-                                                        Alignment.CenterHorizontally
-                                                    )
-                                                ) {
-                                                    rowButtons.forEach { (data, action) ->
-                                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                            OutlinedButton(
-                                                                onClick = action,
-                                                                modifier = Modifier
-                                                                    .width(160.dp)
-                                                                    .height(100.dp),
-                                                                shape = MaterialTheme.shapes.large,
-                                                                border = ButtonDefaults.outlinedButtonBorder(
-                                                                    enabled = true
-                                                                ),
-                                                                colors = ButtonDefaults.outlinedButtonColors(
-                                                                    contentColor = data.third
-                                                                )
-                                                            ) {
-                                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                                    Icon(
-                                                                        imageVector = data.second,
-                                                                        contentDescription = data.first,
-                                                                        tint = data.third,
-                                                                        modifier = Modifier.size(48.dp)
-                                                                    )
-                                                                    Spacer(
-                                                                        modifier = Modifier.height(
-                                                                            4.dp
-                                                                        )
-                                                                    )
-                                                                    Text(
-                                                                        data.first,
-                                                                        style = MaterialTheme.typography.labelSmall
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                RideCard(
+                                    ride = ride,
+                                    selectedUserUid = uid,
+                                    onShowMapClicked = { onShowMapClicked(ride) }
+                                )
                             }
                         }
                     }

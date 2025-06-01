@@ -85,19 +85,43 @@ fun CompanyFilterDropdownButton(
             }
 
             if (CompanyFilterFields.COMPANY_NAME in selectedFilters) {
-                FilterSection(
-                    label = "Company",
-                    value = selectedCompanyName,
-                    visible = showCompanyField,
-                    onShowToggle = { showCompanyField = it },
-                    onClear = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    FilterChip(
+                        selected = showCompanyField,
+                        onClick = { showCompanyField = !showCompanyField },
+                        label = {
+                            Text("Company: $selectedCompanyName", style = MaterialTheme.typography.bodySmall)
+                        }
+                    )
+                    TextButton(onClick = {
                         selectedCompanyName = ""
                         companySuggestions = emptyList()
                         onCompanyNameChanged(null)
-                        onClearField(CompanyFilterFields.COMPANY_NAME)
-                        onFiltersChanged(selectedFilters - CompanyFilterFields.COMPANY_NAME)
+                        showCompanyField = true
+                    }) {
+                        Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
-                )
+                    IconButton(onClick = {
+                        selectedCompanyName = ""
+                        companySuggestions = emptyList()
+                        showCompanyField = false
+                        onCompanyNameChanged(null)
+                        onClearField(CompanyFilterFields.COMPANY_NAME)
+                        if (CompanyFilterFields.COMPANY_NAME in selectedFilters) {
+                            onFiltersChanged(selectedFilters - CompanyFilterFields.COMPANY_NAME)
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Remove",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
 
                 FilterWithTextFieldAndSuggestions(
                     visible = showCompanyField,

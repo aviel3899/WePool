@@ -83,7 +83,12 @@ fun CompanySortDropdownButton(
                                 },
                                 onClick = {
                                     onSortFieldsChanged(
-                                        listOf(CompanySortFieldWithOrder(option, SortOrder.ASCENDING))
+                                        listOf(
+                                            CompanySortFieldWithOrder(
+                                                option,
+                                                SortOrder.ASCENDING
+                                            )
+                                        )
                                     )
                                     expanded = false
                                 }
@@ -113,22 +118,54 @@ fun CompanySortDropdownButton(
                 ) {
                     OutlinedButton(
                         onClick = {
-                            onSortFieldsChanged(listOf(CompanySortFieldWithOrder(selectedField, SortOrder.ASCENDING)))
-                        }
+                            onSortFieldsChanged(
+                                listOf(
+                                    CompanySortFieldWithOrder(
+                                        selectedField,
+                                        SortOrder.ASCENDING
+                                    )
+                                )
+                            )
+                        },
+                        modifier = Modifier
+                            .height(32.dp)
+                            .weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Icon(Icons.Default.ArrowUpward, contentDescription = "Ascending")
+                        Icon(
+                            Icons.Default.ArrowUpward,
+                            contentDescription = "Ascending",
+                            modifier = Modifier.size(16.dp)
+                        )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Ascending")
+                        Text("Asc", style = MaterialTheme.typography.labelSmall)
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     OutlinedButton(
                         onClick = {
-                            onSortFieldsChanged(listOf(CompanySortFieldWithOrder(selectedField, SortOrder.DESCENDING)))
-                        }
+                            onSortFieldsChanged(
+                                listOf(
+                                    CompanySortFieldWithOrder(
+                                        selectedField,
+                                        SortOrder.DESCENDING
+                                    )
+                                )
+                            )
+                        },
+                        modifier = Modifier
+                            .height(32.dp)
+                            .weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Icon(Icons.Default.ArrowDownward, contentDescription = "Descending")
+                        Icon(
+                            Icons.Default.ArrowDownward,
+                            contentDescription = "Descending",
+                            modifier = Modifier.size(16.dp)
+                        )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Descending")
+                        Text("Desc", style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

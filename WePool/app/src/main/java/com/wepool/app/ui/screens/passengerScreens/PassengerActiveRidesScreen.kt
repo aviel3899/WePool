@@ -1,7 +1,5 @@
 package com.wepool.app.ui.screens.passengerScreens
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
@@ -23,11 +21,16 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.enums.ride.RideDirection
+import com.wepool.app.data.model.enums.ride.RideFilterFields
+import com.wepool.app.data.model.enums.ride.RideSortFields
+import com.wepool.app.data.model.enums.ride.RideSortFieldsWithOrder
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideRequest
+import com.wepool.app.data.model.ride.RideSearchFilters
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
-import com.wepool.app.ui.screens.components.*
+import com.wepool.app.ui.screens.components.BottomNavigationButtons
+import com.wepool.app.ui.screens.components.ExpandableCard
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -46,24 +49,13 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    var startDate by remember { mutableStateOf("") }
-    var endDate by remember { mutableStateOf("") }
-    var startTime by remember { mutableStateOf("") }
-    var endTime by remember { mutableStateOf("") }
-    var selectedDirection by remember { mutableStateOf<RideDirection?>(null) }
-    var directionMenuExpanded by remember { mutableStateOf(false) }
-
-    var showDateRangePicker by remember { mutableStateOf(false) }
-    var showTimeRangePicker by remember { mutableStateOf(false) }
+    var filters by remember { mutableStateOf(RideSearchFilters()) }
+    var selectedFilters by remember { mutableStateOf<List<RideFilterFields>>(emptyList()) }
+    var searchTriggered by remember { mutableStateOf(false) }
 
     var showDriverDialog by remember { mutableStateOf(false) }
     var selectedRide by remember { mutableStateOf<Ride?>(null) }
     var selectedDriver by remember { mutableStateOf<User?>(null) }
-
-    val directionOptions =
-        listOf(RideDirection.TO_HOME to "To Home", RideDirection.TO_WORK to "To Work")
-
-    val calendar = remember { Calendar.getInstance() }
 
     fun refreshRides() {
         coroutineScope.launch {
@@ -72,57 +64,19 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
             try {
                 val allRides = passengerRepository.getActiveRidesForPassenger(uid)
                 rides = allRides
-                filteredRides =
-                    filterRides(allRides, startDate, endDate, startTime, endTime, selectedDirection)
+                filteredRides = allRides.filter {
+                    (filters.dateFrom == null || it.date >= filters.dateFrom!!) &&
+                            (filters.dateTo == null || it.date <= filters.dateTo!!) &&
+                            (filters.timeFrom == null || it.departureTime!! >= filters.timeFrom!!) &&
+                            (filters.timeTo == null || it.arrivalTime!! <= filters.timeTo!!) &&
+                            (filters.direction == null || it.direction == filters.direction)
+                }
                 hasFilterBeenApplied = true
             } catch (e: Exception) {
                 error = "❌ Failed to load rides: ${e.message}"
             } finally {
                 loading = false
             }
-        }
-    }
-
-    LaunchedEffect(showDateRangePicker) {
-        if (showDateRangePicker) {
-            DatePickerDialog(
-                context,
-                { _, startYear, startMonth, startDay ->
-                    val proposedStart = "%04d-%02d-%02d".format(startYear, startMonth + 1, startDay)
-                    DatePickerDialog(
-                        context,
-                        { _, endYear, endMonth, endDay ->
-                            val proposedEnd = "%04d-%02d-%02d".format(endYear, endMonth + 1, endDay)
-                            if (proposedEnd >= proposedStart) {
-                                startDate = proposedStart
-                                endDate = proposedEnd
-                            } else {
-                                startDate = ""
-                                endDate = ""
-                            }
-                            showDateRangePicker = false
-                        },
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH)
-                    ).show()
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            ).show()
-        }
-    }
-
-    LaunchedEffect(showTimeRangePicker) {
-        if (showTimeRangePicker) {
-            TimePickerDialog(context, { _, hour, minute ->
-                startTime = "%02d:%02d".format(hour, minute)
-                TimePickerDialog(context, { _, hour2, minute2 ->
-                    endTime = "%02d:%02d".format(hour2, minute2)
-                    showTimeRangePicker = false
-                }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
-            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
         }
     }
 
@@ -140,27 +94,49 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                ActiveRidesFilterCard(
-                    startDate = startDate,
-                    endDate = endDate,
-                    startTime = startTime,
-                    endTime = endTime,
-                    selectedDirection = selectedDirection,
-                    directionMenuExpanded = directionMenuExpanded,
-                    directionOptions = directionOptions,
-                    onShowDateRangePicker = { showDateRangePicker = true },
-                    onShowTimeRangePicker = { showTimeRangePicker = true },
-                    onClearDateRange = { startDate = ""; endDate = "" },
-                    onClearTimeRange = { startTime = ""; endTime = "" },
-                    onClearDirection = { selectedDirection = null },
-                    onDirectionSelected = { selectedDirection = it; directionMenuExpanded = false },
-                    onDirectionMenuExpand = { directionMenuExpanded = true },
-                    onDirectionMenuDismiss = { directionMenuExpanded = false },
-                    onApplyFilter = {
-                        refreshRides()
-                    }
+                ExpandableCard(
+                    filters = filters,
+                    selectedFilters = selectedFilters,
+                    onFiltersChanged = { updated ->
+                        if (updated is RideSearchFilters) filters = updated
+                    },
+                    availableFilters = listOf(
+                        RideFilterFields.DATE_RANGE,
+                        RideFilterFields.TIME_RANGE,
+                        RideFilterFields.DIRECTION
+                    ),
+                    rideAvailableSortFields = listOf(
+                        RideSortFields.DATE,
+                        RideSortFields.DEPARTURE_TIME,
+                        RideSortFields.ARRIVAL_TIME
+                    ),
+                    selectedSortFields = filters.sortFields,
+                    onSortFieldsChanged = {
+                        filters = filters.copy(sortFields = it.filterIsInstance<RideSortFieldsWithOrder>())
+                    },
+                    onSelectedFiltersChanged = {
+                        selectedFilters = it.filterIsInstance<RideFilterFields>()
+                    },
+                    onSearchClicked = { refreshRides() },
+                    onSearchTriggeredChanged = { searchTriggered = false },
+                    onCleanAllClicked = {
+                        filters = RideSearchFilters()
+                        selectedFilters = emptyList()
+                        searchTriggered = true
+                        filteredRides = emptyList()
+
+                        coroutineScope.launch {
+                            searchTriggered = false
+                            kotlinx.coroutines.delay(50)
+                            searchTriggered = true
+                        }
+                    },
+                    showCompanyName = false,
+                    showUserName = false,
+                    showAvailableSeats = false,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -168,14 +144,11 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                 when {
                     loading -> CircularProgressIndicator()
                     error != null -> Text(error!!, color = MaterialTheme.colorScheme.error)
-                    !hasFilterBeenApplied -> Text("Please select filter options and press Apply Filter.")
+                    !hasFilterBeenApplied -> Text("Please select filter options and press Search.")
                     filteredRides.isEmpty() -> Text("No active rides found for selected criteria.")
                     else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(filteredRides.filter { rideId == null || it.rideId == rideId }) { ride ->
-                            val rideRequest by produceState<RideRequest?>(
-                                initialValue = null,
-                                ride
-                            ) {
+                            val rideRequest by produceState<RideRequest?>(initialValue = null, ride) {
                                 value = try {
                                     requestRepository.getRequestsByPassenger(uid)
                                         .firstOrNull { it.rideId == ride.rideId }
@@ -190,17 +163,16 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
 
                             val currentTime = Calendar.getInstance().timeInMillis
                             val rideStartTime = ride.departureTime?.let {
-                                val rideTime = it.split(":")
-                                val rideCalendar = Calendar.getInstance().apply {
-                                    set(Calendar.HOUR_OF_DAY, rideTime[0].toInt())
-                                    set(Calendar.MINUTE, rideTime[1].toInt())
-                                }
-                                rideCalendar.timeInMillis
+                                val (hour, minute) = it.split(":").map(String::toInt)
+                                Calendar.getInstance().apply {
+                                    set(Calendar.HOUR_OF_DAY, hour)
+                                    set(Calendar.MINUTE, minute)
+                                }.timeInMillis
                             }
 
                             val canCancelRide = when (ride.direction) {
-                                RideDirection.TO_WORK -> rideStartTime?.let { currentTime + 3600000 < it } == true // at least 1 hour before TO_WORK
-                                RideDirection.TO_HOME -> rideStartTime?.let { currentTime + 600000 < it } == true // at least 10 minutes before TO_HOME
+                                RideDirection.TO_WORK -> rideStartTime?.let { currentTime + 3600000 < it } == true
+                                RideDirection.TO_HOME -> rideStartTime?.let { currentTime + 600000 < it } == true
                                 else -> false
                             }
 
@@ -221,72 +193,37 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                                     Text("Date: ${ride.date}")
                                     if (ride.direction == RideDirection.TO_WORK) {
                                         Text("Arrival: ${ride.arrivalTime}")
-                                        Text(
-                                            "Pickup: ${
-                                                rideRepository.getPickupTimeForPassenger(
-                                                    ride,
-                                                    uid
-                                                )
-                                            }"
-                                        )
+                                        Text("Pickup: ${rideRepository.getPickupTimeForPassenger(ride, uid)}")
                                     } else {
                                         Text("Departure: ${ride.departureTime}")
-                                        Text(
-                                            "Dropoff: ${
-                                                rideRepository.getDropoffTimeForPassenger(
-                                                    ride,
-                                                    uid
-                                                )
-                                            }"
-                                        )
+                                        Text("Dropoff: ${rideRepository.getDropoffTimeForPassenger(ride, uid)}")
                                     }
 
                                     Spacer(modifier = Modifier.height(12.dp))
 
-                                    Column(
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Button(
                                             onClick = {
                                                 if (canCancelRide) {
                                                     coroutineScope.launch {
                                                         try {
-                                                            rideRepository.removePassengerFromRide(
-                                                                ride.rideId,
-                                                                uid,
-                                                                false
-                                                            )
-                                                            requestRepository.getRequestsByPassenger(
-                                                                uid
-                                                            ).firstOrNull {
+                                                            rideRepository.removePassengerFromRide(ride.rideId, uid, false)
+                                                            requestRepository.getRequestsByPassenger(uid).firstOrNull {
                                                                 it.rideId == ride.rideId && it.status.name == "ACCEPTED"
                                                             }?.let {
-                                                                rideRepository.cancelRideRequest(
-                                                                    ride.rideId,
-                                                                    it.requestId
-                                                                )
+                                                                rideRepository.cancelRideRequest(ride.rideId, it.requestId)
                                                             }
                                                             refreshRides()
                                                         } catch (e: Exception) {
-                                                            Log.e(
-                                                                "PassengerCancel",
-                                                                "Error: ${e.message}"
-                                                            )
+                                                            Log.e("PassengerCancel", "Error: ${e.message}")
                                                         }
                                                     }
                                                 } else {
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Too late to cancel the ride",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
+                                                    Toast.makeText(context, "Too late to cancel the ride", Toast.LENGTH_SHORT).show()
                                                 }
                                             },
                                             modifier = Modifier.fillMaxWidth(),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFFC62828),
-                                                contentColor = Color.White
-                                            )
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828), contentColor = Color.White)
                                         ) {
                                             Text("Cancel Ride")
                                         }
@@ -296,15 +233,11 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                                                 selectedRide = ride
                                                 showDriverDialog = true
                                                 coroutineScope.launch {
-                                                    selectedDriver =
-                                                        userRepository.getUser(ride.driverId)
+                                                    selectedDriver = userRepository.getUser(ride.driverId)
                                                 }
                                             },
                                             modifier = Modifier.fillMaxWidth(),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF039BE5),
-                                                contentColor = Color.White
-                                            )
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF039BE5), contentColor = Color.White)
                                         ) {
                                             Text("Driver Details")
                                         }
@@ -331,53 +264,48 @@ fun PassengerActiveRidesScreen(uid: String, navController: NavController, rideId
                     showHomeButton = true
                 )
             }
-        }
 
-        if (showDriverDialog && selectedDriver != null) {
-            val context = LocalContext.current
-
-            AlertDialog(
-                onDismissRequest = {
-                    showDriverDialog = false
-                    selectedDriver = null
-                },
-                title = { Text("Driver Details") },
-                text = {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text("Name: ${selectedDriver!!.name}")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Email: ${selectedDriver!!.email}")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TextButton(
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_DIAL).apply {
-                                    data = Uri.parse("tel:${selectedDriver!!.phoneNumber}")
-                                }
-                                context.startActivity(intent)
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Call,
-                                contentDescription = "Call Driver",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Call: ${selectedDriver!!.phoneNumber}",
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                },
-                confirmButton = {
-                    Button(onClick = {
+            if (showDriverDialog && selectedDriver != null) {
+                AlertDialog(
+                    onDismissRequest = {
                         showDriverDialog = false
                         selectedDriver = null
-                    }) {
-                        Text("Close")
+                    },
+                    title = { Text("Driver Details") },
+                    text = {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text("Name: ${selectedDriver!!.name}")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Email: ${selectedDriver!!.email}")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TextButton(
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_DIAL).apply {
+                                        data = Uri.parse("tel:${selectedDriver!!.phoneNumber}")
+                                    }
+                                    context.startActivity(intent)
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Call,
+                                    contentDescription = "Call Driver",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Call: ${selectedDriver!!.phoneNumber}", color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(onClick = {
+                            showDriverDialog = false
+                            selectedDriver = null
+                        }) {
+                            Text("Close")
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }

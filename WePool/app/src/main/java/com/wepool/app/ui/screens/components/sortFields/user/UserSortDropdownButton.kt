@@ -23,22 +23,16 @@ import com.wepool.app.data.model.enums.user.UserSortFields
 @Composable
 fun UserSortDropdownButton(
     modifier: Modifier = Modifier,
-    showName: Boolean = true,
-    showEmail: Boolean = true,
-    showPhone: Boolean = true,
-    showCompanyName: Boolean = true,
+    availableSortFields: List<UserSortFields> = listOf(
+        UserSortFields.USER_NAME,
+        UserSortFields.USER_EMAIL,
+        UserSortFields.USER_PHONE
+    ),
     selectedSortFields: List<UserSortFieldWithOrder>,
     onSortFieldsChanged: (List<UserSortFieldWithOrder>) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     var buttonSize by remember { mutableStateOf(IntSize.Zero) }
-
-    val options = listOfNotNull(
-        UserSortFields.USER_NAME.takeIf { showName },
-        UserSortFields.USER_EMAIL.takeIf { showEmail },
-        UserSortFields.USER_PHONE.takeIf { showPhone },
-        UserSortFields.COMPANY_NAME.takeIf { showCompanyName },
-    )
 
     val current = selectedSortFields.firstOrNull()
     val selectedField = current?.field
@@ -77,7 +71,7 @@ fun UserSortDropdownButton(
                         onDismissRequest = { expanded = false },
                         modifier = Modifier.width(with(LocalDensity.current) { buttonSize.width.toDp() })
                     ) {
-                        options.forEach { option ->
+                        availableSortFields.forEach { option ->
                             DropdownMenuItem(
                                 text = {
                                     Text(
@@ -121,22 +115,54 @@ fun UserSortDropdownButton(
                 ) {
                     OutlinedButton(
                         onClick = {
-                            onSortFieldsChanged(listOf(UserSortFieldWithOrder(selectedField, SortOrder.ASCENDING)))
-                        }
+                            onSortFieldsChanged(
+                                listOf(
+                                    UserSortFieldWithOrder(
+                                        selectedField,
+                                        SortOrder.ASCENDING
+                                    )
+                                )
+                            )
+                        },
+                        modifier = Modifier
+                            .height(32.dp)
+                            .weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Icon(Icons.Default.ArrowUpward, contentDescription = "Ascending")
+                        Icon(
+                            Icons.Default.ArrowUpward,
+                            contentDescription = "Ascending",
+                            modifier = Modifier.size(16.dp)
+                        )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Ascending")
+                        Text("Asc", style = MaterialTheme.typography.labelSmall)
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     OutlinedButton(
                         onClick = {
-                            onSortFieldsChanged(listOf(UserSortFieldWithOrder(selectedField, SortOrder.DESCENDING)))
-                        }
+                            onSortFieldsChanged(
+                                listOf(
+                                    UserSortFieldWithOrder(
+                                        selectedField,
+                                        SortOrder.DESCENDING
+                                    )
+                                )
+                            )
+                        },
+                        modifier = Modifier
+                            .height(32.dp)
+                            .weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Icon(Icons.Default.ArrowDownward, contentDescription = "Descending")
+                        Icon(
+                            Icons.Default.ArrowDownward,
+                            contentDescription = "Descending",
+                            modifier = Modifier.size(16.dp)
+                        )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Descending")
+                        Text("Desc", style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

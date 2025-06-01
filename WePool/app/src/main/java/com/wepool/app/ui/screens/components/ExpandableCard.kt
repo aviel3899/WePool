@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.wepool.app.data.model.enums.ride.RideFilterFields
 import com.wepool.app.data.model.enums.ride.RideSortFieldsWithOrder
+import com.wepool.app.data.model.enums.ride.RideSortFields
 import com.wepool.app.data.model.enums.user.UserFilterFields
 import com.wepool.app.data.model.enums.user.UserSortFieldWithOrder
 import com.wepool.app.data.model.enums.company.CompanyFilterFields
@@ -23,6 +24,8 @@ import com.wepool.app.data.model.enums.company.CompanySortFieldWithOrder
 import com.wepool.app.data.model.ride.RideSearchFilters
 import com.wepool.app.data.model.users.UserSearchFilters
 import com.wepool.app.data.model.company.CompanySearchFilters
+import com.wepool.app.data.model.enums.user.UserSortFields
+import com.wepool.app.data.model.users.RoleOnlyFilters
 import com.wepool.app.data.model.users.User
 import com.wepool.app.ui.screens.components.filterFields.RideFilterDropdownButton
 import com.wepool.app.ui.screens.components.filterFields.UserFilterDropdownButton
@@ -60,6 +63,8 @@ fun <T : Enum<T>> ExpandableCard(
     limitUserSuggestionsToCompany: Boolean = false,
     ridesInCompanyOnly: Boolean = false,
     companyCode: String? = null,
+    rideAvailableSortFields: List<RideSortFields> = RideSortFields.values().toList(),
+    userAvailableSortFields: List<UserSortFields> = UserSortFields.values().toList(),
     additionalContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -93,6 +98,7 @@ fun <T : Enum<T>> ExpandableCard(
                     )
                 }
 
+                @Suppress("UNCHECKED_CAST")
                 if (expanded) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
 
@@ -152,12 +158,16 @@ fun <T : Enum<T>> ExpandableCard(
                                     onIsActiveChanged = {
                                         onFiltersChanged(filters.copy(isActiveUser = it))
                                     },
+                                    onRoleChanged = { role ->
+                                        onFiltersChanged(filters.copy(role = role))
+                                    },
                                     onClearField = { field ->
                                         val updated = when (field) {
                                             UserFilterFields.USER_NAME -> filters.copy(nameOrEmailOrPhone = null)
                                             UserFilterFields.COMPANY_NAME -> filters.copy(companyCode = null)
                                             UserFilterFields.ACTIVE_USER -> filters.copy(isActiveUser = null)
                                             UserFilterFields.PHONE -> filters.copy(nameOrEmailOrPhone = null)
+                                            UserFilterFields.USER_ROLE -> filters.copy(role = null)
                                         }
                                         onFiltersChanged(updated)
                                     },
@@ -165,6 +175,31 @@ fun <T : Enum<T>> ExpandableCard(
                                     usersInCompany = usersInCompany,
                                     filters = filters
                                 )
+
+                                is RoleOnlyFilters -> {
+                                    val tempFilters = UserSearchFilters(role = filters.role)
+                                    UserFilterDropdownButton(
+                                        availableFilters = availableFilters.filterIsInstance<UserFilterFields>(),
+                                        selectedFilters = selectedFilters.filterIsInstance<UserFilterFields>(),
+                                        onFiltersChanged = { onSelectedFiltersChanged(it as List<T>) },
+                                        onQueryChanged = {},
+                                        onCompanyCodeChanged = {},
+                                        onIsActiveChanged = {},
+                                        onRoleChanged = { role ->
+                                            onFiltersChanged(RoleOnlyFilters(role = role))
+                                        },
+                                        onClearField = { field ->
+                                            val updated = when (field) {
+                                                UserFilterFields.USER_ROLE -> RoleOnlyFilters(role = null)
+                                                else -> filters
+                                            }
+                                            onFiltersChanged(updated)
+                                        },
+                                        limitUserSuggestionsToCompany = false,
+                                        usersInCompany = emptyList(),
+                                        filters = tempFilters
+                                    )
+                                }
 
                                 is CompanySearchFilters -> CompanyFilterDropdownButton(
                                     availableFilters = availableFilters.filterIsInstance<CompanyFilterFields>(),
@@ -187,12 +222,20 @@ fun <T : Enum<T>> ExpandableCard(
                             when (filters) {
                                 is RideSearchFilters -> RideSortDropdownButton(
                                     selectedSortFields = selectedSortFields.filterIsInstance<RideSortFieldsWithOrder>(),
-                                    onSortFieldsChanged = onSortFieldsChanged
+                                    onSortFieldsChanged = onSortFieldsChanged,
+                                    availableSortFields = rideAvailableSortFields
                                 )
 
                                 is UserSearchFilters -> UserSortDropdownButton(
                                     selectedSortFields = selectedSortFields.filterIsInstance<UserSortFieldWithOrder>(),
-                                    onSortFieldsChanged = onSortFieldsChanged
+                                    onSortFieldsChanged = onSortFieldsChanged,
+                                    availableSortFields = userAvailableSortFields
+                                )
+
+                                is RoleOnlyFilters -> RideSortDropdownButton(
+                                    selectedSortFields = selectedSortFields.filterIsInstance<RideSortFieldsWithOrder>(),
+                                    onSortFieldsChanged = onSortFieldsChanged,
+                                    availableSortFields = rideAvailableSortFields
                                 )
 
                                 is CompanySearchFilters -> CompanySortDropdownButton(
@@ -235,10 +278,16 @@ fun <T : Enum<T>> ExpandableCard(
                                                 nameOrEmailOrPhone = null,
                                                 companyCode = null,
                                                 isActiveUser = null,
-                                                sortFields = emptyList()
+                                                sortFields = emptyList(),
+                                                role = null
                                             )
                                         )
                                         onSortFieldsChanged(emptyList<UserSortFieldWithOrder>())
+                                    }
+
+                                    is RoleOnlyFilters -> {
+                                        onFiltersChanged(RoleOnlyFilters())
+                                        onSortFieldsChanged(emptyList<RideSortFieldsWithOrder>())
                                     }
 
                                     is CompanySearchFilters -> {

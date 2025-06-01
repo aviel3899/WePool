@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.R
+import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import kotlinx.coroutines.launch
@@ -26,14 +27,20 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
     val context = LocalContext.current
     val userRepository = RepositoryProvider.provideUserRepository()
     val companyRepository: ICompanyRepository = RepositoryProvider.provideCompanyRepository()
+    val mapsService = RepositoryProvider.mapsService
     val coroutineScope = rememberCoroutineScope()
 
     var showDialog by remember { mutableStateOf(false) }
+    var showLocationDialog by remember { mutableStateOf(false) }
     var companyCode by remember { mutableStateOf<String?>(null) }
     var companyName by remember { mutableStateOf<String?>(null) }
+    var companyLocation by remember { mutableStateOf<LocationData?>(null) }
     var newCompanyName by remember { mutableStateOf(TextFieldValue("")) }
+    var newLocationAddress by remember { mutableStateOf("") }
+    var locationSuggestions by remember { mutableStateOf(emptyList<String>()) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var showCodeDialog by remember { mutableStateOf(false) } // Track Show Code dialog state
+    var showCodeDialog by remember { mutableStateOf(false) }
+    var companyId by remember { mutableStateOf<String?>(null) }
 
     // Fetch the company details immediately when the screen is shown
     LaunchedEffect(uid) {
@@ -42,6 +49,8 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
             companyCode = user.companyCode
             companyRepository.getCompanyByCode(user.companyCode)?.let {
                 companyName = it.companyName
+                companyLocation = it.location
+                companyId = it.companyId
             }
         } else {
             Toast.makeText(
@@ -62,14 +71,13 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Show Code button
                 Column(
                     modifier = Modifier.width(120.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     OutlinedButton(
                         onClick = {
-                            showCodeDialog = true // Show the company code dialog
+                            showCodeDialog = true
                         },
                         modifier = Modifier.size(120.dp),
                         shape = MaterialTheme.shapes.medium,
@@ -94,18 +102,16 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Two buttons in a row: Update Location + Update Name
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Update Location button
                     Column(
                         modifier = Modifier.width(120.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         OutlinedButton(
-                            onClick = { /* Handle update location */ },
+                            onClick = { showLocationDialog = true },
                             modifier = Modifier.size(120.dp),
                             shape = MaterialTheme.shapes.medium,
                             border = ButtonDefaults.outlinedButtonBorder(enabled = true),
@@ -127,7 +133,6 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
                         )
                     }
 
-                    // Update Name button
                     Column(
                         modifier = Modifier.width(120.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -174,7 +179,6 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
             }
         }
 
-        // Show Company Code Dialog
         if (showCodeDialog) {
             AlertDialog(
                 onDismissRequest = { showCodeDialog = false },
@@ -205,7 +209,6 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
             )
         }
 
-        // Update Name Dialog
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
@@ -219,7 +222,6 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
                 },
                 text = {
                     Column {
-                        // Display the current company name
                         Text(
                             text = "Current Name: ${companyName ?: "N/A"}",
                             style = MaterialTheme.typography.bodyLarge,
@@ -227,7 +229,6 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
                         )
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Input for the new company name
                         OutlinedTextField(
                             value = newCompanyName,
                             onValueChange = { newCompanyName = it },
@@ -235,7 +236,6 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        // Error message if the name is blank
                         errorMessage?.let {
                             Text(
                                 text = it,
@@ -249,16 +249,13 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
                 confirmButton = {
                     Button(
                         onClick = {
-                            // Validate the new name
                             if (newCompanyName.text.isBlank()) {
                                 errorMessage = "Company name cannot be blank."
                             } else {
                                 errorMessage = null
-                                // Call the repository method to update the company name
                                 coroutineScope.launch {
                                     companyCode?.let { code ->
                                         companyRepository.updateCompanyName(code, newCompanyName.text)
-                                        // Show success toast after updating company name
                                         Toast.makeText(
                                             context,
                                             "✅ Company name updated successfully!",
@@ -278,6 +275,83 @@ fun HRManageCompanyScreen(uid: String, navController: NavController) {
                 dismissButton = {
                     TextButton(
                         onClick = { showDialog = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Close", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            )
+        }
+
+        if (showLocationDialog) {
+            AlertDialog(
+                onDismissRequest = { showLocationDialog = false },
+                title = {
+                    Text(
+                        text = "Update Company Location",
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Current Location: ${companyLocation?.name ?: "N/A"}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = newLocationAddress,
+                            onValueChange = {
+                                newLocationAddress = it
+                                coroutineScope.launch {
+                                    locationSuggestions = mapsService.getAddressSuggestions(it)
+                                }
+                            },
+                            label = { Text("New Location Address") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        locationSuggestions.forEach { suggestion ->
+                            TextButton(onClick = {
+                                newLocationAddress = suggestion
+                                locationSuggestions = emptyList()
+                            }) {
+                                Text(suggestion, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    if (!newLocationAddress.isNullOrBlank() && companyId != null) {
+                                        companyRepository.updateLocation(companyId!!, newLocationAddress)
+                                        Toast.makeText(
+                                            context,
+                                            "✅ Location updated successfully!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        Toast.makeText(context, "Invalid location.", Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Error updating location.", Toast.LENGTH_SHORT).show()
+                                }
+                                showLocationDialog = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Save")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showLocationDialog = false },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Close", color = MaterialTheme.colorScheme.error)

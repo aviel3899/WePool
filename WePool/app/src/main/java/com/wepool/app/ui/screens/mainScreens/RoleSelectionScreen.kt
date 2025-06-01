@@ -164,6 +164,7 @@ fun RoleButton(role: UserRole, uid: String, navController: NavController) {
         UserRole.PASSENGER -> R.drawable.seat_belt_svgrepo_com
         UserRole.HR_MANAGER -> R.drawable.hr_manager_svgrepo_com
         UserRole.ADMIN -> R.drawable.admin_svgrepo_com
+        UserRole.All -> null
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -192,6 +193,7 @@ fun RoleButton(role: UserRole, uid: String, navController: NavController) {
 
                             UserRole.HR_MANAGER -> navController.navigate("hrManagerMenu/$uid")
                             UserRole.ADMIN -> navController.navigate("adminMenu/$uid")
+                            UserRole.All -> {}
                         }
                     }
                 },
@@ -200,7 +202,7 @@ fun RoleButton(role: UserRole, uid: String, navController: NavController) {
                 border = ButtonDefaults.outlinedButtonBorder(enabled = true)
             ) {
                 Icon(
-                    painter = painterResource(id = iconRes),
+                    painter = painterResource(id = iconRes!!),
                     contentDescription = "$role Icon",
                     tint = Color.Unspecified,
                     modifier = Modifier.size(72.dp)

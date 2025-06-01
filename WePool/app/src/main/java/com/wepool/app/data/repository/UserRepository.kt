@@ -69,6 +69,9 @@ class UserRepository(
                     UserRole.ADMIN -> {
                         Log.d("Firestore", "ℹ Admin role detected for $uid – no delete action taken.")
                     }
+                    UserRole.All -> {
+                        Log.d("Firestore", "ℹ Skipped deleting ALL pseudo-role for $uid.")
+                    }
                 }
             }
             usersCollection.document(uid).delete().await()

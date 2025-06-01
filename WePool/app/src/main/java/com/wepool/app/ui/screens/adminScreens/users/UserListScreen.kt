@@ -170,7 +170,7 @@ fun UserListScreen(uid: String, navController: NavController) {
                         )
 
                         !searchTriggered -> Text(
-                            "Please enter a search and press Search.",
+                            "Please enter filters and press Search.",
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
 

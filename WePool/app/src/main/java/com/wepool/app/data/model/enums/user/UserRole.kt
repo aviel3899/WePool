@@ -7,5 +7,6 @@ enum class UserRole {
     ADMIN,
     DRIVER,
     PASSENGER,
-    HR_MANAGER
+    HR_MANAGER,
+    All
 }

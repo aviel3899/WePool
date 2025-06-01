@@ -1,5 +1,6 @@
 package com.wepool.app.ui.screens.hrManagerScreens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -16,6 +18,7 @@ import com.wepool.app.data.model.enums.user.UserSortFieldWithOrder
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.model.users.UserSearchFilters
 import com.wepool.app.data.model.company.Company
+import com.wepool.app.data.model.enums.user.UserSortFields
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.components.ExpandableCard
@@ -25,6 +28,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HRManageEmployeesScreen(uid: String, navController: NavController) {
+    val context = LocalContext.current
+
     val userRepository = RepositoryProvider.provideUserRepository()
     val companyRepository = RepositoryProvider.provideCompanyRepository()
     val coroutineScope = rememberCoroutineScope()
@@ -51,12 +56,16 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
                             user.phoneNumber.contains(query)
                 } else true
 
-            matchesUser
+            val matchesStatus = filters.isActiveUser == null || user.active == filters.isActiveUser
+
+            matchesUser && matchesStatus
         }
+
+        val filteredSortFields = filters.sortFields.filter { it.field != UserSortFields.COMPANY_NAME }
 
         filteredUsers = UserSortManager.sortUsers(
             filtered,
-            filters.sortFields,
+            filteredSortFields,
             emptyMap()
         )
     }
@@ -82,13 +91,23 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
                 ExpandableCard(
                     title = "Search Employees",
                     filters = filters,
-                    selectedSortFields = filters.sortFields,
+                    selectedSortFields = filters.sortFields.filter { it.field != UserSortFields.COMPANY_NAME },
                     onSortFieldsChanged = { sortFields ->
-                        filters = filters.copy(sortFields = sortFields.filterIsInstance<UserSortFieldWithOrder>())
+                        filters = filters.copy(
+                            sortFields = sortFields
+                                .filterIsInstance<UserSortFieldWithOrder>()
+                                .filter { it.field != UserSortFields.COMPANY_NAME }
+                        )
                     },
                     availableFilters = listOf(
                         UserFilterFields.USER_NAME,
-                        UserFilterFields.PHONE
+                        UserFilterFields.PHONE,
+                        UserFilterFields.ACTIVE_USER
+                    ),
+                    userAvailableSortFields = listOf(
+                        UserSortFields.USER_NAME,
+                        UserSortFields.USER_EMAIL,
+                        UserSortFields.USER_PHONE
                     ),
                     selectedFilters = selectedFilters,
                     onSelectedFiltersChanged = { selectedFilters = it.filterIsInstance<UserFilterFields>() },
@@ -98,6 +117,21 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
                         }
                     },
                     onSearchClicked = {
+                        val query = filters.nameOrEmailOrPhone.orEmpty().trim()
+
+                        val isNameOrPhoneSelected = selectedFilters.contains(UserFilterFields.USER_NAME) || selectedFilters.contains(UserFilterFields.PHONE)
+                        val isActiveSelected = selectedFilters.contains(UserFilterFields.ACTIVE_USER)
+
+                        if (isNameOrPhoneSelected && query.isBlank()) {
+                            Toast.makeText(context, "Please enter a name, email, or phone number to search.", Toast.LENGTH_SHORT).show()
+                            return@ExpandableCard
+                        }
+
+                        if (isActiveSelected && filters.isActiveUser == null) {
+                            Toast.makeText(context, "Please select a user status to search.", Toast.LENGTH_SHORT).show()
+                            return@ExpandableCard
+                        }
+
                         searchTriggered = true
                         applySearch(users)
                     },
@@ -132,7 +166,7 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
-                        !searchTriggered -> Text("Please enter a search and press Search.", modifier = Modifier.align(Alignment.CenterHorizontally))
+                        !searchTriggered -> Text("Please enter filters and press Search.", modifier = Modifier.align(Alignment.CenterHorizontally))
                         filteredUsers.isEmpty() -> Text("No employees found.", modifier = Modifier.align(Alignment.CenterHorizontally))
                         else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
                             items(filteredUsers) { user ->
