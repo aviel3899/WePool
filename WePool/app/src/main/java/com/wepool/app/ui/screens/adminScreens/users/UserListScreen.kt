@@ -11,14 +11,17 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.wepool.app.data.model.enums.FilterFields
-import com.wepool.app.data.model.enums.SortFields
-import com.wepool.app.data.model.ride.RideSearchFilters
+import com.wepool.app.data.model.enums.user.UserFilterFields
+import com.wepool.app.data.model.enums.user.UserSortFields
+import com.wepool.app.data.model.enums.SortOrder
 import com.wepool.app.data.model.users.User
+import com.wepool.app.data.model.users.UserSearchFilters
+import com.wepool.app.data.model.company.Company
+import com.wepool.app.data.model.enums.user.UserSortFieldWithOrder
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
-import com.wepool.app.ui.screens.components.ExpandableSortCard
-import com.wepool.app.data.model.company.Company
+import com.wepool.app.ui.screens.components.ExpandableCard
+import com.wepool.app.ui.screens.components.sortFields.user.UserSortManager
 import kotlinx.coroutines.launch
 
 @Composable
@@ -31,8 +34,14 @@ fun UserListScreen(uid: String, navController: NavController) {
     var filteredUsers by remember { mutableStateOf<List<User>>(emptyList()) }
     var companies by remember { mutableStateOf<List<Company>>(emptyList()) }
     var companyMap by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-    var filters by remember { mutableStateOf(RideSearchFilters()) }
-    var selectedFilters by remember { mutableStateOf<List<FilterFields>>(emptyList()) }
+    var filters by remember {
+        mutableStateOf(
+            UserSearchFilters(
+                sortFields = emptyList()
+            )
+        )
+    }
+    var selectedFilters by remember { mutableStateOf<List<UserFilterFields>>(emptyList()) }
     var searchTriggered by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -54,61 +63,72 @@ fun UserListScreen(uid: String, navController: NavController) {
     }
 
     fun applyUserSearch(allUsers: List<User>) {
-        val query = filters.userNameOrEmail.orEmpty().trim()
-        val companyQuery = filters.companyName.orEmpty().trim()
+        val query = filters.nameOrEmailOrPhone.orEmpty().trim()
+        val companyQuery = filters.companyCode.orEmpty().trim()
 
-        val filtered = if (selectedFilters.isEmpty()) {
-            allUsers
-        } else {
-            allUsers.filter { user ->
-                val matchesQuery =
-                    if (FilterFields.USER_NAME !in selectedFilters && FilterFields.PHONE !in selectedFilters) {
-                        true
-                    } else {
-                        query.isBlank() ||
-                                user.name.contains(query, ignoreCase = true) ||
-                                user.email.contains(query, ignoreCase = true) ||
-                                "${user.name} (${user.email})".contains(query, ignoreCase = true) ||
-                                user.phoneNumber.contains(query)
-                    }
+        val filtered = allUsers.filter { user ->
+            val matchesQuery =
+                if (UserFilterFields.USER_NAME !in selectedFilters && UserFilterFields.PHONE !in selectedFilters) {
+                    true
+                } else {
+                    query.isBlank() ||
+                            user.name.contains(query, ignoreCase = true) ||
+                            user.email.contains(query, ignoreCase = true) ||
+                            "${user.name} (${user.email})".contains(query, ignoreCase = true) ||
+                            user.phoneNumber.contains(query)
+                }
 
-                val matchesCompany =
-                    if (FilterFields.COMPANY_NAME !in selectedFilters) {
-                        true
-                    } else {
-                        val companyName = companyMap[user.companyCode].orEmpty()
-                        companyQuery.isBlank() || companyName.contains(companyQuery, ignoreCase = true)
-                    }
+            val matchesCompany =
+                if (UserFilterFields.COMPANY_NAME !in selectedFilters) {
+                    true
+                } else {
+                    val companyName = companyMap[user.companyCode].orEmpty()
+                    companyQuery.isBlank() || companyName.contains(companyQuery, ignoreCase = true)
+                }
 
-                matchesQuery && matchesCompany
-            }
+            val matchesStatus =
+                filters.isActiveUser == null || user.active == filters.isActiveUser
+
+            matchesQuery && matchesCompany && matchesStatus
         }
 
-        filteredUsers = when (filters.sortFields.firstOrNull()) {
-            SortFields.USER -> filtered.sortedByDescending { it.name }
-            SortFields.COMPANY_NAME -> filtered.sortedByDescending {
-                companyMap[it.companyCode].orEmpty()
-            }
-            else -> filtered
-        }
+        filteredUsers = UserSortManager.sortUsers(
+            filtered,
+            filters.sortFields,
+            companyMap
+        )
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().padding(bottom = 96.dp)) {
-                ExpandableSortCard(
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .fillMaxSize()
+                    .padding(bottom = 96.dp)
+            ) {
+                ExpandableCard(
                     title = "Search User",
                     filters = filters,
                     selectedSortFields = filters.sortFields,
-                    onSortFieldsChanged = { filters = filters.copy(sortFields = it) },
+                    onSortFieldsChanged = { sortFields ->
+                        filters = filters.copy(sortFields = sortFields.filterIsInstance<UserSortFieldWithOrder>())
+                    },
                     availableFilters = listOf(
-                        FilterFields.USER_NAME,
-                        FilterFields.COMPANY_NAME,
-                        FilterFields.PHONE
+                        UserFilterFields.USER_NAME,
+                        UserFilterFields.COMPANY_NAME,
+                        UserFilterFields.PHONE,
+                        UserFilterFields.ACTIVE_USER
                     ),
                     selectedFilters = selectedFilters,
-                    onSelectedFiltersChanged = { selectedFilters = it },
-                    onFiltersChanged = { filters = it },
+                    onSelectedFiltersChanged = {
+                        selectedFilters = it.filterIsInstance<UserFilterFields>()
+                    },
+                    onFiltersChanged = { updated ->
+                        if (updated is UserSearchFilters) {
+                            filters = updated
+                        }
+                    },
                     onSearchClicked = {
                         searchTriggered = true
                         applyUserSearch(users)
@@ -126,7 +146,7 @@ fun UserListScreen(uid: String, navController: NavController) {
                     limitUserSuggestionsToCompany = false,
                     onSearchTriggeredChanged = { searchTriggered = false },
                     onCleanAllClicked = {
-                        filters = RideSearchFilters()
+                        filters = UserSearchFilters()
                         selectedFilters = emptyList()
                         filteredUsers = emptyList()
                         searchTriggered = false
@@ -136,12 +156,29 @@ fun UserListScreen(uid: String, navController: NavController) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Column(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)
+                ) {
                     when {
                         loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                        error != null -> Text(text = error ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.CenterHorizontally))
-                        !searchTriggered -> Text("Please enter a search and press Search.", modifier = Modifier.align(Alignment.CenterHorizontally))
-                        filteredUsers.isEmpty() -> Text("No users found.", modifier = Modifier.align(Alignment.CenterHorizontally))
+                        error != null -> Text(
+                            text = error ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+
+                        !searchTriggered -> Text(
+                            "Please enter a search and press Search.",
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+
+                        filteredUsers.isEmpty() -> Text(
+                            "No users found.",
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+
                         else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
                             items(filteredUsers) { user ->
                                 UserCard(

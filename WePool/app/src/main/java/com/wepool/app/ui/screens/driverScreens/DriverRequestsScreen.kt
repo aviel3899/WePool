@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.enums.RequestStatus
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideCandidate

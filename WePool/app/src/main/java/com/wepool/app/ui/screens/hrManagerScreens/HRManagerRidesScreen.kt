@@ -9,16 +9,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.wepool.app.data.model.enums.FilterFields
+import com.wepool.app.data.model.enums.ride.RideFilterFields
+import com.wepool.app.data.model.enums.ride.RideSortFieldsWithOrder
+import com.wepool.app.data.model.enums.ride.RideSortFields
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideSearchFilters
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
-import com.wepool.app.ui.screens.components.ExpandableSortCard
+import com.wepool.app.ui.screens.components.ExpandableCard
 import com.wepool.app.ui.screens.components.RideDataProvider
 import com.wepool.app.ui.screens.components.RideMapDialog
-import com.wepool.app.ui.screens.components.sortFields.RideSortManager
+import com.wepool.app.ui.screens.components.sortFields.ride.RideSortManager
 import com.wepool.app.ui.screens.adminScreens.rides.RideCard
 import kotlinx.coroutines.launch
 
@@ -50,13 +52,13 @@ fun HRManagerRidesScreen(
     var filters by remember { mutableStateOf(initialFilters) }
     var selectedFilters by remember {
         mutableStateOf(
-            if (filterByUid) listOf(FilterFields.USER_NAME)
+            if (filterByUid) listOf(RideFilterFields.USER_NAME)
             else emptyList()
         )
     }
     var searchTriggered by remember { mutableStateOf(filterByUid) }
 
-    val availableFilters = listOf(FilterFields.USER_NAME, FilterFields.DATE_RANGE, FilterFields.TIME_RANGE, FilterFields.DIRECTION)
+    val availableFilters = RideFilterFields.values().toList()
 
     var companyCode by remember { mutableStateOf("") }
 
@@ -78,19 +80,12 @@ fun HRManagerRidesScreen(
                 matchedUser?.let { user ->
                     filters = RideSearchFilters(userNameOrEmail = "${user.name} (${user.email})")
                 }
-                selectedFilters = listOf(FilterFields.USER_NAME)
+                selectedFilters = listOf(RideFilterFields.USER_NAME)
 
-                val filtered = allRides.filter { ride ->
-                    val driverMatch = ride.driverId == uid
-                    val passengerMatch = ride.pickupStops.any { it.passengerId == uid }
-                    driverMatch || passengerMatch
+                val filtered = allRides.filter {
+                    it.driverId == uid || it.pickupStops.any { stop -> stop.passengerId == uid }
                 }
-                filteredRides = RideSortManager.sortRides(
-                    filtered,
-                    filters.sortFields,
-                    users.associateBy { it.uid },
-                    emptyMap()
-                )
+                filteredRides = filtered
             }
 
             if (!filterByUid) {
@@ -99,28 +94,38 @@ fun HRManagerRidesScreen(
         }
     }
 
-    RideDataProvider { userMap, _ ->
+    RideDataProvider { userMap, companyNameMap ->
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = 96.dp)
             ) {
-                ExpandableSortCard(
+                ExpandableCard(
                     selectedSortFields = filters.sortFields,
                     onSortFieldsChanged = {
-                        filters = filters.copy(sortFields = it)
+                        filters = filters.copy(sortFields = it.filterIsInstance<RideSortFieldsWithOrder>())
                     },
                     availableFilters = availableFilters,
                     selectedFilters = selectedFilters,
-                    onSelectedFiltersChanged = { selectedFilters = it },
+                    onSelectedFiltersChanged = {
+                        selectedFilters = it.filterIsInstance<RideFilterFields>()
+                    },
                     filters = filters,
-                    onFiltersChanged = { updated -> filters = updated },
+                    onFiltersChanged = { updated ->
+                        if (updated is RideSearchFilters) {
+                            filters = updated
+                        }
+                    },
                     onSearchClicked = {
                         searchTriggered = true
 
                         val filtered = allRides.filter { ride ->
-                            val matchesUser = if (FilterFields.USER_NAME !in selectedFilters) {
+                            val matchesCompany =
+                                filters.companyName?.let { it == companyNameMap[ride.companyCode] }
+                                    ?: true
+
+                            val matchesUser = if (RideFilterFields.USER_NAME !in selectedFilters) {
                                 true
                             } else {
                                 filters.userNameOrEmail?.let { query ->
@@ -148,7 +153,7 @@ fun HRManagerRidesScreen(
                             val matchesTimeStart = filters.timeFrom?.takeIf { it.isNotBlank() }?.let { ride.departureTime ?: "" >= it } ?: true
                             val matchesTimeEnd = filters.timeTo?.takeIf { it.isNotBlank() }?.let { ride.departureTime ?: "" <= it } ?: true
 
-                            matchesUser && matchesDirection &&
+                            matchesCompany && matchesUser && matchesDirection &&
                                     matchesDateStart && matchesDateEnd &&
                                     matchesTimeStart && matchesTimeEnd
                         }
@@ -157,7 +162,7 @@ fun HRManagerRidesScreen(
                             filtered,
                             filters.sortFields,
                             userMap,
-                            emptyMap()
+                            companyNameMap
                         )
                     },
                     showSort = true,

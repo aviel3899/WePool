@@ -1,6 +1,6 @@
-package com.wepool.app.data.model.enums
+package com.wepool.app.data.model.enums.ride
 
-enum class FilterFields(val displayName: String) {
+enum class RideFilterFields(val displayName: String) {
     COMPANY_NAME("Company Name"),
     USER_NAME("User Name"),
     PHONE("Phone"),

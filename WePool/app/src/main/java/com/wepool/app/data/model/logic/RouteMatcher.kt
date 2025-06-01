@@ -3,8 +3,8 @@ package com.wepool.app.data.model.logic
 import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.SphericalUtil
-import com.wepool.app.data.model.enums.UserRole
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.user.UserRole
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.remote.IGoogleMapsService
 import com.wepool.app.data.repository.interfaces.IRideRepository

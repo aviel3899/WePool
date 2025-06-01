@@ -4,7 +4,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.PolyUtil
 import com.google.maps.android.SphericalUtil
 import com.wepool.app.data.model.users.User
-import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.user.UserRole
 
 object PolylineDecoder {
 

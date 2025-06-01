@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideRequest
 import com.wepool.app.data.model.users.User

@@ -6,7 +6,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.messaging.FirebaseMessaging
 import com.wepool.app.data.model.common.LocationData
-import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.user.UserRole
 import com.wepool.app.data.repository.interfaces.IUserRepository
 import com.wepool.app.data.repository.interfaces.IDriverRepository
 import com.wepool.app.data.repository.interfaces.IPassengerRepository

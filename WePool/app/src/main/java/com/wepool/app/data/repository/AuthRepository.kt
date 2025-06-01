@@ -3,7 +3,7 @@ package com.wepool.app.data.repository
 import android.util.Log
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
-import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.user.UserRole
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.repository.interfaces.ICompanyRepository
 import com.wepool.app.data.repository.interfaces.IUserRepository

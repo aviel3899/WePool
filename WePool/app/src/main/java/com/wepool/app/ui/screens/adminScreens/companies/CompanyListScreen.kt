@@ -13,14 +13,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.company.Company
-import com.wepool.app.data.model.enums.FilterFields
-import com.wepool.app.data.model.ride.RideSearchFilters
+import com.wepool.app.data.model.company.CompanySearchFilters
+import com.wepool.app.data.model.enums.company.CompanyFilterFields
+import com.wepool.app.data.model.enums.company.CompanySortFieldWithOrder
 import com.wepool.app.data.model.users.User
-import com.wepool.app.ui.screens.components.BottomNavigationButtons
-import com.wepool.app.ui.screens.components.ExpandableSortCard
-import com.wepool.app.ui.screens.adminScreens.AdminAddCompanyDialog
-import com.wepool.app.ui.screens.adminScreens.companies.CompanyCard
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.screens.adminScreens.AdminAddCompanyDialog
+import com.wepool.app.ui.screens.components.BottomNavigationButtons
+import com.wepool.app.ui.screens.components.ExpandableCard
+import com.wepool.app.ui.screens.components.sortFields.company.CompanySortManager
 import kotlinx.coroutines.launch
 
 @Composable
@@ -32,8 +33,9 @@ fun CompanyListScreen(uid: String, navController: NavController) {
     var users by remember { mutableStateOf<List<User>>(emptyList()) }
     var companies by remember { mutableStateOf<List<Company>>(emptyList()) }
     var filteredCompanies by remember { mutableStateOf<List<Company>>(emptyList()) }
-    var filters by remember { mutableStateOf(RideSearchFilters()) }
-    var selectedFilters by remember { mutableStateOf<List<FilterFields>>(emptyList()) }
+    var filters by remember { mutableStateOf(CompanySearchFilters()) }
+    var selectedFilters by remember { mutableStateOf<List<CompanyFilterFields>>(emptyList()) }
+    var selectedSortFields by remember { mutableStateOf<List<CompanySortFieldWithOrder>>(emptyList()) }
     var hasFilterBeenApplied by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -59,17 +61,20 @@ fun CompanyListScreen(uid: String, navController: NavController) {
 
                 val nameQuery = filters.companyName.orEmpty().trim()
 
-                val filtered = if (selectedFilters.isEmpty()) {
-                    all
-                } else {
-                    all.filter { company ->
-                        if (FilterFields.COMPANY_NAME in selectedFilters) {
-                            nameQuery.isBlank() || company.companyName.contains(nameQuery, ignoreCase = true)
-                        } else true
+                val filtered = all.filter { company ->
+                    val matchesName = nameQuery.isBlank() || company.companyName.contains(nameQuery, ignoreCase = true)
+
+                    selectedFilters.all { field ->
+                        when (field) {
+                            CompanyFilterFields.COMPANY_NAME -> matchesName
+                            else -> true
+                        }
                     }
                 }
 
-                filteredCompanies = filtered
+                val sorted = CompanySortManager.sortCompanies(filtered, selectedSortFields)
+
+                filteredCompanies = sorted
                 hasFilterBeenApplied = true
             } catch (e: Exception) {
                 error = "\u274C Error loading companies: ${e.message}"
@@ -83,38 +88,44 @@ fun CompanyListScreen(uid: String, navController: NavController) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
 
-                ExpandableSortCard(
-                    title = "Search Company",
-                    filters = filters,
-                    selectedSortFields = filters.sortFields,
-                    onSortFieldsChanged = { filters = filters.copy(sortFields = it) },
-                    availableFilters = listOf(FilterFields.COMPANY_NAME),
+                ExpandableCard(
+                    selectedSortFields = selectedSortFields,
+                    onSortFieldsChanged = {
+                        selectedSortFields = it.filterIsInstance<CompanySortFieldWithOrder>()
+                        filters = filters.copy(sortFields = selectedSortFields)
+                    },
+                    availableFilters = listOf(CompanyFilterFields.COMPANY_NAME),
                     selectedFilters = selectedFilters,
-                    onSelectedFiltersChanged = { selectedFilters = it },
-                    onFiltersChanged = { filters = it },
+                    onSelectedFiltersChanged = {
+                        selectedFilters = it.filterIsInstance<CompanyFilterFields>()
+                    },
+                    filters = filters,
+                    onFiltersChanged = {
+                        if (it is CompanySearchFilters) filters = it
+                    },
                     onSearchClicked = { refreshCompanies() },
                     showDate = false,
                     showArrivalTime = false,
                     showAvailableSeats = false,
                     showDepartureTime = false,
-                    showCompanyName = false,
+                    showCompanyName = true,
                     showUserName = false,
-                    showSort = false,
+                    showSort = true,
                     showFilter = true,
                     showCleanAllButton = true,
                     usersInCompany = users,
                     limitUserSuggestionsToCompany = false,
                     onSearchTriggeredChanged = { hasFilterBeenApplied = false },
                     onCleanAllClicked = {
-                        filters = RideSearchFilters()
+                        filters = CompanySearchFilters()
                         selectedFilters = emptyList()
-                        hasFilterBeenApplied = true
-                        filteredCompanies = companies
+                        selectedSortFields = emptyList()
+                        filteredCompanies = emptyList()
+                        hasFilterBeenApplied = false
 
                         coroutineScope.launch {
-                            hasFilterBeenApplied = false
                             kotlinx.coroutines.delay(50)
-                            hasFilterBeenApplied = true
+                            hasFilterBeenApplied = false
                         }
                     }
                 )

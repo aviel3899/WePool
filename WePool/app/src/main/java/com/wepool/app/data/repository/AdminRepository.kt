@@ -1,7 +1,7 @@
 package com.wepool.app.data.repository
 
 import android.util.Log
-import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.user.UserRole
 import com.wepool.app.data.model.users.HRManager
 import com.wepool.app.data.model.users.User
 import com.wepool.app.data.repository.interfaces.IAdminRepository

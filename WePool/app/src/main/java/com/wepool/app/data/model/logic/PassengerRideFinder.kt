@@ -2,7 +2,7 @@ package com.wepool.app.data.model.logic
 
 import android.util.Log
 import com.wepool.app.data.model.enums.RequestStatus
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.remote.IGoogleMapsService

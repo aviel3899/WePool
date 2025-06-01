@@ -21,8 +21,8 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.wepool.app.data.model.enums.FilterFields
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideFilterFields
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.model.ride.RideSearchFilters
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
@@ -33,9 +33,9 @@ import java.util.*
 @Composable
 fun RideFilterDropdownButton(
     modifier: Modifier = Modifier,
-    availableFilters: List<FilterFields>,
-    selectedFilters: List<FilterFields>,
-    onFiltersChanged: (List<FilterFields>) -> Unit,
+    availableFilters: List<RideFilterFields>,
+    selectedFilters: List<RideFilterFields>,
+    onFiltersChanged: (List<RideFilterFields>) -> Unit,
     onCompanyNameChanged: (String?) -> Unit,
     onUserQueryChanged: (String?) -> Unit,
     onDateFromChanged: (String?) -> Unit,
@@ -43,7 +43,7 @@ fun RideFilterDropdownButton(
     onTimeFromChanged: (String?) -> Unit,
     onTimeToChanged: (String?) -> Unit,
     onDirectionChanged: (RideDirection?) -> Unit,
-    onClearField: (FilterFields) -> Unit,
+    onClearField: (RideFilterFields) -> Unit,
     limitUserSuggestionsToCompany: Boolean = false,
     usersInCompany: List<User> = emptyList(),
     filters: RideSearchFilters,
@@ -132,7 +132,7 @@ fun RideFilterDropdownButton(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (FilterFields.COMPANY_NAME in selectedFilters) {
+            if (RideFilterFields.COMPANY_NAME in selectedFilters) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -154,7 +154,7 @@ fun RideFilterDropdownButton(
                     )
                     TextButton(onClick = {
                         selectedCompanyName = ""
-                        onClearField(FilterFields.COMPANY_NAME)
+                        onClearField(RideFilterFields.COMPANY_NAME)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
@@ -162,7 +162,7 @@ fun RideFilterDropdownButton(
                         selectedCompanyName = ""
                         showCompanyField = false
                         onCompanyNameChanged(null)
-                        onFiltersChanged(selectedFilters - FilterFields.COMPANY_NAME)
+                        onFiltersChanged(selectedFilters - RideFilterFields.COMPANY_NAME)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -195,7 +195,7 @@ fun RideFilterDropdownButton(
                 )
             }
 
-            if (FilterFields.USER_NAME in selectedFilters) {
+            if (RideFilterFields.USER_NAME in selectedFilters) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -218,15 +218,15 @@ fun RideFilterDropdownButton(
                     )
                     TextButton(onClick = {
                         selectedUserQuery = ""
-                        onClearField(FilterFields.USER_NAME)
+                        onClearField(RideFilterFields.USER_NAME)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
                     IconButton(onClick = {
                         selectedUserQuery = ""
                         showUserField = false
-                        onClearField(FilterFields.USER_NAME)
-                        onFiltersChanged(selectedFilters - FilterFields.USER_NAME)
+                        onClearField(RideFilterFields.USER_NAME)
+                        onFiltersChanged(selectedFilters - RideFilterFields.USER_NAME)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -268,7 +268,7 @@ fun RideFilterDropdownButton(
                 )
             }
 
-            if (FilterFields.PHONE in selectedFilters) {
+            if (RideFilterFields.PHONE in selectedFilters) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -284,15 +284,15 @@ fun RideFilterDropdownButton(
                     )
                     TextButton(onClick = {
                         selectedPhone = ""
-                        onClearField(FilterFields.PHONE)
+                        onClearField(RideFilterFields.PHONE)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
                     IconButton(onClick = {
                         selectedPhone = ""
                         showPhoneField = false
-                        onClearField(FilterFields.PHONE)
-                        onFiltersChanged(selectedFilters - FilterFields.PHONE)
+                        onClearField(RideFilterFields.PHONE)
+                        onFiltersChanged(selectedFilters - RideFilterFields.PHONE)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -319,7 +319,7 @@ fun RideFilterDropdownButton(
                 )
             }
 
-            if (FilterFields.DATE_RANGE in selectedFilters) {
+            if (RideFilterFields.DATE_RANGE in selectedFilters) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -341,7 +341,7 @@ fun RideFilterDropdownButton(
                     )
 
                     TextButton(onClick = {
-                        onClearField(FilterFields.DATE_RANGE)
+                        onClearField(RideFilterFields.DATE_RANGE)
                         dateFrom = ""
                         dateTo = ""
                     }) {
@@ -349,7 +349,7 @@ fun RideFilterDropdownButton(
                     }
 
                     IconButton(onClick = {
-                        onClearField(FilterFields.DATE_RANGE)
+                        onClearField(RideFilterFields.DATE_RANGE)
                         showDateRange = false
                     }) {
                         Icon(
@@ -410,7 +410,7 @@ fun RideFilterDropdownButton(
                 )
             }
 
-            if (FilterFields.TIME_RANGE in selectedFilters) {
+            if (RideFilterFields.TIME_RANGE in selectedFilters) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -432,7 +432,7 @@ fun RideFilterDropdownButton(
                     )
 
                     TextButton(onClick = {
-                        onClearField(FilterFields.TIME_RANGE)
+                        onClearField(RideFilterFields.TIME_RANGE)
                         timeFrom = ""
                         timeTo = ""
                     }) {
@@ -440,7 +440,7 @@ fun RideFilterDropdownButton(
                     }
 
                     IconButton(onClick = {
-                        onClearField(FilterFields.TIME_RANGE)
+                        onClearField(RideFilterFields.TIME_RANGE)
                         showTimeRange = false
                     }) {
                         Icon(
@@ -501,7 +501,7 @@ fun RideFilterDropdownButton(
                 )
             }
 
-            if (FilterFields.DIRECTION in selectedFilters) {
+            if (RideFilterFields.DIRECTION in selectedFilters) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -523,14 +523,14 @@ fun RideFilterDropdownButton(
                     )
                     TextButton(onClick = {
                         selectedDirection = null
-                        onClearField(FilterFields.DIRECTION)
+                        onClearField(RideFilterFields.DIRECTION)
                     }) {
                         Text("Clean", style = MaterialTheme.typography.labelSmall)
                     }
                     IconButton(onClick = {
                         selectedDirection = null
                         showDirectionField = false
-                        onClearField(FilterFields.DIRECTION)
+                        onClearField(RideFilterFields.DIRECTION)
                     }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -574,7 +574,7 @@ fun RideFilterDropdownButton(
 }
 
 @Composable
-private fun FilterWithTextFieldAndSuggestions(
+fun FilterWithTextFieldAndSuggestions(
     visible: Boolean,
     label: String,
     value: String,
@@ -621,7 +621,7 @@ private fun FilterWithTextFieldAndSuggestions(
 }
 
 @Composable
-private fun FilterWithRangeButtons(
+fun FilterWithRangeButtons(
     labelPrefix: String,
     fromValue: String,
     toValue: String,

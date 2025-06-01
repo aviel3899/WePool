@@ -1,7 +1,8 @@
 package com.wepool.app.data.model.ride
 
-import com.wepool.app.data.model.enums.RideDirection
-import com.wepool.app.data.model.enums.SortFields
+import com.wepool.app.data.model.enums.ride.RideDirection
+import com.wepool.app.data.model.enums.ride.RideSortFields
+import com.wepool.app.data.model.enums.ride.RideSortFieldsWithOrder
 
 data class RideSearchFilters(
     val companyName: String? = null,
@@ -12,6 +13,6 @@ data class RideSearchFilters(
     val timeFrom: String? = null,
     val timeTo: String? = null,
     val direction: RideDirection? = null,
-    val sortFields: List<SortFields> = emptyList(),
+    val sortFields: List<RideSortFieldsWithOrder> = emptyList(),
     val isActiveRide: Boolean? = null,
 )

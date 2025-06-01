@@ -17,7 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider

@@ -10,7 +10,7 @@ import com.wepool.app.data.model.logic.DurationAndRoute
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideRequest
 import com.wepool.app.data.model.ride.RideCandidate
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.model.logic.RouteMatcher
 import com.wepool.app.data.remote.IGoogleMapsService
 import com.wepool.app.data.repository.interfaces.IRideRepository

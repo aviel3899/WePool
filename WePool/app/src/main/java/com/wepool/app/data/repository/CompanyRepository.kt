@@ -5,7 +5,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.company.Company
-import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.user.UserRole
 import com.wepool.app.data.repository.interfaces.ICompanyRepository
 import com.wepool.app.data.remote.IGoogleMapsService
 import com.wepool.app.data.repository.interfaces.IHRManagerRepository

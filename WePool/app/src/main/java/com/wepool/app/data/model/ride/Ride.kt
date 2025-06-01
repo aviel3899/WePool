@@ -1,7 +1,7 @@
 package com.wepool.app.data.model.ride
 
 import com.wepool.app.data.model.common.LocationData
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.model.logic.DepartureCalculationResult
 
 data class Ride(

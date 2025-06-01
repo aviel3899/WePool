@@ -3,7 +3,7 @@ package com.wepool.app.data.remote
 import com.google.firebase.firestore.GeoPoint
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.logic.DurationAndRoute
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.model.ride.PickupStop
 
 interface IGoogleMapsService {

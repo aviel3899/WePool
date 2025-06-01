@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.user.UserRole
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.infrastructure.RepositoryProvider

@@ -3,7 +3,7 @@ package com.wepool.app.infrastructure.navigation
 import android.content.Context
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
-import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.user.UserRole
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.notifications.NotificationHelper
 

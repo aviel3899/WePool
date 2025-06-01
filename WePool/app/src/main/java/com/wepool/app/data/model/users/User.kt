@@ -1,7 +1,7 @@
 package com.wepool.app.data.model.users
 
 import com.wepool.app.data.model.common.LocationData
-import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.user.UserRole
 
 @kotlinx.serialization.Serializable
 data class User(

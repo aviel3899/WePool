@@ -27,7 +27,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.firebase.auth.FirebaseAuth
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.repository.LoginSessionManager
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.handleNotificationNavigation

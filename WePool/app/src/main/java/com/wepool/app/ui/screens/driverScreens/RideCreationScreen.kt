@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.data.model.common.LocationData
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.favoriteLocations.FavoriteLocationDropdown

@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import com.wepool.app.R
-import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.user.UserRole
 import com.wepool.app.data.model.users.User
 
 @Composable

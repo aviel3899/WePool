@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.R
-import com.wepool.app.data.model.enums.UserRole
+import com.wepool.app.data.model.enums.user.UserRole
 import com.wepool.app.data.model.users.Passenger
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider

@@ -5,7 +5,7 @@ import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.data.model.logic.DepartureCalculationResult
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideCandidate
-import com.wepool.app.data.model.enums.RideDirection
+import com.wepool.app.data.model.enums.ride.RideDirection
 
 
 interface IRideRepository {

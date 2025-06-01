@@ -9,14 +9,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.wepool.app.data.model.enums.FilterFields
+import com.wepool.app.data.model.enums.ride.RideFilterFields
+import com.wepool.app.data.model.enums.ride.RideSortFieldsWithOrder
+import com.wepool.app.data.model.enums.ride.RideSortFields
+import com.wepool.app.data.model.enums.user.UserSortFieldWithOrder
 import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.ride.RideSearchFilters
 import com.wepool.app.data.model.users.User
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
-import com.wepool.app.ui.screens.components.ExpandableSortCard
+import com.wepool.app.ui.screens.components.ExpandableCard
 import com.wepool.app.ui.screens.components.RideDataProvider
-import com.wepool.app.ui.screens.components.sortFields.RideSortManager
+import com.wepool.app.ui.screens.components.sortFields.ride.RideSortManager
 import kotlinx.coroutines.launch
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.ui.screens.components.RideMapDialog
@@ -46,14 +49,14 @@ fun RidesListScreen(
     var filters by remember { mutableStateOf(initialFilters) }
     var selectedFilters by remember {
         mutableStateOf(
-            if (filterByUid) listOf(FilterFields.USER_NAME)
+            if (filterByUid) listOf(RideFilterFields.USER_NAME)
             else emptyList()
         )
     }
 
     var searchTriggered by remember { mutableStateOf(filterByUid) }
 
-    val availableFilters = FilterFields.values().toList()
+    val availableFilters = RideFilterFields.values().toList()
 
     var rideForMapDialog by remember { mutableStateOf<Ride?>(null) }
 
@@ -78,7 +81,7 @@ fun RidesListScreen(
                 matchedUser?.let { user ->
                     filters = RideSearchFilters(userNameOrEmail = "${user.name} (${user.email})")
                 }
-                selectedFilters = listOf(FilterFields.USER_NAME)
+                selectedFilters = listOf(RideFilterFields.USER_NAME)
             }
 
             filteredRides = emptyList()
@@ -111,88 +114,94 @@ fun RidesListScreen(
                     .fillMaxSize()
                     .padding(bottom = 96.dp)
             ) {
-                    ExpandableSortCard(
-                        selectedSortFields = filters.sortFields,
-                        onSortFieldsChanged = {
-                            filters = filters.copy(sortFields = it)
-                        },
-                        availableFilters = availableFilters,
-                        selectedFilters = selectedFilters,
-                        onSelectedFiltersChanged = { selectedFilters = it },
-                        filters = filters,
-                        onFiltersChanged = { updated -> filters = updated },
-                        onSearchClicked = {
-                            searchTriggered = true
-
-                            val filtered = allRides.filter { ride ->
-                                val matchesCompany =
-                                    filters.companyName?.let { it == companyNameMap[ride.companyCode] }
-                                        ?: true
-
-                                val matchesUser = if (FilterFields.USER_NAME !in selectedFilters) {
-                                    true
-                                } else {
-                                    filters.userNameOrEmail?.let { query ->
-                                        val driverMatch = userMap[ride.driverId]?.let { user ->
-                                            user.name.contains(query, ignoreCase = true) ||
-                                                    user.email.contains(query, ignoreCase = true)
-                                        } ?: false
-                                        val passengerMatch = ride.pickupStops.any { stop ->
-                                            userMap[stop.passengerId]?.let { user ->
-                                                user.name.contains(query, ignoreCase = true) ||
-                                                        user.email.contains(
-                                                            query,
-                                                            ignoreCase = true
-                                                        )
-                                            } ?: false
-                                        }
-                                        driverMatch || passengerMatch
-                                    } ?: true
-                                }
-
-                                val matchesDirection =
-                                    filters.direction?.let { it == ride.direction } ?: true
-                                val matchesDateStart = filters.dateFrom?.takeIf { it.isNotBlank() }
-                                    ?.let { ride.date >= it } ?: true
-                                val matchesDateEnd = filters.dateTo?.takeIf { it.isNotBlank() }
-                                    ?.let { ride.date <= it } ?: true
-                                val matchesTimeStart = filters.timeFrom?.takeIf { it.isNotBlank() }
-                                    ?.let { ride.departureTime ?: "" >= it } ?: true
-                                val matchesTimeEnd = filters.timeTo?.takeIf { it.isNotBlank() }
-                                    ?.let { ride.departureTime ?: "" <= it } ?: true
-
-                                matchesCompany && matchesUser && matchesDirection &&
-                                        matchesDateStart && matchesDateEnd &&
-                                        matchesTimeStart && matchesTimeEnd
-                            }
-
-                            filteredRides = RideSortManager.sortRides(
-                                filtered,
-                                filters.sortFields,
-                                userMap,
-                                companyNameMap
-                            )
-                        },
-                        showSort = true,
-                        showFilter = true,
-                        showCleanAllButton = true,
-                        usersInCompany = allUsers,
-                        limitUserSuggestionsToCompany = false,
-                        onSearchTriggeredChanged = { searchTriggered = false },
-                        onCleanAllClicked = {
-                            filters = RideSearchFilters()
-                            selectedFilters = emptyList()
-                            searchTriggered = true
-                            allRides = allFetchedRides
-                            filteredRides = emptyList()
-
-                            coroutineScope.launch {
-                                searchTriggered = false
-                                kotlinx.coroutines.delay(50)
-                                searchTriggered = true
-                            }
+                ExpandableCard(
+                    selectedSortFields = filters.sortFields,
+                    onSortFieldsChanged = {
+                        filters = filters.copy(sortFields = it.filterIsInstance<RideSortFieldsWithOrder>())
+                    },
+                    availableFilters = availableFilters,
+                    selectedFilters = selectedFilters,
+                    onSelectedFiltersChanged = {
+                        selectedFilters = it.filterIsInstance<RideFilterFields>()
+                    },
+                    filters = filters,
+                    onFiltersChanged = { updated ->
+                        if (updated is RideSearchFilters) {
+                            filters = updated
                         }
-                    )
+                    },
+                    onSearchClicked = {
+                        searchTriggered = true
+
+                        val filtered = allRides.filter { ride ->
+                            val matchesCompany =
+                                filters.companyName?.let { it == companyNameMap[ride.companyCode] }
+                                    ?: true
+
+                            val matchesUser = if (RideFilterFields.USER_NAME !in selectedFilters) {
+                                true
+                            } else {
+                                filters.userNameOrEmail?.let { query ->
+                                    val driverMatch = userMap[ride.driverId]?.let { user ->
+                                        user.name.contains(query, ignoreCase = true) ||
+                                                user.email.contains(query, ignoreCase = true)
+                                    } ?: false
+                                    val passengerMatch = ride.pickupStops.any { stop ->
+                                        userMap[stop.passengerId]?.let { user ->
+                                            user.name.contains(query, ignoreCase = true) ||
+                                                    user.email.contains(
+                                                        query,
+                                                        ignoreCase = true
+                                                    )
+                                        } ?: false
+                                    }
+                                    driverMatch || passengerMatch
+                                } ?: true
+                            }
+
+                            val matchesDirection =
+                                filters.direction?.let { it == ride.direction } ?: true
+                            val matchesDateStart = filters.dateFrom?.takeIf { it.isNotBlank() }
+                                ?.let { ride.date >= it } ?: true
+                            val matchesDateEnd = filters.dateTo?.takeIf { it.isNotBlank() }
+                                ?.let { ride.date <= it } ?: true
+                            val matchesTimeStart = filters.timeFrom?.takeIf { it.isNotBlank() }
+                                ?.let { ride.departureTime ?: "" >= it } ?: true
+                            val matchesTimeEnd = filters.timeTo?.takeIf { it.isNotBlank() }
+                                ?.let { ride.departureTime ?: "" <= it } ?: true
+
+                            matchesCompany && matchesUser && matchesDirection &&
+                                    matchesDateStart && matchesDateEnd &&
+                                    matchesTimeStart && matchesTimeEnd
+                        }
+
+                        filteredRides = RideSortManager.sortRides(
+                            filtered,
+                            filters.sortFields,
+                            userMap,
+                            companyNameMap
+                        )
+                    },
+                    showSort = true,
+                    showFilter = true,
+                    showCleanAllButton = true,
+                    usersInCompany = allUsers,
+                    limitUserSuggestionsToCompany = false,
+                    onSearchTriggeredChanged = { searchTriggered = false },
+                    onCleanAllClicked = {
+                        filters = RideSearchFilters()
+                        selectedFilters = emptyList()
+                        searchTriggered = true
+                        allRides = allFetchedRides
+                        filteredRides = emptyList()
+
+                        coroutineScope.launch {
+                            searchTriggered = false
+                            kotlinx.coroutines.delay(50)
+                            searchTriggered = true
+                        }
+                    }
+                )
 
                 if (searchTriggered) {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {

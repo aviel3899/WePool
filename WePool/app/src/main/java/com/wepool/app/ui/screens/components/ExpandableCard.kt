@@ -1,7 +1,5 @@
 package com.wepool.app.ui.screens.components
 
-import android.widget.Toast
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,18 +10,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.wepool.app.data.model.enums.FilterFields
-import com.wepool.app.data.model.enums.SortFields
+import com.wepool.app.data.model.enums.ride.RideFilterFields
+import com.wepool.app.data.model.enums.ride.RideSortFieldsWithOrder
+import com.wepool.app.data.model.enums.user.UserFilterFields
+import com.wepool.app.data.model.enums.user.UserSortFieldWithOrder
+import com.wepool.app.data.model.enums.company.CompanyFilterFields
+import com.wepool.app.data.model.enums.company.CompanySortFieldWithOrder
 import com.wepool.app.data.model.ride.RideSearchFilters
+import com.wepool.app.data.model.users.UserSearchFilters
+import com.wepool.app.data.model.company.CompanySearchFilters
 import com.wepool.app.data.model.users.User
 import com.wepool.app.ui.screens.components.filterFields.RideFilterDropdownButton
-import com.wepool.app.ui.screens.components.sortFields.RideSortDropdownButton
+import com.wepool.app.ui.screens.components.filterFields.UserFilterDropdownButton
+import com.wepool.app.ui.screens.components.filterFields.CompanyFilterDropdownButton
+import com.wepool.app.ui.screens.components.sortFields.ride.RideSortDropdownButton
+import com.wepool.app.ui.screens.components.sortFields.user.UserSortDropdownButton
+import com.wepool.app.ui.screens.components.sortFields.company.CompanySortDropdownButton
+import kotlinx.coroutines.launch
 
 @Composable
-fun ExpandableSortCard(
+fun <T : Enum<T>> ExpandableCard(
     title: String = "Sort & Filter",
     modifier: Modifier = Modifier,
     initiallyExpanded: Boolean = false,
@@ -36,15 +46,15 @@ fun ExpandableSortCard(
     showSort: Boolean = true,
     showFilter: Boolean = true,
     showCleanAllButton: Boolean = true,
-    filters: RideSearchFilters,
-    selectedSortFields: List<SortFields>,
-    onSortFieldsChanged: (List<SortFields>) -> Unit,
-    availableFilters: List<FilterFields> = emptyList(),
-    selectedFilters: List<FilterFields> = emptyList(),
-    onFiltersChanged: (RideSearchFilters) -> Unit,
+    filters: Any,
+    selectedSortFields: List<Any>,
+    onSortFieldsChanged: (List<Any>) -> Unit,
+    availableFilters: List<T> = emptyList(),
+    selectedFilters: List<T> = emptyList(),
+    onFiltersChanged: (Any) -> Unit,
     onSearchTriggeredChanged: () -> Unit = {},
     onCleanAllClicked: () -> Unit = {},
-    onSelectedFiltersChanged: (List<FilterFields>) -> Unit,
+    onSelectedFiltersChanged: (List<T>) -> Unit,
     onSearchClicked: () -> Unit,
     usersInCompany: List<User> = emptyList(),
     limitUserSuggestionsToCompany: Boolean = false,
@@ -52,6 +62,7 @@ fun ExpandableSortCard(
     companyCode: String? = null,
     additionalContent: @Composable ColumnScope.() -> Unit = {}
 ) {
+    val coroutineScope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf(initiallyExpanded) }
     val context = LocalContext.current
 
@@ -64,7 +75,6 @@ fun ExpandableSortCard(
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -87,69 +97,109 @@ fun ExpandableSortCard(
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
 
                         if (showFilter) {
-                            RideFilterDropdownButton(
-                                availableFilters = availableFilters,
-                                selectedFilters = selectedFilters,
-                                onFiltersChanged = onSelectedFiltersChanged,
-                                onCompanyNameChanged = {
-                                    val updated = filters.copy(companyName = it)
-                                    onFiltersChanged(updated)
-                                },
-                                onUserQueryChanged = {
-                                    val updated = filters.copy(userNameOrEmail = it)
-                                    onFiltersChanged(updated)
-                                },
-                                onDateFromChanged = {
-                                    val updated = filters.copy(dateFrom = it)
-                                    onFiltersChanged(updated)
-                                },
-                                onDateToChanged = {
-                                    val updated = filters.copy(dateTo = it)
-                                    onFiltersChanged(updated)
-                                },
-                                onTimeFromChanged = {
-                                    val updated = filters.copy(timeFrom = it)
-                                    onFiltersChanged(updated)
-                                },
-                                onTimeToChanged = {
-                                    val updated = filters.copy(timeTo = it)
-                                    onFiltersChanged(updated)
-                                },
-                                onDirectionChanged = {
-                                    val updated = filters.copy(direction = it)
-                                    onFiltersChanged(updated)
-                                },
-                                onClearField = { field ->
-                                    val updated = when (field) {
-                                        FilterFields.COMPANY_NAME -> filters.copy(companyName = null)
-                                        FilterFields.USER_NAME -> filters.copy(userNameOrEmail = null)
-                                        FilterFields.DATE_RANGE -> filters.copy(dateFrom = null, dateTo = null)
-                                        FilterFields.TIME_RANGE -> filters.copy(timeFrom = null, timeTo = null)
-                                        FilterFields.DIRECTION -> filters.copy(direction = null)
-                                        FilterFields.PHONE -> filters.copy(userNameOrEmail = null)
-                                    }
-                                    onFiltersChanged(updated)
-                                },
-                                usersInCompany = usersInCompany,
-                                limitUserSuggestionsToCompany = limitUserSuggestionsToCompany,
-                                filters = filters,
-                            )
+                            when (filters) {
+                                is RideSearchFilters -> RideFilterDropdownButton(
+                                    availableFilters = availableFilters.filterIsInstance<RideFilterFields>(),
+                                    selectedFilters = selectedFilters.filterIsInstance<RideFilterFields>(),
+                                    onFiltersChanged = { onSelectedFiltersChanged(it as List<T>) },
+                                    onCompanyNameChanged = {
+                                        onFiltersChanged(filters.copy(companyName = it))
+                                    },
+                                    onUserQueryChanged = {
+                                        onFiltersChanged(filters.copy(userNameOrEmail = it))
+                                    },
+                                    onDateFromChanged = {
+                                        onFiltersChanged(filters.copy(dateFrom = it))
+                                    },
+                                    onDateToChanged = {
+                                        onFiltersChanged(filters.copy(dateTo = it))
+                                    },
+                                    onTimeFromChanged = {
+                                        onFiltersChanged(filters.copy(timeFrom = it))
+                                    },
+                                    onTimeToChanged = {
+                                        onFiltersChanged(filters.copy(timeTo = it))
+                                    },
+                                    onDirectionChanged = {
+                                        onFiltersChanged(filters.copy(direction = it))
+                                    },
+                                    onClearField = { field ->
+                                        val updated = when (field) {
+                                            RideFilterFields.COMPANY_NAME -> filters.copy(companyName = null)
+                                            RideFilterFields.USER_NAME -> filters.copy(userNameOrEmail = null)
+                                            RideFilterFields.DATE_RANGE -> filters.copy(dateFrom = null, dateTo = null)
+                                            RideFilterFields.TIME_RANGE -> filters.copy(timeFrom = null, timeTo = null)
+                                            RideFilterFields.DIRECTION -> filters.copy(direction = null)
+                                            RideFilterFields.PHONE -> filters.copy(userNameOrEmail = null)
+                                        }
+                                        onFiltersChanged(updated)
+                                    },
+                                    usersInCompany = usersInCompany,
+                                    limitUserSuggestionsToCompany = limitUserSuggestionsToCompany,
+                                    filters = filters,
+                                )
+
+                                is UserSearchFilters -> UserFilterDropdownButton(
+                                    availableFilters = availableFilters.filterIsInstance<UserFilterFields>(),
+                                    selectedFilters = selectedFilters.filterIsInstance<UserFilterFields>(),
+                                    onFiltersChanged = { onSelectedFiltersChanged(it as List<T>) },
+                                    onQueryChanged = {
+                                        onFiltersChanged(filters.copy(nameOrEmailOrPhone = it))
+                                    },
+                                    onCompanyCodeChanged = {
+                                        onFiltersChanged(filters.copy(companyCode = it))
+                                    },
+                                    onIsActiveChanged = {
+                                        onFiltersChanged(filters.copy(isActiveUser = it))
+                                    },
+                                    onClearField = { field ->
+                                        val updated = when (field) {
+                                            UserFilterFields.USER_NAME -> filters.copy(nameOrEmailOrPhone = null)
+                                            UserFilterFields.COMPANY_NAME -> filters.copy(companyCode = null)
+                                            UserFilterFields.ACTIVE_USER -> filters.copy(isActiveUser = null)
+                                            UserFilterFields.PHONE -> filters.copy(nameOrEmailOrPhone = null)
+                                        }
+                                        onFiltersChanged(updated)
+                                    },
+                                    limitUserSuggestionsToCompany = limitUserSuggestionsToCompany,
+                                    usersInCompany = usersInCompany,
+                                    filters = filters
+                                )
+
+                                is CompanySearchFilters -> CompanyFilterDropdownButton(
+                                    availableFilters = availableFilters.filterIsInstance<CompanyFilterFields>(),
+                                    selectedFilters = selectedFilters.filterIsInstance<CompanyFilterFields>(),
+                                    onFiltersChanged = { onSelectedFiltersChanged(it as List<T>) },
+                                    onCompanyNameChanged = {
+                                        onFiltersChanged(filters.copy(companyName = it))
+                                    },
+                                    onClearField = {
+                                        onFiltersChanged(filters.copy(companyName = null))
+                                    },
+                                    filters = filters
+                                )
+                            }
 
                             Spacer(modifier = Modifier.height(12.dp))
                         }
 
                         if (showSort) {
-                            RideSortDropdownButton(
-                                selectedSortFields = selectedSortFields,
-                                onSortFieldsChanged = onSortFieldsChanged,
-                                showDate = showDate,
-                                showDepartureTime = showDepartureTime,
-                                showArrivalTime = showArrivalTime,
-                                showAvailableSeats = showAvailableSeats,
-                                showCompanyName = showCompanyName,
-                                showUserName = showUserName,
-                            )
+                            when (filters) {
+                                is RideSearchFilters -> RideSortDropdownButton(
+                                    selectedSortFields = selectedSortFields.filterIsInstance<RideSortFieldsWithOrder>(),
+                                    onSortFieldsChanged = onSortFieldsChanged
+                                )
 
+                                is UserSearchFilters -> UserSortDropdownButton(
+                                    selectedSortFields = selectedSortFields.filterIsInstance<UserSortFieldWithOrder>(),
+                                    onSortFieldsChanged = onSortFieldsChanged
+                                )
+
+                                is CompanySearchFilters -> CompanySortDropdownButton(
+                                    selectedSortFields = selectedSortFields.filterIsInstance<CompanySortFieldWithOrder>(),
+                                    onSortFieldsChanged = onSortFieldsChanged
+                                )
+                            }
                             Spacer(modifier = Modifier.height(12.dp))
                         }
 
@@ -162,20 +212,46 @@ fun ExpandableSortCard(
                     if (showCleanAllButton) {
                         OutlinedButton(
                             onClick = {
-                                onFiltersChanged(
-                                    RideSearchFilters(
-                                        companyName = null,
-                                        userNameOrEmail = null,
-                                        dateFrom = null,
-                                        dateTo = null,
-                                        timeFrom = null,
-                                        timeTo = null,
-                                        direction = null,
-                                        sortFields = emptyList()
-                                    )
-                                )
+                                when (filters) {
+                                    is RideSearchFilters -> {
+                                        onFiltersChanged(
+                                            filters.copy(
+                                                companyName = null,
+                                                userNameOrEmail = null,
+                                                dateFrom = null,
+                                                dateTo = null,
+                                                timeFrom = null,
+                                                timeTo = null,
+                                                direction = null,
+                                                sortFields = emptyList()
+                                            )
+                                        )
+                                        onSortFieldsChanged(emptyList<RideSortFieldsWithOrder>())
+                                    }
+
+                                    is UserSearchFilters -> {
+                                        onFiltersChanged(
+                                            filters.copy(
+                                                nameOrEmailOrPhone = null,
+                                                companyCode = null,
+                                                isActiveUser = null,
+                                                sortFields = emptyList()
+                                            )
+                                        )
+                                        onSortFieldsChanged(emptyList<UserSortFieldWithOrder>())
+                                    }
+
+                                    is CompanySearchFilters -> {
+                                        onFiltersChanged(
+                                            filters.copy(
+                                                companyName = null,
+                                                sortFields = emptyList()
+                                            )
+                                        )
+                                        onSortFieldsChanged(emptyList<CompanySortFieldWithOrder>())
+                                    }
+                                }
                                 onSelectedFiltersChanged(emptyList())
-                                onSortFieldsChanged(emptyList())
                                 onSearchTriggeredChanged()
                                 onCleanAllClicked()
                             },
@@ -183,48 +259,16 @@ fun ExpandableSortCard(
                         ) {
                             Text("Clean All")
                         }
-
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
                     Button(
                         onClick = {
-                            val missingFields = mutableListOf<String>()
-                            if (FilterFields.COMPANY_NAME in selectedFilters && filters.companyName.isNullOrBlank()) {
-                                missingFields.add(FilterFields.COMPANY_NAME.displayName)
+                            onSearchTriggeredChanged()
+                            coroutineScope.launch {
+                                kotlinx.coroutines.delay(50)
+                                onSearchClicked()
                             }
-                            if (FilterFields.USER_NAME in selectedFilters && filters.userNameOrEmail.isNullOrBlank()) {
-                                missingFields.add(FilterFields.USER_NAME.displayName)
-                            }
-                            if (FilterFields.DATE_RANGE in selectedFilters && (filters.dateFrom.isNullOrBlank() || filters.dateTo.isNullOrBlank())) {
-                                missingFields.add(FilterFields.DATE_RANGE.displayName)
-                            }
-                            if (FilterFields.TIME_RANGE in selectedFilters && (filters.timeFrom.isNullOrBlank() || filters.timeTo.isNullOrBlank())) {
-                                missingFields.add(FilterFields.TIME_RANGE.displayName)
-                            }
-                            if (FilterFields.DIRECTION in selectedFilters && filters.direction == null) {
-                                missingFields.add(FilterFields.DIRECTION.displayName)
-                            }
-                            if (FilterFields.PHONE in selectedFilters && filters.userNameOrEmail.isNullOrBlank()) {
-                                missingFields.add(FilterFields.PHONE.displayName)
-                            }
-
-                            if (missingFields.isNotEmpty()) {
-                                Toast.makeText(
-                                    context,
-                                    "Please fill in: ${missingFields.joinToString()}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@Button
-                            }
-
-                            if (ridesInCompanyOnly && !companyCode.isNullOrBlank()) {
-                                onFiltersChanged(filters.copy(companyName = companyCode))
-                            } else {
-                                onFiltersChanged(filters)
-                            }
-
-                            onSearchClicked()
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
