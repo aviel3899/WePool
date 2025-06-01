@@ -19,6 +19,7 @@ import com.wepool.app.data.model.users.UserSearchFilters
 import com.wepool.app.data.model.company.Company
 import com.wepool.app.data.model.enums.user.UserSortFieldWithOrder
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.components.ExpandableCard
 import com.wepool.app.ui.screens.components.sortFields.user.UserSortManager
@@ -99,119 +100,122 @@ fun UserListScreen(uid: String, navController: NavController) {
         )
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .fillMaxSize()
-                    .padding(bottom = 96.dp)
-            ) {
-                ExpandableCard(
-                    title = "Search User",
-                    filters = filters,
-                    selectedSortFields = filters.sortFields,
-                    onSortFieldsChanged = { sortFields ->
-                        filters = filters.copy(sortFields = sortFields.filterIsInstance<UserSortFieldWithOrder>())
-                    },
-                    availableFilters = listOf(
-                        UserFilterFields.USER_NAME,
-                        UserFilterFields.COMPANY_NAME,
-                        UserFilterFields.PHONE,
-                        UserFilterFields.ACTIVE_USER
-                    ),
-                    selectedFilters = selectedFilters,
-                    onSelectedFiltersChanged = {
-                        selectedFilters = it.filterIsInstance<UserFilterFields>()
-                    },
-                    onFiltersChanged = { updated ->
-                        if (updated is UserSearchFilters) {
-                            filters = updated
-                        }
-                    },
-                    onSearchClicked = {
-                        searchTriggered = true
-                        applyUserSearch(users)
-                    },
-                    showDate = false,
-                    showDepartureTime = false,
-                    showArrivalTime = false,
-                    showAvailableSeats = false,
-                    showCompanyName = true,
-                    showUserName = true,
-                    showSort = true,
-                    showFilter = true,
-                    showCleanAllButton = true,
-                    usersInCompany = users,
-                    limitUserSuggestionsToCompany = false,
-                    onSearchTriggeredChanged = { searchTriggered = false },
-                    onCleanAllClicked = {
-                        filters = UserSearchFilters()
-                        selectedFilters = emptyList()
-                        filteredUsers = emptyList()
-                        searchTriggered = false
-                        coroutineScope.launch { kotlinx.coroutines.delay(50) }
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
+    BackgroundWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 Column(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 16.dp)
+                        .fillMaxSize()
+                        .fillMaxSize()
+                        .padding(bottom = 96.dp)
                 ) {
-                    when {
-                        loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                        error != null -> Text(
-                            text = error ?: "",
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
+                    ExpandableCard(
+                        title = "Search User",
+                        filters = filters,
+                        selectedSortFields = filters.sortFields,
+                        onSortFieldsChanged = { sortFields ->
+                            filters =
+                                filters.copy(sortFields = sortFields.filterIsInstance<UserSortFieldWithOrder>())
+                        },
+                        availableFilters = listOf(
+                            UserFilterFields.USER_NAME,
+                            UserFilterFields.COMPANY_NAME,
+                            UserFilterFields.PHONE,
+                            UserFilterFields.ACTIVE_USER
+                        ),
+                        selectedFilters = selectedFilters,
+                        onSelectedFiltersChanged = {
+                            selectedFilters = it.filterIsInstance<UserFilterFields>()
+                        },
+                        onFiltersChanged = { updated ->
+                            if (updated is UserSearchFilters) {
+                                filters = updated
+                            }
+                        },
+                        onSearchClicked = {
+                            searchTriggered = true
+                            applyUserSearch(users)
+                        },
+                        showDate = false,
+                        showDepartureTime = false,
+                        showArrivalTime = false,
+                        showAvailableSeats = false,
+                        showCompanyName = true,
+                        showUserName = true,
+                        showSort = true,
+                        showFilter = true,
+                        showCleanAllButton = true,
+                        usersInCompany = users,
+                        limitUserSuggestionsToCompany = false,
+                        onSearchTriggeredChanged = { searchTriggered = false },
+                        onCleanAllClicked = {
+                            filters = UserSearchFilters()
+                            selectedFilters = emptyList()
+                            filteredUsers = emptyList()
+                            searchTriggered = false
+                            coroutineScope.launch { kotlinx.coroutines.delay(50) }
+                        }
+                    )
 
-                        !searchTriggered -> Text(
-                            "Please enter filters and press Search.",
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                        filteredUsers.isEmpty() -> Text(
-                            "No users found.",
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        when {
+                            loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                            error != null -> Text(
+                                text = error ?: "",
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
 
-                        else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(filteredUsers) { user ->
-                                UserCard(
-                                    user = user,
-                                    navController = navController,
-                                    onUserStatusChanged = {
-                                        coroutineScope.launch {
-                                            users = userRepository.getAllUsers()
-                                            applyUserSearch(users)
-                                        }
-                                    },
-                                    fromScreen = "UserList"
-                                )
+                            !searchTriggered -> Text(
+                                "Please enter filters and press Search.",
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+
+                            filteredUsers.isEmpty() -> Text(
+                                "No users found.",
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+
+                            else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                items(filteredUsers) { user ->
+                                    UserCard(
+                                        user = user,
+                                        navController = navController,
+                                        onUserStatusChanged = {
+                                            coroutineScope.launch {
+                                                users = userRepository.getAllUsers()
+                                                applyUserSearch(users)
+                                            }
+                                        },
+                                        fromScreen = "UserList"
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
-                tonalElevation = 4.dp,
-                shadowElevation = 4.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                BottomNavigationButtons(
-                    uid = uid,
-                    navController = navController,
-                    showBackButton = true,
-                    showHomeButton = true
-                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+                    tonalElevation = 4.dp,
+                    shadowElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    BottomNavigationButtons(
+                        uid = uid,
+                        navController = navController,
+                        showBackButton = true,
+                        showHomeButton = true
+                    )
+                }
             }
         }
     }

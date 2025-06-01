@@ -27,6 +27,7 @@ import com.wepool.app.data.model.ride.PickupStop
 import com.wepool.app.data.model.ride.RideCandidate
 import com.wepool.app.data.model.common.LocationData
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.favoriteLocations.FavoriteLocationDropdown
 import kotlinx.coroutines.launch
@@ -90,350 +91,356 @@ fun PassengerRideSearchScreen(
             locationInput.name.isNotBlank() && selectedDate.isNotBlank() && selectedTime.isNotBlank()
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        if (fixedLocation != null) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 32.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+    BackgroundWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            if (fixedLocation != null) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 32.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.Top,
+                        horizontalAlignment = Alignment.Start
                     ) {
-                        Text(title, style = MaterialTheme.typography.headlineSmall)
-                        IconButton(onClick = { showDetails = !showDetails }) {
-                            Icon(
-                                imageVector = if (showDetails) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                                contentDescription = null
-                            )
-                        }
-                    }
-
-                    if (showDetails) {
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        if (isToHome) {
-                            OutlinedTextField(
-                                value = fixedLocation!!.name,
-                                onValueChange = {},
-                                label = { Text("Start Location") },
-                                enabled = false,
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-                        }
-
-                        FavoriteLocationDropdown(
-                            label = if (isToHome) "Destination" else "Start Location",
-                            locationData = locationInput,
-                            onLocationSelected = { locationInput = it },
-                            onTextChanged = { text ->
-                                locationInput = locationInput.copy(name = text)
-                                coroutineScope.launch {
-                                    locationSuggestions = mapsService.getAddressSuggestions(text)
-                                }
-                            },
-                            suggestions = locationSuggestions,
-                            favoriteLocations = favoriteLocations,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        if (!isToHome) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            OutlinedTextField(
-                                value = fixedLocation!!.name,
-                                onValueChange = {},
-                                label = { Text("Destination") },
-                                enabled = false,
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedTextField(
-                                value = passengerNotes,
-                                onValueChange = { passengerNotes = it },
-                                label = { Text("Notes for Driver (optional)") },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .heightIn(min = 80.dp),
-                                singleLine = false,
-                                maxLines = 3
+                            Text(title, style = MaterialTheme.typography.headlineSmall)
+                            IconButton(onClick = { showDetails = !showDetails }) {
+                                Icon(
+                                    imageVector = if (showDetails) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+
+                        if (showDetails) {
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            if (isToHome) {
+                                OutlinedTextField(
+                                    value = fixedLocation!!.name,
+                                    onValueChange = {},
+                                    label = { Text("Start Location") },
+                                    enabled = false,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+                            }
+
+                            FavoriteLocationDropdown(
+                                label = if (isToHome) "Destination" else "Start Location",
+                                locationData = locationInput,
+                                onLocationSelected = { locationInput = it },
+                                onTextChanged = { text ->
+                                    locationInput = locationInput.copy(name = text)
+                                    coroutineScope.launch {
+                                        locationSuggestions =
+                                            mapsService.getAddressSuggestions(text)
+                                    }
+                                },
+                                suggestions = locationSuggestions,
+                                favoriteLocations = favoriteLocations,
+                                modifier = Modifier.fillMaxWidth()
                             )
-                            if (passengerNotes.isNotBlank()) {
-                                IconButton(onClick = { passengerNotes = "" }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Clear Notes",
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(24.dp)
-                                    )
+
+                            if (!isToHome) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                OutlinedTextField(
+                                    value = fixedLocation!!.name,
+                                    onValueChange = {},
+                                    label = { Text("Destination") },
+                                    enabled = false,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                OutlinedTextField(
+                                    value = passengerNotes,
+                                    onValueChange = { passengerNotes = it },
+                                    label = { Text("Notes for Driver (optional)") },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 80.dp),
+                                    singleLine = false,
+                                    maxLines = 3
+                                )
+                                if (passengerNotes.isNotBlank()) {
+                                    IconButton(onClick = { passengerNotes = "" }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Clear Notes",
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            val calendar = Calendar.getInstance()
+                                            DatePickerDialog(
+                                                context,
+                                                { _, y, m, d ->
+                                                    calendar.set(y, m, d)
+                                                    selectedDate =
+                                                        SimpleDateFormat(
+                                                            "dd-MM-yyyy",
+                                                            Locale.getDefault()
+                                                        )
+                                                            .format(calendar.time)
+                                                },
+                                                calendar.get(Calendar.YEAR),
+                                                calendar.get(Calendar.MONTH),
+                                                calendar.get(Calendar.DAY_OF_MONTH)
+                                            ).show()
+                                        },
+                                        modifier = Modifier.size(80.dp),
+                                        shape = MaterialTheme.shapes.medium,
+                                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.DateRange,
+                                            contentDescription = "Pick a Date",
+                                            tint = Color.Unspecified,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = if (selectedDate.isNotBlank()) selectedDate else "Pick a Date",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            modifier = Modifier.align(Alignment.Center)
+                                        )
+                                        if (selectedDate.isNotBlank()) {
+                                            IconButton(
+                                                onClick = { selectedDate = "" },
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .offset(x = 40.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Clear Date",
+                                                    tint = MaterialTheme.colorScheme.error,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            val calendar = Calendar.getInstance()
+                                            TimePickerDialog(
+                                                context,
+                                                { _, h, m ->
+                                                    selectedTime = String.format("%02d:%02d", h, m)
+                                                },
+                                                calendar.get(Calendar.HOUR_OF_DAY),
+                                                calendar.get(Calendar.MINUTE),
+                                                true
+                                            ).show()
+                                        },
+                                        modifier = Modifier.size(80.dp),
+                                        shape = MaterialTheme.shapes.medium,
+                                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.AccessTime,
+                                            contentDescription = "Pick a Time",
+                                            tint = Color.Unspecified,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = if (selectedTime.isNotBlank()) selectedTime
+                                            else if (!isToHome) "Pick an\narrival time"
+                                            else "Pick a\ndeparture time",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            modifier = Modifier.align(Alignment.Center),
+                                            textAlign = TextAlign.Center
+                                        )
+                                        if (selectedTime.isNotBlank()) {
+                                            IconButton(
+                                                onClick = { selectedTime = "" },
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .offset(x = 40.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Clear Time",
+                                                    tint = MaterialTheme.colorScheme.error,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                locationInput = LocationData()
+                                passengerNotes = ""
+                                selectedDate = ""
+                                selectedTime = ""
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.extraLarge
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                OutlinedButton(
-                                    onClick = {
-                                        val calendar = Calendar.getInstance()
-                                        DatePickerDialog(
-                                            context,
-                                            { _, y, m, d ->
-                                                calendar.set(y, m, d)
-                                                selectedDate =
-                                                    SimpleDateFormat(
-                                                        "dd-MM-yyyy",
-                                                        Locale.getDefault()
-                                                    )
-                                                        .format(calendar.time)
-                                            },
-                                            calendar.get(Calendar.YEAR),
-                                            calendar.get(Calendar.MONTH),
-                                            calendar.get(Calendar.DAY_OF_MONTH)
-                                        ).show()
-                                    },
-                                    modifier = Modifier.size(80.dp),
-                                    shape = MaterialTheme.shapes.medium,
-                                    border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.DateRange,
-                                        contentDescription = "Pick a Date",
-                                        tint = Color.Unspecified,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = if (selectedDate.isNotBlank()) selectedDate else "Pick a Date",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        modifier = Modifier.align(Alignment.Center)
-                                    )
-                                    if (selectedDate.isNotBlank()) {
-                                        IconButton(
-                                            onClick = { selectedDate = "" },
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .offset(x = 40.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = "Clear Date",
-                                                tint = MaterialTheme.colorScheme.error,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                OutlinedButton(
-                                    onClick = {
-                                        val calendar = Calendar.getInstance()
-                                        TimePickerDialog(
-                                            context,
-                                            { _, h, m ->
-                                                selectedTime = String.format("%02d:%02d", h, m)
-                                            },
-                                            calendar.get(Calendar.HOUR_OF_DAY),
-                                            calendar.get(Calendar.MINUTE),
-                                            true
-                                        ).show()
-                                    },
-                                    modifier = Modifier.size(80.dp),
-                                    shape = MaterialTheme.shapes.medium,
-                                    border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.AccessTime,
-                                        contentDescription = "Pick a Time",
-                                        tint = Color.Unspecified,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = if (selectedTime.isNotBlank()) selectedTime
-                                        else if (!isToHome) "Pick an\narrival time"
-                                        else "Pick a\ndeparture time",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        modifier = Modifier.align(Alignment.Center),
-                                        textAlign = TextAlign.Center
-                                    )
-                                    if (selectedTime.isNotBlank()) {
-                                        IconButton(
-                                            onClick = { selectedTime = "" },
-                                            modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .offset(x = 40.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = "Clear Time",
-                                                tint = MaterialTheme.colorScheme.error,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                            Text("Clear All Fields")
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Button(
-                        onClick = {
-                            locationInput = LocationData()
-                            passengerNotes = ""
-                            selectedDate = ""
-                            selectedTime = ""
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.extraLarge
-                    ) {
-                        Text("Clear All Fields")
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                isLoading = true
-                                try {
-                                    val geo = mapsService.getCoordinatesFromAddress(locationInput.name)
-                                    if (geo == null) {
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    isLoading = true
+                                    try {
+                                        val geo =
+                                            mapsService.getCoordinatesFromAddress(locationInput.name)
+                                        if (geo == null) {
+                                            Toast.makeText(
+                                                context,
+                                                "❌ Address not found",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            return@launch
+                                        }
+                                        pickupStop = PickupStop(location = geo, passengerId = uid)
+                                        val availableRides =
+                                            passengerRideFinder.getAvailableRidesForPassenger(
+                                                companyCode = companyCode,
+                                                direction = direction,
+                                                passengerArrivalTime = if (!isToHome) selectedTime else "",
+                                                passengerDepartureTime = if (isToHome) selectedTime else "",
+                                                passengerDate = selectedDate,
+                                                pickupPoint = pickupStop,
+                                                rideRepository = rideRepository,
+                                                rideRequestRepository = rideRequestRepository
+                                            )
+                                        rides = availableRides
+                                        ridesFetched = true
+                                    } catch (e: Exception) {
                                         Toast.makeText(
                                             context,
-                                            "❌ Address not found",
+                                            "❌ Error fetching rides",
                                             Toast.LENGTH_SHORT
                                         ).show()
-                                        return@launch
+                                        e.printStackTrace()
+                                    } finally {
+                                        isLoading = false
                                     }
-                                    pickupStop = PickupStop(location = geo, passengerId = uid)
-                                    val availableRides = passengerRideFinder.getAvailableRidesForPassenger(
-                                        companyCode = companyCode,
-                                        direction = direction,
-                                        passengerArrivalTime = if (!isToHome) selectedTime else "",
-                                        passengerDepartureTime = if (isToHome) selectedTime else "",
-                                        passengerDate = selectedDate,
-                                        pickupPoint = pickupStop,
-                                        rideRepository = rideRepository,
-                                        rideRequestRepository = rideRequestRepository
-                                    )
-                                    rides = availableRides
-                                    ridesFetched = true
-                                } catch (e: Exception) {
-                                    Toast.makeText(
-                                        context,
-                                        "❌ Error fetching rides",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    e.printStackTrace()
-                                } finally {
-                                    isLoading = false
                                 }
+                            },
+                            enabled = isFormValid,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.extraLarge
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Searching...")
+                            } else {
+                                Text("Show Available Rides")
                             }
-                        },
-                        enabled = isFormValid,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.extraLarge
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Searching...")
-                        } else {
-                            Text("Show Available Rides")
                         }
-                    }
 
-                    if (ridesFetched) {
-                        if (rides.isEmpty()) {
-                            Text(
-                                "❌ No available rides matching your request.",
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(rides) { ride ->
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                                        elevation = CardDefaults.cardElevation(4.dp)
-                                    ) {
-                                        Column(modifier = Modifier.padding(16.dp)) {
-                                            Text("Start: ${ride.ride.startLocation.name}")
-                                            Text("Destination: ${ride.ride.destination.name}")
-                                            Text("Date: ${ride.ride.date}")
-                                            Text("Arrival Time: ${ride.detourEvaluationResult.updatedReferenceTime}")
-                                            val timeLabel =
-                                                if (direction == RideDirection.TO_WORK) {
-                                                    ride.detourEvaluationResult.pickupLocation?.pickupTime
-                                                        ?: "לא ידוע"
-                                                } else {
-                                                    ride.detourEvaluationResult.pickupLocation?.dropoffTime
-                                                        ?: "לא ידוע"
-                                                }
-                                            val timeLabelTitle =
-                                                if (direction == RideDirection.TO_WORK) "Pickup Time" else "Dropoff Time"
-                                            Text("$timeLabelTitle: $timeLabel")
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Button(onClick = {
-                                                coroutineScope.launch {
-                                                    val success = rideRequestRepository.sendRequest(
-                                                        rideId = ride.ride.rideId,
-                                                        passengerId = uid,
-                                                        pickupLocation = pickupStop.location,
-                                                        detourEvaluationResult = ride.detourEvaluationResult,
-                                                        notes = passengerNotes
-                                                    )
-                                                    Toast.makeText(
-                                                        context,
-                                                        if (success) "✅ Request sent" else "❌ Failed to send request",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                    if (success) {
-                                                        rides =
-                                                            rides.filterNot { it.ride.rideId == ride.ride.rideId }
+                        if (ridesFetched) {
+                            if (rides.isEmpty()) {
+                                Text(
+                                    "❌ No available rides matching your request.",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(rides) { ride ->
+                                        Card(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                            elevation = CardDefaults.cardElevation(4.dp)
+                                        ) {
+                                            Column(modifier = Modifier.padding(16.dp)) {
+                                                Text("Start: ${ride.ride.startLocation.name}")
+                                                Text("Destination: ${ride.ride.destination.name}")
+                                                Text("Date: ${ride.ride.date}")
+                                                Text("Arrival Time: ${ride.detourEvaluationResult.updatedReferenceTime}")
+                                                val timeLabel =
+                                                    if (direction == RideDirection.TO_WORK) {
+                                                        ride.detourEvaluationResult.pickupLocation?.pickupTime
+                                                            ?: "לא ידוע"
+                                                    } else {
+                                                        ride.detourEvaluationResult.pickupLocation?.dropoffTime
+                                                            ?: "לא ידוע"
                                                     }
+                                                val timeLabelTitle =
+                                                    if (direction == RideDirection.TO_WORK) "Pickup Time" else "Dropoff Time"
+                                                Text("$timeLabelTitle: $timeLabel")
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Button(onClick = {
+                                                    coroutineScope.launch {
+                                                        val success =
+                                                            rideRequestRepository.sendRequest(
+                                                                rideId = ride.ride.rideId,
+                                                                passengerId = uid,
+                                                                pickupLocation = pickupStop.location,
+                                                                detourEvaluationResult = ride.detourEvaluationResult,
+                                                                notes = passengerNotes
+                                                            )
+                                                        Toast.makeText(
+                                                            context,
+                                                            if (success) "✅ Request sent" else "❌ Failed to send request",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                        if (success) {
+                                                            rides =
+                                                                rides.filterNot { it.ride.rideId == ride.ride.rideId }
+                                                        }
+                                                    }
+                                                }, modifier = Modifier.fillMaxWidth()) {
+                                                    Text("Send Request")
                                                 }
-                                            }, modifier = Modifier.fillMaxWidth()) {
-                                                Text("Send Request")
                                             }
                                         }
                                     }
@@ -441,30 +448,30 @@ fun PassengerRideSearchScreen(
                             }
                         }
                     }
-                }
 
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth(),
-                    tonalElevation = 4.dp,
-                    shadowElevation = 4.dp,
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    BottomNavigationButtons(
-                        uid = uid,
-                        navController = navController,
-                        showBackButton = true,
-                        showHomeButton = true
-                    )
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth(),
+                        tonalElevation = 4.dp,
+                        shadowElevation = 4.dp,
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        BottomNavigationButtons(
+                            uid = uid,
+                            navController = navController,
+                            showBackButton = true,
+                            showHomeButton = true
+                        )
+                    }
                 }
-            }
-        } else {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
         }
     }

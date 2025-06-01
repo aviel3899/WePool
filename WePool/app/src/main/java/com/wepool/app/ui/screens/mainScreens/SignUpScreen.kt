@@ -25,6 +25,7 @@ import com.wepool.app.R
 import com.wepool.app.data.model.enums.user.UserRole
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.components.RoleSelectionCard
 import kotlinx.coroutines.launch
 
@@ -67,222 +68,234 @@ fun SignUpScreen(navController: NavController) {
                 companyCode.isNotBlank()
     }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .padding(horizontal = 32.dp)) {
-        val scrollState = rememberScrollState()
-
-        Column(
+    BackgroundWrapper {
+        Box(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .verticalScroll(scrollState)
-                .padding(vertical = 16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .padding(horizontal = 32.dp)
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
-            Text("Create an Account", style = MaterialTheme.typography.headlineSmall)
-            Spacer(modifier = Modifier.height(24.dp))
+            val scrollState = rememberScrollState()
 
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                CustomTextField(
-                    value = name,
-                    onValueChange = { name = it; errorMessage = null },
-                    label = "Name",
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                CustomTextField(
-                    value = email,
-                    onValueChange = { email = it; errorMessage = null },
-                    label = "Email",
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                CustomTextField(
-                    value = password,
-                    onValueChange = { password = it; errorMessage = null },
-                    label = "Password",
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                CustomTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it; errorMessage = null },
-                    label = "Confirm Password",
-                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                            Icon(
-                                imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                CustomTextField(
-                    value = phoneNumber,
-                    onValueChange = { phoneNumber = it; errorMessage = null },
-                    label = "Phone Number",
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                CustomTextField(
-                    value = companyCode,
-                    onValueChange = { companyCode = it; errorMessage = null },
-                    label = "Company Code",
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text("Select Your Role(s)", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .verticalScroll(scrollState)
+                    .padding(vertical = 16.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                RoleSelectionCard(
-                    role = UserRole.DRIVER,
-                    isSelected = selectedRoles[UserRole.DRIVER] ?: false,
-                    onClick = { selectedRoles[UserRole.DRIVER] = !(selectedRoles[UserRole.DRIVER] ?: false) },
-                    iconResId = R.drawable.seat_belt_svgrepo_com,
-                    text = "Driver",
-                    modifier = Modifier.weight(1f)
-                )
-                RoleSelectionCard(
-                    role = UserRole.PASSENGER,
-                    isSelected = selectedRoles[UserRole.PASSENGER] ?: false,
-                    onClick = { selectedRoles[UserRole.PASSENGER] = !(selectedRoles[UserRole.PASSENGER] ?: false) },
-                    iconResId = R.drawable.steering_wheel_car_svgrepo_com,
-                    text = "Passenger",
-                    modifier = Modifier.weight(1f)
-                )
-            }
+                Spacer(modifier = Modifier.height(32.dp))
+                Text("Create an Account", style = MaterialTheme.typography.headlineSmall)
+                Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(onClick = {
-                if (!isInputValid()) {
-                    errorMessage = "Please fill all fields"
-                    return@Button
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    CustomTextField(
+                        value = name,
+                        onValueChange = { name = it; errorMessage = null },
+                        label = "Name",
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
-                if (password != confirmPassword) {
-                    errorMessage = "Password doesn't match"
-                    return@Button
-                }
-                val chosenRoles = selectedRoles.filterValues { it }.keys.toList()
-                if (chosenRoles.isEmpty()) {
-                    errorMessage = "Pick at least one role"
-                    return@Button
-                }
-                showTermsDialog = true
-            }, enabled = !isRegistering, modifier = Modifier.fillMaxWidth()) {
-                Text("Register")
-            }
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    CustomTextField(
+                        value = email,
+                        onValueChange = { email = it; errorMessage = null },
+                        label = "Email",
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
 
-            TextButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cancel", color = MaterialTheme.colorScheme.error)
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    CustomTextField(
+                        value = password,
+                        onValueChange = { password = it; errorMessage = null },
+                        label = "Password",
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    CustomTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it; errorMessage = null },
+                        label = "Confirm Password",
+                        visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                confirmPasswordVisible = !confirmPasswordVisible
+                            }) {
+                                Icon(
+                                    imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    CustomTextField(
+                        value = phoneNumber,
+                        onValueChange = { phoneNumber = it; errorMessage = null },
+                        label = "Phone Number",
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    CustomTextField(
+                        value = companyCode,
+                        onValueChange = { companyCode = it; errorMessage = null },
+                        label = "Company Code",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text("Select Your Role(s)", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    RoleSelectionCard(
+                        role = UserRole.DRIVER,
+                        isSelected = selectedRoles[UserRole.DRIVER] ?: false,
+                        onClick = {
+                            selectedRoles[UserRole.DRIVER] =
+                                !(selectedRoles[UserRole.DRIVER] ?: false)
+                        },
+                        iconResId = R.drawable.seat_belt_svgrepo_com,
+                        text = "Driver",
+                        modifier = Modifier.weight(1f)
+                    )
+                    RoleSelectionCard(
+                        role = UserRole.PASSENGER,
+                        isSelected = selectedRoles[UserRole.PASSENGER] ?: false,
+                        onClick = {
+                            selectedRoles[UserRole.PASSENGER] =
+                                !(selectedRoles[UserRole.PASSENGER] ?: false)
+                        },
+                        iconResId = R.drawable.steering_wheel_car_svgrepo_com,
+                        text = "Passenger",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(onClick = {
+                    if (!isInputValid()) {
+                        errorMessage = "Please fill all fields"
+                        return@Button
+                    }
+                    if (password != confirmPassword) {
+                        errorMessage = "Password doesn't match"
+                        return@Button
+                    }
+                    val chosenRoles = selectedRoles.filterValues { it }.keys.toList()
+                    if (chosenRoles.isEmpty()) {
+                        errorMessage = "Pick at least one role"
+                        return@Button
+                    }
+                    showTermsDialog = true
+                }, enabled = !isRegistering, modifier = Modifier.fillMaxWidth()) {
+                    Text("Register")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.error)
+                }
             }
         }
-    }
 
-    if (errorMessage != null) {
-        AlertDialog(
-            onDismissRequest = { errorMessage = null },
-            confirmButton = {
-                TextButton(onClick = { errorMessage = null }) {
-                    Text("OK")
+        if (errorMessage != null) {
+            AlertDialog(
+                onDismissRequest = { errorMessage = null },
+                confirmButton = {
+                    TextButton(onClick = { errorMessage = null }) {
+                        Text("OK")
+                    }
+                },
+                title = { Text("Error") },
+                text = { Text(errorMessage ?: "") }
+            )
+        }
+
+        TermsAndConditionsDialog(
+            showDialog = showTermsDialog,
+            onDismissRequest = { showTermsDialog = false },
+            showCheckbox = true,
+            termsAccepted = termsAccepted,
+            onTermsAcceptedChange = { termsAccepted = it; termsError = false },
+            termsError = termsError,
+            onAccepted = {
+                termsError = false
+                showTermsDialog = false
+                coroutineScope.launch {
+                    isRegistering = true
+
+                    val user = User(
+                        uid = "",
+                        name = name,
+                        email = email,
+                        phoneNumber = phoneNumber,
+                        companyCode = companyCode,
+                        banned = false,
+                        active = false,
+                        roles = selectedRoles.filterValues { it }.keys.toList()
+                    )
+
+                    val result = authRepository.signUpWithEmailAndPassword(
+                        email = email,
+                        password = password,
+                        user = user,
+                        userRepository = userRepository,
+                        companyRepository = companyRepository
+                    )
+
+                    isRegistering = false
+
+                    result.onSuccess {
+                        navController.navigate("login") {
+                            popUpTo("signUp") { inclusive = true }
+                        }
+                    }.onFailure {
+                        Toast.makeText(
+                            context,
+                            it.message ?: "שגיאה בהרשמה",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
-            },
-            title = { Text("Error") },
-            text = { Text(errorMessage ?: "") }
+            }
         )
     }
-
-    TermsAndConditionsDialog(
-        showDialog = showTermsDialog,
-        onDismissRequest = { showTermsDialog = false },
-        showCheckbox = true,
-        termsAccepted = termsAccepted,
-        onTermsAcceptedChange = { termsAccepted = it; termsError = false },
-        termsError = termsError,
-        onAccepted = {
-            termsError = false
-            showTermsDialog = false
-            coroutineScope.launch {
-                isRegistering = true
-
-                val user = User(
-                    uid = "",
-                    name = name,
-                    email = email,
-                    phoneNumber = phoneNumber,
-                    companyCode = companyCode,
-                    banned = false,
-                    active = false,
-                    roles = selectedRoles.filterValues { it }.keys.toList()
-                )
-
-                val result = authRepository.signUpWithEmailAndPassword(
-                    email = email,
-                    password = password,
-                    user = user,
-                    userRepository = userRepository,
-                    companyRepository = companyRepository
-                )
-
-                isRegistering = false
-
-                result.onSuccess {
-                    navController.navigate("login") {
-                        popUpTo("signUp") { inclusive = true }
-                    }
-                }.onFailure {
-                    Toast.makeText(
-                        context,
-                        it.message ?: "שגיאה בהרשמה",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    )
 }
 
 @Composable

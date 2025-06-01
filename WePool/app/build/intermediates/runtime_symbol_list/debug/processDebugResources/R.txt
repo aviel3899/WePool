@@ -1324,6 +1324,7 @@ int color accent_material_dark 0x7f050019
 int color accent_material_light 0x7f05001a
 int color androidx_core_ripple_material_light 0x7f05001b
 int color androidx_core_secondary_text_default_material_light 0x7f05001c
+int color background_dimmed 0x7f05031d
 int color background_floating_material_dark 0x7f05001d
 int color background_floating_material_light 0x7f05001e
 int color background_material_dark 0x7f05001f
@@ -3051,8 +3052,11 @@ int drawable ic_password 0x7f0700b3
 int drawable ic_search_black_24 0x7f0700b4
 int drawable indeterminate_static 0x7f0700b5
 int drawable information_svgrepo_com 0x7f070114
+int drawable light_green_blue_bg 0x7f07011d
 int drawable location_pin_svgrepo_com 0x7f07011c
 int drawable login_line_svgrepo_com 0x7f070106
+int drawable logo 0x7f070120
+int drawable logo_background 0x7f07011f
 int drawable logout_svgrepo_com 0x7f070104
 int drawable m3_avd_hide_password 0x7f0700b6
 int drawable m3_avd_show_password 0x7f0700b7
@@ -3824,6 +3828,10 @@ int layout select_dialog_singlechoice_material 0x7f0b006e
 int layout support_simple_spinner_dropdown_item 0x7f0b006f
 int mipmap ic_launcher 0x7f0d0000
 int mipmap ic_launcher_round 0x7f0d0001
+int mipmap logo 0x7f0d0002
+int mipmap logo_background 0x7f0d0005
+int mipmap logo_foreground 0x7f0d0003
+int mipmap logo_round 0x7f0d0004
 int plurals mtrl_badge_content_description 0x7f0e0000
 int raw firebase_common_keep 0x7f0f0000
 int string abc_action_bar_home_description 0x7f100000

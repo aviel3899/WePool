@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.wepool.app.R
 import com.wepool.app.data.model.enums.user.UserRole
 import com.wepool.app.data.model.users.User
+import com.wepool.app.ui.components.BackgroundWrapper
 
 @Composable
 fun IntermediateScreen(navController: NavController, uid: String) {
@@ -57,199 +58,201 @@ fun IntermediateScreen(navController: NavController, uid: String) {
         }
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier = Modifier.fillMaxSize()) {
+    BackgroundWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(modifier = Modifier.fillMaxSize()) {
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 32.dp)
-                    .padding(bottom = 96.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Welcome to WePool", style = MaterialTheme.typography.headlineMedium)
-                Spacer(modifier = Modifier.height(32.dp))
-
-                val buttonSize = 120.dp
-                val iconSize = 72.dp
-                val iconColor = Color(0xFF03A9F4)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        OutlinedButton(
-                            onClick = {
-                                val isAdmin = user?.roles?.contains(UserRole.ADMIN) == true
-                                if (user?.active == true || isAdmin) {
-                                    navController.navigate("roleSelection/$uid")
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "The user is not active. Please contact your HR Manager",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            },
-                            modifier = Modifier.size(buttonSize),
-                            shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Role Selection",
-                                tint = iconColor,
-                                modifier = Modifier.size(iconSize)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Role\nSelection", textAlign = TextAlign.Center)
-                    }
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        OutlinedButton(
-                            onClick = {
-                                val isAdmin = user?.roles?.contains(UserRole.ADMIN) == true
-                                if (user?.active == true || isAdmin) {
-                                    navController.navigate("rideHistory/$uid")
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Access to ride history is only allowed for active users",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            },
-                            modifier = Modifier.size(buttonSize),
-                            shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.History,
-                                contentDescription = "Ride History",
-                                tint = iconColor,
-                                modifier = Modifier.size(iconSize)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Ride\nHistory", textAlign = TextAlign.Center)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        OutlinedButton(
-                            onClick = { navController.navigate("preferredLocations/$uid") },
-                            modifier = Modifier.size(buttonSize),
-                            shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Preferred Locations",
-                                tint = iconColor,
-                                modifier = Modifier.size(iconSize)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Preferred\nLocations", textAlign = TextAlign.Center)
-                    }
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        OutlinedButton(
-                            onClick = { navController.navigate("updateDetails/$uid") },
-                            modifier = Modifier.size(buttonSize),
-                            shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ManageAccounts,
-                                contentDescription = "Update Personal Details",
-                                tint = iconColor,
-                                modifier = Modifier.size(iconSize)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Update\nDetails", textAlign = TextAlign.Center)
-                    }
-                }
-            }
-
-            if (showDialog) {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f))
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(horizontal = 32.dp)
+                        .padding(bottom = 96.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(dialogMessage!!, style = MaterialTheme.typography.bodyLarge)
-                            Spacer(modifier = Modifier.height(16.dp))
+                    Text("Welcome to WePool", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                            Button(onClick = {
-                                hasShownDialog = true
-                            }) {
-                                Text("OK")
+                    val buttonSize = 120.dp
+                    val iconSize = 72.dp
+                    val iconColor = Color(0xFF03A9F4)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            OutlinedButton(
+                                onClick = {
+                                    val isAdmin = user?.roles?.contains(UserRole.ADMIN) == true
+                                    if (user?.active == true || isAdmin) {
+                                        navController.navigate("roleSelection/$uid")
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "The user is not active. Please contact your HR Manager",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                },
+                                modifier = Modifier.size(buttonSize),
+                                shape = MaterialTheme.shapes.medium,
+                                border = ButtonDefaults.outlinedButtonBorder(enabled = true),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Role Selection",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(iconSize)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Role\nSelection", textAlign = TextAlign.Center)
+                        }
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            OutlinedButton(
+                                onClick = {
+                                    val isAdmin = user?.roles?.contains(UserRole.ADMIN) == true
+                                    if (user?.active == true || isAdmin) {
+                                        navController.navigate("rideHistory/$uid")
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Access to ride history is only allowed for active users",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                },
+                                modifier = Modifier.size(buttonSize),
+                                shape = MaterialTheme.shapes.medium,
+                                border = ButtonDefaults.outlinedButtonBorder(enabled = true),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.History,
+                                    contentDescription = "Ride History",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(iconSize)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Ride\nHistory", textAlign = TextAlign.Center)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            OutlinedButton(
+                                onClick = { navController.navigate("preferredLocations/$uid") },
+                                modifier = Modifier.size(buttonSize),
+                                shape = MaterialTheme.shapes.medium,
+                                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = "Preferred Locations",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(iconSize)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Preferred\nLocations", textAlign = TextAlign.Center)
+                        }
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            OutlinedButton(
+                                onClick = { navController.navigate("updateDetails/$uid") },
+                                modifier = Modifier.size(buttonSize),
+                                shape = MaterialTheme.shapes.medium,
+                                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ManageAccounts,
+                                    contentDescription = "Update Personal Details",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(iconSize)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Update\nDetails", textAlign = TextAlign.Center)
+                        }
+                    }
+                }
+
+                if (showDialog) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(dialogMessage!!, style = MaterialTheme.typography.bodyLarge)
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Button(onClick = {
+                                    hasShownDialog = true
+                                }) {
+                                    Text("OK")
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            FloatingActionButton(
-                onClick = { showTermsDialog = true },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 24.dp, bottom = 96.dp),
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Info, contentDescription = "Terms Info")
-            }
-
-            TermsAndConditionsDialog(
-                showDialog = showTermsDialog,
-                onDismissRequest = { showTermsDialog = false },
-                showCheckbox = false
-            )
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                OutlinedButton(
-                    onClick = {
-                        navController.navigate("login")
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                FloatingActionButton(
+                    onClick = { showTermsDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 24.dp, bottom = 96.dp),
+                    containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.logout_svgrepo_com),
-                        contentDescription = "Logout",
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Icon(Icons.Default.Info, contentDescription = "Terms Info")
+                }
 
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Logout", color = MaterialTheme.colorScheme.error)
+                TermsAndConditionsDialog(
+                    showDialog = showTermsDialog,
+                    onDismissRequest = { showTermsDialog = false },
+                    showCheckbox = false
+                )
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            navController.navigate("login")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.logout_svgrepo_com),
+                            contentDescription = "Logout",
+                            modifier = Modifier.size(24.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Logout", color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }

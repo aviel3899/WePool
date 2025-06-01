@@ -1325,6 +1325,7 @@ color accent_material_dark
 color accent_material_light
 color androidx_core_ripple_material_light
 color androidx_core_secondary_text_default_material_light
+color background_dimmed
 color background_floating_material_dark
 color background_floating_material_light
 color background_material_dark
@@ -3052,8 +3053,11 @@ drawable ic_password
 drawable ic_search_black_24
 drawable indeterminate_static
 drawable information_svgrepo_com
+drawable light_green_blue_bg
 drawable location_pin_svgrepo_com
 drawable login_line_svgrepo_com
+drawable logo
+drawable logo_background
 drawable logout_svgrepo_com
 drawable m3_avd_hide_password
 drawable m3_avd_show_password
@@ -3825,6 +3829,10 @@ layout select_dialog_singlechoice_material
 layout support_simple_spinner_dropdown_item
 mipmap ic_launcher
 mipmap ic_launcher_round
+mipmap logo
+mipmap logo_background
+mipmap logo_foreground
+mipmap logo_round
 plurals mtrl_badge_content_description
 raw firebase_common_keep
 string abc_action_bar_home_description

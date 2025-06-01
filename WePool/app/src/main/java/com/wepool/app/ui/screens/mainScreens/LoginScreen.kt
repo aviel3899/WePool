@@ -32,6 +32,7 @@ import com.wepool.app.data.repository.LoginSessionManager
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.painterResource
 import com.wepool.app.R
+import com.wepool.app.ui.components.BackgroundWrapper
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -49,229 +50,216 @@ fun LoginScreen(navController: NavController) {
     var showResetDialog by remember { mutableStateOf(false) }
     var resetEmail by remember { mutableStateOf("") }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFFE3F2FD), Color(0xFFBBDEFB))
-                )
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
+    BackgroundWrapper {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp)
-                .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(24.dp))
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.DirectionsCar,
-                contentDescription = "Carpool Icon",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Welcome to WePool", style = MaterialTheme.typography.headlineSmall)
-            Spacer(modifier = Modifier.height(24.dp))
-
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = {
-                        email = it
-                        errorMessage = null
-                    },
-                    label = {
-                        Text(
-                            text = "Email",
-                            textAlign = TextAlign.Start
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
-                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = {
-                        password = it
-                        errorMessage = null
-                    },
-                    label = {
-                        Text(
-                            text = "Password",
-                            textAlign = TextAlign.Start
-                        )
-                    },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            TextButton(
-                onClick = { showResetDialog = true },
-                contentPadding = PaddingValues(vertical = 4.dp),
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Text("Forgot password", style = MaterialTheme.typography.labelSmall)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        if (email.isBlank() || password.isBlank()) {
-                            errorMessage = "Email and password must not be empty."
-                            return@launch
-                        }
-
-                        isLoading = true
-                        val result = authRepository.loginWithEmailAndPassword(email, password)
-                        isLoading = false
-
-                        result.onSuccess { uid ->
-                            LoginSessionManager.setDidLoginManually(context, true)
-
-                            val navigated = handleNotificationNavigation(context, navController)
-                            if (!navigated) {
-                                navController.navigate("intermediate/$uid") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            }
-                        }.onFailure {
-                            errorMessage = it.message
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading,
-                shape = RoundedCornerShape(16.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp)
+                    .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(24.dp))
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.login_line_svgrepo_com),
-                    contentDescription = "Login Icon",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(if (isLoading) "Logging in..." else "Log In")
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            OutlinedButton(
-                onClick = { navController.navigate("signup") },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.contact_details_svgrepo_com),
-                    contentDescription = "Sign Up Icon",
+                    imageVector = Icons.Default.DirectionsCar,
+                    contentDescription = "Carpool Icon",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(48.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Sign Up")
-            }
-
-            errorMessage?.let {
-                Spacer(modifier = Modifier.height(16.dp))
-                val isSuccess = it.startsWith("\uD83D\uDCE7")
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = it,
-                    color = if (isSuccess) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
-                )
-            }
-        }
-
-        if (showResetDialog) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .blur(16.dp)
-                        .background(Color.Black.copy(alpha = 0.3f))
+                    "Welcome to WePool",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.Black
                 )
 
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .padding(24.dp)
-                        .fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Reset Password", style = MaterialTheme.typography.titleMedium)
-                            IconButton(onClick = { showResetDialog = false }) {
-                                Icon(Icons.Default.Close, contentDescription = "Close dialog")
+                Spacer(modifier = Modifier.height(24.dp))
+
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = {
+                            email = it
+                            errorMessage = null
+                        },
+                        label = { Text("Email", textAlign = TextAlign.Start) },
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
+                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = {
+                            password = it
+                            errorMessage = null
+                        },
+                        label = { Text("Password", textAlign = TextAlign.Start) },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                )
                             }
-                        }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                TextButton(
+                    onClick = { showResetDialog = true },
+                    contentPadding = PaddingValues(vertical = 4.dp),
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Forgot password", style = MaterialTheme.typography.labelSmall)
+                }
 
-                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                            OutlinedTextField(
-                                value = resetEmail,
-                                onValueChange = { resetEmail = it },
-                                label = {
-                                    Text(
-                                        text = "Email",
-                                        textAlign = TextAlign.Start
-                                    )
-                                },
-                                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
-                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-                        }
+                Spacer(modifier = Modifier.height(24.dp))
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            if (email.isBlank() || password.isBlank()) {
+                                errorMessage = "Email and password must not be empty."
+                                return@launch
+                            }
 
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    val success = authRepository.resetPassword(resetEmail)
-                                    showResetDialog = false
-                                    errorMessage = if (success) {
-                                        "\uD83D\uDCE7 Reset email sent. Check your inbox."
-                                    } else {
-                                        "\u274C Failed to send reset email."
+                            isLoading = true
+                            val result = authRepository.loginWithEmailAndPassword(email, password)
+                            isLoading = false
+
+                            result.onSuccess { uid ->
+                                LoginSessionManager.setDidLoginManually(context, true)
+
+                                val navigated = handleNotificationNavigation(context, navController)
+                                if (!navigated) {
+                                    navController.navigate("intermediate/$uid") {
+                                        popUpTo("login") { inclusive = true }
                                     }
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Send Reset Email")
+                            }.onFailure {
+                                errorMessage = it.message
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.login_line_svgrepo_com),
+                        contentDescription = "Login Icon",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (isLoading) "Logging in..." else "Log In")
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedButton(
+                    onClick = { navController.navigate("signup") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.contact_details_svgrepo_com),
+                        contentDescription = "Sign Up Icon",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Sign Up")
+                }
+
+                errorMessage?.let {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    val isSuccess = it.startsWith("\uD83D\uDCE7")
+                    Text(
+                        text = it,
+                        color = if (isSuccess) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            if (showResetDialog) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .blur(16.dp)
+                            .background(Color.Black.copy(alpha = 0.3f))
+                    )
+
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .padding(24.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Reset Password", style = MaterialTheme.typography.titleMedium)
+                                IconButton(onClick = { showResetDialog = false }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Close dialog")
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                OutlinedTextField(
+                                    value = resetEmail,
+                                    onValueChange = { resetEmail = it },
+                                    label = { Text("Email", textAlign = TextAlign.Start) },
+                                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
+                                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        val success = authRepository.resetPassword(resetEmail)
+                                        showResetDialog = false
+                                        errorMessage = if (success) {
+                                            "\uD83D\uDCE7 Reset email sent. Check your inbox."
+                                        } else {
+                                            "\u274C Failed to send reset email."
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Send Reset Email")
+                            }
                         }
                     }
                 }

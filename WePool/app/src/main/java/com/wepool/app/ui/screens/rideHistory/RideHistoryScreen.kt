@@ -22,6 +22,7 @@ import com.wepool.app.data.model.ride.Ride
 import com.wepool.app.data.model.users.RoleOnlyFilters
 import com.wepool.app.data.repository.interfaces.IRideRepository
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.components.ExpandableCard
 import com.wepool.app.ui.screens.rideHistory.RideHistoryCard
@@ -67,6 +68,7 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
                         val passengerRides = rideRepository.getPastRidesAsPassenger(uid)
                         (driverRides + passengerRides).distinctBy { it.rideId }
                     }
+
                     else -> emptyList()
                 }
 
@@ -97,87 +99,93 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
         }
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-                    .padding(bottom = 64.dp)
-            ) {
-                Text(
-                    text = "Ride History",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                ExpandableCard(
-                    title = "Filter by Role",
-                    filters = filters,
-                    selectedSortFields = rideSortFields,
-                    onSortFieldsChanged = { rideSortFields = it.filterIsInstance<RideSortFieldsWithOrder>() },
-                    availableFilters = listOf(UserFilterFields.USER_ROLE),
-                    selectedFilters = selectedFilters,
-                    onFiltersChanged = {
-                        filters = it as RoleOnlyFilters
-                        userRoleFilter = filters.role
-                    },
-                    onSelectedFiltersChanged = { selectedFilters = it },
-                    onSearchTriggeredChanged = {
-                        searchTriggered = true
-                        hasFilterBeenApplied = false
-                    },
-                    onSearchClicked = { refreshRides() },
-                    showSort = true,
-                    showFilter = true,
-                    showCleanAllButton = true,
-                    limitUserSuggestionsToCompany = false,
-                    rideAvailableSortFields = listOf(
-                        RideSortFields.DATE,
-                        RideSortFields.DEPARTURE_TIME,
-                        RideSortFields.ARRIVAL_TIME
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                when {
-                    !hasFilterBeenApplied -> Text(
-                        "Please select a filter and press Refresh to show rides.",
+    BackgroundWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                        .padding(bottom = 64.dp)
+                ) {
+                    Text(
+                        text = "Ride History",
+                        style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
-                    loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                    rides.isEmpty() -> Text(
-                        "No ride history found for selected role.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    ExpandableCard(
+                        title = "Filter by Role",
+                        filters = filters,
+                        selectedSortFields = rideSortFields,
+                        onSortFieldsChanged = {
+                            rideSortFields = it.filterIsInstance<RideSortFieldsWithOrder>()
+                        },
+                        availableFilters = listOf(UserFilterFields.USER_ROLE),
+                        selectedFilters = selectedFilters,
+                        onFiltersChanged = {
+                            filters = it as RoleOnlyFilters
+                            userRoleFilter = filters.role
+                        },
+                        onSelectedFiltersChanged = { selectedFilters = it },
+                        onSearchTriggeredChanged = {
+                            searchTriggered = true
+                            hasFilterBeenApplied = false
+                        },
+                        onSearchClicked = { refreshRides() },
+                        showSort = true,
+                        showFilter = true,
+                        showCleanAllButton = true,
+                        limitUserSuggestionsToCompany = false,
+                        rideAvailableSortFields = listOf(
+                            RideSortFields.DATE,
+                            RideSortFields.DEPARTURE_TIME,
+                            RideSortFields.ARRIVAL_TIME
+                        )
                     )
-                    else -> {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(rides) { ride ->
-                                RideHistoryCard(ride = ride)
-                                Spacer(modifier = Modifier.height(8.dp))
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    when {
+                        !hasFilterBeenApplied -> Text(
+                            "Please select a filter and press Refresh to show rides.",
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+
+                        loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                        rides.isEmpty() -> Text(
+                            "No ride history found for selected role.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+
+                        else -> {
+                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                items(rides) { ride ->
+                                    RideHistoryCard(ride = ride)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
-                tonalElevation = 4.dp,
-                shadowElevation = 4.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                BottomNavigationButtons(
-                    uid = uid,
-                    navController = navController,
-                    showBackButton = true,
-                    showHomeButton = false
-                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+                    tonalElevation = 4.dp,
+                    shadowElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    BottomNavigationButtons(
+                        uid = uid,
+                        navController = navController,
+                        showBackButton = true,
+                        showHomeButton = false
+                    )
+                }
             }
         }
     }

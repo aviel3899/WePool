@@ -15,115 +15,118 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 
 @Composable
 fun DriverMenuScreen(navController: NavController, uid: String) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier = Modifier.fillMaxSize()) {
+    BackgroundWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(modifier = Modifier.fillMaxSize()) {
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 32.dp)
-                    .padding(bottom = 96.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Driver Menu", style = MaterialTheme.typography.headlineSmall)
-                Spacer(modifier = Modifier.height(32.dp))
-
-                val buttonSize = 120.dp
-                val iconSize = 72.dp
-                val iconColor = Color(0xFF03A9F4)
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    OutlinedButton(
-                        onClick = { navController.navigate("rideDirection/$uid/DRIVER") },
-                        modifier = Modifier.size(buttonSize),
-                        shape = MaterialTheme.shapes.medium,
-                        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AddCircle,
-                            contentDescription = "Create Ride",
-                            tint = iconColor,
-                            modifier = Modifier.size(iconSize)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Create Ride", style = MaterialTheme.typography.labelLarge)
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Requests + Active Rides - Bottom Row
-                Row(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .fillMaxSize()
+                        .padding(horizontal = 32.dp)
+                        .padding(bottom = 96.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f)
-                    ) {
+                    Text("Driver Menu", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    val buttonSize = 120.dp
+                    val iconSize = 72.dp
+                    val iconColor = Color(0xFF03A9F4)
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         OutlinedButton(
-                            onClick = { navController.navigate("driverPendingRequests/$uid") },
+                            onClick = { navController.navigate("rideDirection/$uid/DRIVER") },
                             modifier = Modifier.size(buttonSize),
                             shape = MaterialTheme.shapes.medium,
                             border = ButtonDefaults.outlinedButtonBorder(enabled = true)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.RequestPage,
-                                contentDescription = "Requests",
+                                imageVector = Icons.Default.AddCircle,
+                                contentDescription = "Create Ride",
                                 tint = iconColor,
                                 modifier = Modifier.size(iconSize)
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Requests", style = MaterialTheme.typography.labelLarge)
+                        Text("Create Ride", style = MaterialTheme.typography.labelLarge)
                     }
 
-                    Spacer(modifier = Modifier.width(48.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f)
+                    // Requests + Active Rides - Bottom Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        OutlinedButton(
-                            onClick = { navController.navigate("driverActiveRides/$uid") },
-                            modifier = Modifier.size(buttonSize),
-                            shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.DirectionsCar,
-                                contentDescription = "Active Rides",
-                                tint = iconColor,
-                                modifier = Modifier.size(iconSize)
-                            )
+                            OutlinedButton(
+                                onClick = { navController.navigate("driverPendingRequests/$uid") },
+                                modifier = Modifier.size(buttonSize),
+                                shape = MaterialTheme.shapes.medium,
+                                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.RequestPage,
+                                    contentDescription = "Requests",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(iconSize)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Requests", style = MaterialTheme.typography.labelLarge)
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Active Rides", style = MaterialTheme.typography.labelLarge)
+
+                        Spacer(modifier = Modifier.width(48.dp))
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedButton(
+                                onClick = { navController.navigate("driverActiveRides/$uid") },
+                                modifier = Modifier.size(buttonSize),
+                                shape = MaterialTheme.shapes.medium,
+                                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DirectionsCar,
+                                    contentDescription = "Active Rides",
+                                    tint = iconColor,
+                                    modifier = Modifier.size(iconSize)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Active Rides", style = MaterialTheme.typography.labelLarge)
+                        }
                     }
                 }
-            }
 
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
-                tonalElevation = 4.dp,
-                shadowElevation = 4.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                BottomNavigationButtons(
-                    uid = uid,
-                    navController = navController,
-                    showBackButton = true,
-                    showHomeButton = true
-                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+                    tonalElevation = 4.dp,
+                    shadowElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    BottomNavigationButtons(
+                        uid = uid,
+                        navController = navController,
+                        showBackButton = true,
+                        showHomeButton = true
+                    )
+                }
             }
         }
     }

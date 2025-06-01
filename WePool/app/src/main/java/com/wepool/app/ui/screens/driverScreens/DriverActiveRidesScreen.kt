@@ -31,6 +31,7 @@ import com.wepool.app.data.model.ride.*
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
 import com.wepool.app.infrastructure.navigation.RideNavigationServiceController
+import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.adminScreens.rides.RideCard
 import com.wepool.app.ui.screens.components.*
 import com.wepool.app.ui.screens.components.sortFields.ride.RideSortManager
@@ -277,90 +278,92 @@ fun DriverActiveRidesContent(
     onPassengerDetailsClicked: (Ride) -> Unit,
     onCleanAllClicked: () -> Unit
 ) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 96.dp),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = "Your Active Rides",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+    BackgroundWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 96.dp),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = "Your Active Rides",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                ExpandableCard(
-                    filters = filters,
-                    selectedSortFields = selectedSortFields,
-                    onSortFieldsChanged = { onSortFieldsChanged(it.filterIsInstance<RideSortFieldsWithOrder>()) },
-                    availableFilters = availableFilters,
-                    selectedFilters = selectedFilters,
-                    onSelectedFiltersChanged = onSelectedFiltersChanged,
-                    onFiltersChanged = { updated ->
-                        if (updated is RideSearchFilters) {
-                            onFiltersChanged(updated)
-                        }
-                    },
-                    rideAvailableSortFields = availableSortFields,
-                    onSearchClicked = onRefreshClicked,
-                    onCleanAllClicked = onCleanAllClicked,
-                    showCompanyName = false,
-                    showUserName = false,
-                    showDate = true,
-                    showDepartureTime = true,
-                    showArrivalTime = true,
-                    showFilter = true,
-                    showSort = true,
-                    showCleanAllButton = true,
-                    title = "Filter Rides"
-                )
+                    ExpandableCard(
+                        filters = filters,
+                        selectedSortFields = selectedSortFields,
+                        onSortFieldsChanged = { onSortFieldsChanged(it.filterIsInstance<RideSortFieldsWithOrder>()) },
+                        availableFilters = availableFilters,
+                        selectedFilters = selectedFilters,
+                        onSelectedFiltersChanged = onSelectedFiltersChanged,
+                        onFiltersChanged = { updated ->
+                            if (updated is RideSearchFilters) {
+                                onFiltersChanged(updated)
+                            }
+                        },
+                        rideAvailableSortFields = availableSortFields,
+                        onSearchClicked = onRefreshClicked,
+                        onCleanAllClicked = onCleanAllClicked,
+                        showCompanyName = false,
+                        showUserName = false,
+                        showDate = true,
+                        showDepartureTime = true,
+                        showArrivalTime = true,
+                        showFilter = true,
+                        showSort = true,
+                        showCleanAllButton = true,
+                        title = "Filter Rides"
+                    )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                when {
-                    loading -> CircularProgressIndicator()
-                    error != null -> Text(error, color = MaterialTheme.colorScheme.error)
-                    rides.isEmpty() -> Text("Click 'Search' to see rides.")
-                    else -> {
-                        val filteredRides =
-                            if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
+                    when {
+                        loading -> CircularProgressIndicator()
+                        error != null -> Text(error, color = MaterialTheme.colorScheme.error)
+                        rides.isEmpty() -> Text("Click 'Search' to see rides.")
+                        else -> {
+                            val filteredRides =
+                                if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
 
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(filteredRides) { ride ->
-                                RideCard(
-                                    ride = ride,
-                                    selectedUserUid = uid,
-                                    onShowMapClicked = { onShowMapClicked(ride) }
-                                )
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(filteredRides) { ride ->
+                                    RideCard(
+                                        ride = ride,
+                                        selectedUserUid = uid,
+                                        onShowMapClicked = { onShowMapClicked(ride) }
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
-                tonalElevation = 4.dp,
-                shadowElevation = 4.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                BottomNavigationButtons(
-                    uid = uid,
-                    navController = navController,
-                    showBackButton = true,
-                    showHomeButton = true
-                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+                    tonalElevation = 4.dp,
+                    shadowElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    BottomNavigationButtons(
+                        uid = uid,
+                        navController = navController,
+                        showBackButton = true,
+                        showHomeButton = true
+                    )
+                }
             }
         }
     }

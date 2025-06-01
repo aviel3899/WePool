@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.R
+import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 
 @Composable
@@ -21,64 +22,66 @@ fun HRManagerMenuScreen(
     uid: String,
     navController: NavController
 ) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 32.dp)
-                    .padding(bottom = 96.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("HR Manager Dashboard", style = MaterialTheme.typography.headlineSmall)
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+    BackgroundWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 32.dp)
+                        .padding(bottom = 96.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    DashboardButton(
-                        label = "Manage Employees",
-                        iconRes = R.drawable.employees_svgrepo_com,
-                        onClick = { navController.navigate("hrManageEmployees/$uid") }
-                    )
+                    Text("HR Manager Dashboard", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                    DashboardButton(
-                        label = "Manage Company",
-                        iconRes = R.drawable.company_svgrepo_com,
-                        onClick = { navController.navigate("hrManageCompany/$uid") }
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        DashboardButton(
+                            label = "Manage Employees",
+                            iconRes = R.drawable.employees_svgrepo_com,
+                            onClick = { navController.navigate("hrManageEmployees/$uid") }
+                        )
+
+                        DashboardButton(
+                            label = "Manage Company",
+                            iconRes = R.drawable.company_svgrepo_com,
+                            onClick = { navController.navigate("hrManageCompany/$uid") }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        DashboardButton(
+                            label = "Manage Rides",
+                            iconRes = R.drawable.car_svgrepo_com,
+                            onClick = { navController.navigate("hrManagerRides/$uid") }
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+                    tonalElevation = 4.dp,
+                    shadowElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface
                 ) {
-                    DashboardButton(
-                        label = "Manage Rides",
-                        iconRes = R.drawable.car_svgrepo_com,
-                        onClick = { navController.navigate("hrManagerRides/$uid") }
+                    BottomNavigationButtons(
+                        uid = uid,
+                        navController = navController,
+                        showBackButton = true,
+                        showHomeButton = true
                     )
                 }
-            }
-
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
-                tonalElevation = 4.dp,
-                shadowElevation = 4.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                BottomNavigationButtons(
-                    uid = uid,
-                    navController = navController,
-                    showBackButton = true,
-                    showHomeButton = true
-                )
             }
         }
     }

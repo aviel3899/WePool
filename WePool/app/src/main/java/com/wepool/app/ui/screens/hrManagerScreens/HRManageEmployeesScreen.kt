@@ -20,6 +20,7 @@ import com.wepool.app.data.model.users.UserSearchFilters
 import com.wepool.app.data.model.company.Company
 import com.wepool.app.data.model.enums.user.UserSortFields
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.components.ExpandableCard
 import com.wepool.app.ui.screens.adminScreens.users.UserCard
@@ -61,7 +62,8 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
             matchesUser && matchesStatus
         }
 
-        val filteredSortFields = filters.sortFields.filter { it.field != UserSortFields.COMPANY_NAME }
+        val filteredSortFields =
+            filters.sortFields.filter { it.field != UserSortFields.COMPANY_NAME }
 
         filteredUsers = UserSortManager.sortUsers(
             filtered,
@@ -75,7 +77,8 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
             try {
                 loading = true
                 company = companyRepository.getCompanyByHrUid(uid)
-                users = company?.let { userRepository.getUsersByCompany(it.companyCode) } ?: emptyList()
+                users =
+                    company?.let { userRepository.getUsersByCompany(it.companyCode) } ?: emptyList()
                 filteredUsers = emptyList()
             } catch (e: Exception) {
                 error = "\u274C Failed to load employees or company info: ${e.message}"
@@ -85,122 +88,153 @@ fun HRManageEmployeesScreen(uid: String, navController: NavController) {
         }
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().padding(bottom = 96.dp)) {
-                ExpandableCard(
-                    title = "Search Employees",
-                    filters = filters,
-                    selectedSortFields = filters.sortFields.filter { it.field != UserSortFields.COMPANY_NAME },
-                    onSortFieldsChanged = { sortFields ->
-                        filters = filters.copy(
-                            sortFields = sortFields
-                                .filterIsInstance<UserSortFieldWithOrder>()
-                                .filter { it.field != UserSortFields.COMPANY_NAME }
-                        )
-                    },
-                    availableFilters = listOf(
-                        UserFilterFields.USER_NAME,
-                        UserFilterFields.PHONE,
-                        UserFilterFields.ACTIVE_USER
-                    ),
-                    userAvailableSortFields = listOf(
-                        UserSortFields.USER_NAME,
-                        UserSortFields.USER_EMAIL,
-                        UserSortFields.USER_PHONE
-                    ),
-                    selectedFilters = selectedFilters,
-                    onSelectedFiltersChanged = { selectedFilters = it.filterIsInstance<UserFilterFields>() },
-                    onFiltersChanged = { updated ->
-                        if (updated is UserSearchFilters) {
-                            filters = updated
-                        }
-                    },
-                    onSearchClicked = {
-                        val query = filters.nameOrEmailOrPhone.orEmpty().trim()
+    BackgroundWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 96.dp)) {
+                    ExpandableCard(
+                        title = "Search Employees",
+                        filters = filters,
+                        selectedSortFields = filters.sortFields.filter { it.field != UserSortFields.COMPANY_NAME },
+                        onSortFieldsChanged = { sortFields ->
+                            filters = filters.copy(
+                                sortFields = sortFields
+                                    .filterIsInstance<UserSortFieldWithOrder>()
+                                    .filter { it.field != UserSortFields.COMPANY_NAME }
+                            )
+                        },
+                        availableFilters = listOf(
+                            UserFilterFields.USER_NAME,
+                            UserFilterFields.PHONE,
+                            UserFilterFields.ACTIVE_USER
+                        ),
+                        userAvailableSortFields = listOf(
+                            UserSortFields.USER_NAME,
+                            UserSortFields.USER_EMAIL,
+                            UserSortFields.USER_PHONE
+                        ),
+                        selectedFilters = selectedFilters,
+                        onSelectedFiltersChanged = {
+                            selectedFilters = it.filterIsInstance<UserFilterFields>()
+                        },
+                        onFiltersChanged = { updated ->
+                            if (updated is UserSearchFilters) {
+                                filters = updated
+                            }
+                        },
+                        onSearchClicked = {
+                            val query = filters.nameOrEmailOrPhone.orEmpty().trim()
 
-                        val isNameOrPhoneSelected = selectedFilters.contains(UserFilterFields.USER_NAME) || selectedFilters.contains(UserFilterFields.PHONE)
-                        val isActiveSelected = selectedFilters.contains(UserFilterFields.ACTIVE_USER)
-
-                        if (isNameOrPhoneSelected && query.isBlank()) {
-                            Toast.makeText(context, "Please enter a name, email, or phone number to search.", Toast.LENGTH_SHORT).show()
-                            return@ExpandableCard
-                        }
-
-                        if (isActiveSelected && filters.isActiveUser == null) {
-                            Toast.makeText(context, "Please select a user status to search.", Toast.LENGTH_SHORT).show()
-                            return@ExpandableCard
-                        }
-
-                        searchTriggered = true
-                        applySearch(users)
-                    },
-                    showDate = false,
-                    showDepartureTime = false,
-                    showArrivalTime = false,
-                    showAvailableSeats = false,
-                    showCompanyName = false,
-                    showUserName = true,
-                    showSort = true,
-                    showFilter = true,
-                    showCleanAllButton = true,
-                    usersInCompany = users,
-                    limitUserSuggestionsToCompany = true,
-                    onSearchTriggeredChanged = { searchTriggered = false },
-                    onCleanAllClicked = {
-                        filters = UserSearchFilters()
-                        selectedFilters = emptyList()
-                        filteredUsers = emptyList()
-                        searchTriggered = false
-                        coroutineScope.launch { kotlinx.coroutines.delay(50) }
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Column(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
-                    when {
-                        loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                        error != null -> Text(
-                            text = error ?: "",
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
-                        !searchTriggered -> Text("Please enter filters and press Search.", modifier = Modifier.align(Alignment.CenterHorizontally))
-                        filteredUsers.isEmpty() -> Text("No employees found.", modifier = Modifier.align(Alignment.CenterHorizontally))
-                        else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(filteredUsers) { user ->
-                                UserCard(
-                                    user = user,
-                                    navController = navController,
-                                    onUserStatusChanged = {
-                                        coroutineScope.launch {
-                                            users = company?.let { userRepository.getUsersByCompany(it.companyCode) } ?: emptyList()
-                                            applySearch(users)
-                                        }
-                                    },
-                                    fromScreen = "HRManageEmployees"
+                            val isNameOrPhoneSelected =
+                                selectedFilters.contains(UserFilterFields.USER_NAME) || selectedFilters.contains(
+                                    UserFilterFields.PHONE
                                 )
+                            val isActiveSelected =
+                                selectedFilters.contains(UserFilterFields.ACTIVE_USER)
+
+                            if (isNameOrPhoneSelected && query.isBlank()) {
+                                Toast.makeText(
+                                    context,
+                                    "Please enter a name, email, or phone number to search.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@ExpandableCard
+                            }
+
+                            if (isActiveSelected && filters.isActiveUser == null) {
+                                Toast.makeText(
+                                    context,
+                                    "Please select a user status to search.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@ExpandableCard
+                            }
+
+                            searchTriggered = true
+                            applySearch(users)
+                        },
+                        showDate = false,
+                        showDepartureTime = false,
+                        showArrivalTime = false,
+                        showAvailableSeats = false,
+                        showCompanyName = false,
+                        showUserName = true,
+                        showSort = true,
+                        showFilter = true,
+                        showCleanAllButton = true,
+                        usersInCompany = users,
+                        limitUserSuggestionsToCompany = true,
+                        onSearchTriggeredChanged = { searchTriggered = false },
+                        onCleanAllClicked = {
+                            filters = UserSearchFilters()
+                            selectedFilters = emptyList()
+                            filteredUsers = emptyList()
+                            searchTriggered = false
+                            coroutineScope.launch { kotlinx.coroutines.delay(50) }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Column(modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)) {
+                        when {
+                            loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                            error != null -> Text(
+                                text = error ?: "",
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+
+                            !searchTriggered -> Text(
+                                "Please enter filters and press Search.",
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+
+                            filteredUsers.isEmpty() -> Text(
+                                "No employees found.",
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+
+                            else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                items(filteredUsers) { user ->
+                                    UserCard(
+                                        user = user,
+                                        navController = navController,
+                                        onUserStatusChanged = {
+                                            coroutineScope.launch {
+                                                users = company?.let {
+                                                    userRepository.getUsersByCompany(it.companyCode)
+                                                } ?: emptyList()
+                                                applySearch(users)
+                                            }
+                                        },
+                                        fromScreen = "HRManageEmployees"
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
-                tonalElevation = 4.dp,
-                shadowElevation = 4.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                BottomNavigationButtons(
-                    uid = uid,
-                    navController = navController,
-                    showBackButton = true,
-                    showHomeButton = true
-                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+                    tonalElevation = 4.dp,
+                    shadowElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    BottomNavigationButtons(
+                        uid = uid,
+                        navController = navController,
+                        showBackButton = true,
+                        showHomeButton = true
+                    )
+                }
             }
         }
     }

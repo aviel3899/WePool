@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.wepool.app.R
+import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 
 @Composable
@@ -22,75 +23,77 @@ fun RideDirectionScreen(
     onToWorkClick: () -> Unit,
     onToHomeClick: () -> Unit
 ) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 32.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Choose Direction", style = MaterialTheme.typography.headlineSmall)
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(
+    BackgroundWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        .fillMaxSize()
+                        .padding(horizontal = 32.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        OutlinedButton(
-                            onClick = onToWorkClick,
-                            modifier = Modifier.size(120.dp),
-                            shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.work_is_money_svgrepo_com),
-                                contentDescription = "WorkBound",
-                                tint = Color.Unspecified,
-                                modifier = Modifier.size(72.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("To Work", style = MaterialTheme.typography.labelLarge)
-                    }
+                    Text("Choose Direction", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        OutlinedButton(
-                            onClick = onToHomeClick,
-                            modifier = Modifier.size(120.dp),
-                            shape = MaterialTheme.shapes.medium,
-                            border = ButtonDefaults.outlinedButtonBorder(enabled = true)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.home_house_svgrepo_com),
-                                contentDescription = "WorkBound",
-                                tint = Color.Unspecified,
-                                modifier = Modifier.size(72.dp)
-                            )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            OutlinedButton(
+                                onClick = onToWorkClick,
+                                modifier = Modifier.size(120.dp),
+                                shape = MaterialTheme.shapes.medium,
+                                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.work_is_money_svgrepo_com),
+                                    contentDescription = "WorkBound",
+                                    tint = Color.Unspecified,
+                                    modifier = Modifier.size(72.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("To Work", style = MaterialTheme.typography.labelLarge)
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("To Home", style = MaterialTheme.typography.labelLarge)
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            OutlinedButton(
+                                onClick = onToHomeClick,
+                                modifier = Modifier.size(120.dp),
+                                shape = MaterialTheme.shapes.medium,
+                                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.home_house_svgrepo_com),
+                                    contentDescription = "WorkBound",
+                                    tint = Color.Unspecified,
+                                    modifier = Modifier.size(72.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("To Home", style = MaterialTheme.typography.labelLarge)
+                        }
                     }
                 }
-            }
 
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
-                tonalElevation = 4.dp,
-                shadowElevation = 4.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                BottomNavigationButtons(
-                    uid = uid,
-                    navController = navController,
-                    showBackButton = true,
-                    showHomeButton = true
-                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+                    tonalElevation = 4.dp,
+                    shadowElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    BottomNavigationButtons(
+                        uid = uid,
+                        navController = navController,
+                        showBackButton = true,
+                        showHomeButton = true
+                    )
+                }
             }
         }
     }

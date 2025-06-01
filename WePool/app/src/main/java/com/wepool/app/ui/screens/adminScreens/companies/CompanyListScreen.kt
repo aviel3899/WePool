@@ -18,6 +18,7 @@ import com.wepool.app.data.model.enums.company.CompanyFilterFields
 import com.wepool.app.data.model.enums.company.CompanySortFieldWithOrder
 import com.wepool.app.data.model.users.User
 import com.wepool.app.infrastructure.RepositoryProvider
+import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.adminScreens.AdminAddCompanyDialog
 import com.wepool.app.ui.screens.components.BottomNavigationButtons
 import com.wepool.app.ui.screens.components.ExpandableCard
@@ -62,7 +63,10 @@ fun CompanyListScreen(uid: String, navController: NavController) {
                 val nameQuery = filters.companyName.orEmpty().trim()
 
                 val filtered = all.filter { company ->
-                    val matchesName = nameQuery.isBlank() || company.companyName.contains(nameQuery, ignoreCase = true)
+                    val matchesName = nameQuery.isBlank() || company.companyName.contains(
+                        nameQuery,
+                        ignoreCase = true
+                    )
 
                     selectedFilters.all { field ->
                         when (field) {
@@ -84,128 +88,130 @@ fun CompanyListScreen(uid: String, navController: NavController) {
         }
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
+    BackgroundWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize()) {
 
-                ExpandableCard(
-                    selectedSortFields = selectedSortFields,
-                    onSortFieldsChanged = {
-                        selectedSortFields = it.filterIsInstance<CompanySortFieldWithOrder>()
-                        filters = filters.copy(sortFields = selectedSortFields)
-                    },
-                    availableFilters = listOf(CompanyFilterFields.COMPANY_NAME),
-                    selectedFilters = selectedFilters,
-                    onSelectedFiltersChanged = {
-                        selectedFilters = it.filterIsInstance<CompanyFilterFields>()
-                    },
-                    filters = filters,
-                    onFiltersChanged = {
-                        if (it is CompanySearchFilters) filters = it
-                    },
-                    onSearchClicked = { refreshCompanies() },
-                    showDate = false,
-                    showArrivalTime = false,
-                    showAvailableSeats = false,
-                    showDepartureTime = false,
-                    showCompanyName = true,
-                    showUserName = false,
-                    showSort = true,
-                    showFilter = true,
-                    showCleanAllButton = true,
-                    usersInCompany = users,
-                    limitUserSuggestionsToCompany = false,
-                    onSearchTriggeredChanged = { hasFilterBeenApplied = false },
-                    onCleanAllClicked = {
-                        filters = CompanySearchFilters()
-                        selectedFilters = emptyList()
-                        selectedSortFields = emptyList()
-                        filteredCompanies = emptyList()
-                        hasFilterBeenApplied = false
-
-                        coroutineScope.launch {
-                            kotlinx.coroutines.delay(50)
+                    ExpandableCard(
+                        selectedSortFields = selectedSortFields,
+                        onSortFieldsChanged = {
+                            selectedSortFields = it.filterIsInstance<CompanySortFieldWithOrder>()
+                            filters = filters.copy(sortFields = selectedSortFields)
+                        },
+                        availableFilters = listOf(CompanyFilterFields.COMPANY_NAME),
+                        selectedFilters = selectedFilters,
+                        onSelectedFiltersChanged = {
+                            selectedFilters = it.filterIsInstance<CompanyFilterFields>()
+                        },
+                        filters = filters,
+                        onFiltersChanged = {
+                            if (it is CompanySearchFilters) filters = it
+                        },
+                        onSearchClicked = { refreshCompanies() },
+                        showDate = false,
+                        showArrivalTime = false,
+                        showAvailableSeats = false,
+                        showDepartureTime = false,
+                        showCompanyName = true,
+                        showUserName = false,
+                        showSort = true,
+                        showFilter = true,
+                        showCleanAllButton = true,
+                        usersInCompany = users,
+                        limitUserSuggestionsToCompany = false,
+                        onSearchTriggeredChanged = { hasFilterBeenApplied = false },
+                        onCleanAllClicked = {
+                            filters = CompanySearchFilters()
+                            selectedFilters = emptyList()
+                            selectedSortFields = emptyList()
+                            filteredCompanies = emptyList()
                             hasFilterBeenApplied = false
+
+                            coroutineScope.launch {
+                                kotlinx.coroutines.delay(50)
+                                hasFilterBeenApplied = false
+                            }
                         }
-                    }
-                )
+                    )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 16.dp)
-                ) {
-                    error?.let {
-                        Text(
-                            text = it,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        error?.let {
+                            Text(
+                                text = it,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
 
-                    when {
-                        !hasFilterBeenApplied -> Text(
-                            "Please enter filters and press Search.",
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
+                        when {
+                            !hasFilterBeenApplied -> Text(
+                                "Please enter filters and press Search.",
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
 
-                        loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                            loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
 
-                        filteredCompanies.isEmpty() -> Text(
-                            "No companies found.",
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
+                            filteredCompanies.isEmpty() -> Text(
+                                "No companies found.",
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
 
-                        else -> {
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items(filteredCompanies) { company ->
-                                    CompanyCard(
-                                        company = company,
-                                        onCompanyUpdated = { refreshCompanies() }
-                                    )
+                            else -> {
+                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                    items(filteredCompanies) { company ->
+                                        CompanyCard(
+                                            company = company,
+                                            onCompanyUpdated = { refreshCompanies() }
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        tonalElevation = 4.dp,
+                        shadowElevation = 4.dp,
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        BottomNavigationButtons(
+                            uid = uid,
+                            navController = navController,
+                            showBackButton = true,
+                            showHomeButton = true,
+                        )
+                    }
                 }
 
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    tonalElevation = 4.dp,
-                    shadowElevation = 4.dp,
-                    color = MaterialTheme.colorScheme.surface
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 32.dp, bottom = 96.dp)
                 ) {
-                    BottomNavigationButtons(
+                    Text("+", fontSize = 24.sp)
+                }
+
+                if (showAddDialog) {
+                    AdminAddCompanyDialog(
                         uid = uid,
-                        navController = navController,
-                        showBackButton = true,
-                        showHomeButton = true,
+                        showDialog = showAddDialog,
+                        onDismiss = {
+                            showAddDialog = false
+                            refreshCompanies()
+                        }
                     )
                 }
-            }
-
-            FloatingActionButton(
-                onClick = { showAddDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 32.dp, bottom = 96.dp)
-            ) {
-                Text("+", fontSize = 24.sp)
-            }
-
-            if (showAddDialog) {
-                AdminAddCompanyDialog(
-                    uid = uid,
-                    showDialog = showAddDialog,
-                    onDismiss = {
-                        showAddDialog = false
-                        refreshCompanies()
-                    }
-                )
             }
         }
     }
