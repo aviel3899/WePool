@@ -122,13 +122,15 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
    
 **📸 Screenshots**
 
- |Logo |Login |Signup |
+ | Logo | Login | Signup |
 |-----------|---------------------|----------------|
 | ![logo](https://github.com/user-attachments/assets/11ed3168-f985-4800-b1b1-64354fe48f00)|![login](https://github.com/user-attachments/assets/cfab6b96-d705-4626-9569-cf109ff65228)|![signup](https://github.com/user-attachments/assets/d6842e9e-5888-4a80-a5bf-45a3bb834319)|
 
-  | Home Page | Preferred Locations | Role Selection |
+  | Home Page | Terms & Condotions | Role Selection |
 |-----------|---------------------|----------------|
-| <a href="https://github.com/user-attachments/assets/e0ae707e-1235-4a14-8aa1-8c223c17f430"><img src="https://github.com/user-attachments/assets/e0ae707e-1235-4a14-8aa1-8c223c17f430" width="250"/></a> | <a href="https://github.com/user-attachments/assets/e22fc62f-0933-4414-b923-356782fb2cbf"><img src="https://github.com/user-attachments/assets/e22fc62f-0933-4414-b923-356782fb2cbf" width="250"/></a> | <a href="https://github.com/user-attachments/assets/204f5a1c-ae4d-4f33-bd1f-cfc9b372896b"><img src="https://github.com/user-attachments/assets/204f5a1c-ae4d-4f33-bd1f-cfc9b372896b" width="250"/></a> |
+| ![intermidiate](https://github.com/user-attachments/assets/35039669-3fe0-489b-bf2c-f79aab172845) | ![terms and conditions](https://github.com/user-attachments/assets/3fae24c2-992d-47bc-b5d7-e6e9ff616ce1)| ![role selection](https://github.com/user-attachments/assets/4bfa47fb-2da2-405a-a179-43c1df9ddd28)|
+
+
 
 | Admin Menu | Admin Ride View | Ride Creation |
 |------------|------------------|----------------|
