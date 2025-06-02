@@ -134,7 +134,7 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 |------------|------------------|----------------|
 |![driver menu](https://github.com/user-attachments/assets/b13bf1ad-73c8-490a-bf4e-73776b13ae0d)|![choose direction](https://github.com/user-attachments/assets/a1ef6acb-17a8-4e03-b628-72db0fe0eaae)|![ride creation](https://github.com/user-attachments/assets/4120191d-9603-4dba-b117-dd37056586f2)|
 
-| Passenger Menu | Join A Ride | Route Map |
+| Passenger Menu | Join A Ride |
 |-------------|--------------|------------|
 |![passenger menu](https://github.com/user-attachments/assets/2d38e966-9599-4f69-9289-5aa952af027b)|![join a ride](https://github.com/user-attachments/assets/ac21e2fc-72ec-45ca-b8c8-613dca12d198)|
 
