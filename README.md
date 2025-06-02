@@ -134,18 +134,41 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 |------------|------------------|----------------|
 |![driver menu](https://github.com/user-attachments/assets/b13bf1ad-73c8-490a-bf4e-73776b13ae0d)|![choose direction](https://github.com/user-attachments/assets/a1ef6acb-17a8-4e03-b628-72db0fe0eaae)|![ride creation](https://github.com/user-attachments/assets/4120191d-9603-4dba-b117-dd37056586f2)|
 
-| Passenger Menu | Join A Ride |
-|-------------|--------------|------------|
-|![passenger menu](https://github.com/user-attachments/assets/2d38e966-9599-4f69-9289-5aa952af027b)|![join a ride](https://github.com/user-attachments/assets/ac21e2fc-72ec-45ca-b8c8-613dca12d198)|
+| Driver Active Rides | Passenger Menu | Join a Ride |
+|------------|------------------|----------------|
+|![driver active rides](https://github.com/user-attachments/assets/c43e81a7-d5ed-498c-b85e-25cb12ae5f9c)|![passenger menu](https://github.com/user-attachments/assets/2d38e966-9599-4f69-9289-5aa952af027b)|![join a ride](https://github.com/user-attachments/assets/ac21e2fc-72ec-45ca-b8c8-613dca12d198)|
 
-| Admin Menu | Active Rides | Route Map |
+| Passenger Active Rides | Admin Menu | Admin Compamies Manage |
 |-------------|--------------|------------|
-| |
+|![passenger active rides](https://github.com/user-attachments/assets/9c643da7-4fbd-4fae-9598-c2bfe8983b10)|![admin menu](https://github.com/user-attachments/assets/d45b3674-443f-464a-9476-467ea284964f)|![copmanies screen](https://github.com/user-attachments/assets/cc853c14-16e6-4b65-ad2b-55629c39c4db)|
 
-| Join a Ride | Active Rides | Route Map |
+|Company Filter | Add Company | Company Employees |
 |-------------|--------------|------------|
-| <a href="https://github.com/user-attachments/assets/8d8a9b44-e738-49e1-9e15-d0b6bbebd9cb"><img src="https://github.com/user-attachments/assets/8d8a9b44-e738-49e1-9e15-d0b6bbebd9cb" width="250"/></a> | <a href="https://github.com/user-attachments/assets/a042baad-5785-49e1-90d7-510a587ce8fb"><img src="https://github.com/user-attachments/assets/a042baad-5785-49e1-90d7-510a587ce8fb" width="250"/></a> | <a href="https://github.com/user-attachments/assets/8bfa36b8-5c46-4106-9f87-c392d8e7e5ec"><img src="https://github.com/user-attachments/assets/8bfa36b8-5c46-4106-9f87-c392d8e7e5ec" width="250"/></a> |
-  
+|![company filter](https://github.com/user-attachments/assets/96e84f40-7bad-47df-aaf6-22564c431ea3)|![add company](https://github.com/user-attachments/assets/ac321157-d5ca-4a1a-9826-807fc1155b36)|![company employees](https://github.com/user-attachments/assets/f3c16063-ffee-42a1-9f8d-ac2414f1a4e3)|
+
+| Company's HR Manager | Admin Users Manager | User Filter |
+|-------------|--------------|------------|
+|![hr manager selection](https://github.com/user-attachments/assets/32e5e25b-11fb-4ee3-8880-d52e2606b80a)|![users screen](https://github.com/user-attachments/assets/146d9eb8-58c2-4ce1-a51c-1ab0ea53f777)|![user filter](https://github.com/user-attachments/assets/09d4a42a-385f-4574-8e92-2fb2917a1395)|
+
+| User Details | Deactivate User | User Deactivated |
+|-------------|--------------|------------|
+|![user details](https://github.com/user-attachments/assets/00842f81-4abc-4830-9764-1992b6381cf4)|![deactivate user](https://github.com/user-attachments/assets/b0a70e24-98ed-4a21-b72b-1049b19cf062)|![user deactivated](https://github.com/user-attachments/assets/49dc8a36-2582-4b65-86e1-e9524707482c)
+
+| User Deactivated Home Page | Admin Rides Manage | Ride Filter |
+|-------------|--------------|------------|
+|![user deactivated tryimg to use the app](https://github.com/user-attachments/assets/88b19999-ed74-4a24-be57-cd414a61044e)|![rides screen](https://github.com/user-attachments/assets/3ac97146-961a-47b6-a1e5-3e8a4df10d75)|![ride filter](https://github.com/user-attachments/assets/d94c90dc-5a79-4bca-a729-0468d8fd9de4)|
+
+| Ride Details | Ride Dynamic Map | Ride Passengers List |
+|-------------|--------------|------------|
+|![ride deatils](https://github.com/user-attachments/assets/005d5f9b-46eb-47b3-adf0-a95cc4ec6195)|![ride map](https://github.com/user-attachments/assets/aa78b71a-a8c9-4dd4-846b-0aad7daff39f)|![passenger list](https://github.com/user-attachments/assets/8b996564-0111-44c5-856e-3aee3d08b0a7)|
+
+| Paseengers Details | HR Manager Menu | HR Manager Company Manage |
+|-------------|--------------|------------|
+|![passenger details](https://github.com/user-attachments/assets/e27387ad-11fc-4958-b861-e0f28c05b797)|![hr manager menu](https://github.com/user-attachments/assets/cba8d5bc-869b-4b95-8ca9-ed167e28c761)|![hr manager company settings](https://github.com/user-attachments/assets/f384779c-81e2-4b59-a510-2ae24439e3fd)|
+
+| Update Details | Ride History Filter | Preferred Locations |
+|-------------|--------------|------------|
+|![update details](https://github.com/user-attachments/assets/f87448cd-bbd9-4e90-b994-40d804d492f4)|![ride history search](https://github.com/user-attachments/assets/a643a818-66ed-4f1a-90f1-c205a6f59d44)|![preferred locations](https://github.com/user-attachments/assets/28ea2c76-2fb5-4af4-bf65-a92560cf59a5)|
 
 
 👥 Contributors
