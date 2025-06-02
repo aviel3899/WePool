@@ -124,7 +124,7 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 
  |Logo |Login |Signup |
 |-----------|---------------------|----------------|
-| ![logo](https://github.com/user-attachments/assets/11ed3168-f985-4800-b1b1-64354fe48f00)![login](https://github.com/user-attachments/assets/cfab6b96-d705-4626-9569-cf109ff65228)![signup](https://github.com/user-attachments/assets/d6842e9e-5888-4a80-a5bf-45a3bb834319)|
+| ![logo](https://github.com/user-attachments/assets/11ed3168-f985-4800-b1b1-64354fe48f00)|![login](https://github.com/user-attachments/assets/cfab6b96-d705-4626-9569-cf109ff65228)|![signup](https://github.com/user-attachments/assets/d6842e9e-5888-4a80-a5bf-45a3bb834319)|
 
   | Home Page | Preferred Locations | Role Selection |
 |-----------|---------------------|----------------|
