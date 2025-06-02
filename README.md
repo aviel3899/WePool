@@ -12,6 +12,8 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 
       Based on arrival time, route detour tolerance, and available seats
 
+      Smart offline matching algorithm to avoid unnecessary expensive API calls
+
       Real-time detour calculation using Google Directions API
 
   📍 Maps & Navigation Integration:
