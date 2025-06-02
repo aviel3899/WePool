@@ -128,13 +128,19 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 
   | Home Page | Terms & Condotions | Role Selection |
 |-----------|---------------------|----------------|
-| ![intermidiate](https://github.com/user-attachments/assets/35039669-3fe0-489b-bf2c-f79aab172845) | ![terms and conditions](https://github.com/user-attachments/assets/3fae24c2-992d-47bc-b5d7-e6e9ff616ce1)| ![role selection](https://github.com/user-attachments/assets/4bfa47fb-2da2-405a-a179-43c1df9ddd28)|
+| ![intermidiate](https://github.com/user-attachments/assets/35039669-3fe0-489b-bf2c-f79aab172845) |![terms and conditions](https://github.com/user-attachments/assets/3fae24c2-992d-47bc-b5d7-e6e9ff616ce1)|![role selection](https://github.com/user-attachments/assets/4bfa47fb-2da2-405a-a179-43c1df9ddd28)|
 
-
-
-| Admin Menu | Admin Ride View | Ride Creation |
+| Driver Menu | Choose Ride Direction | Ride Creation |
 |------------|------------------|----------------|
-| <a href="https://github.com/user-attachments/assets/e31fb35d-e091-4f8c-b76a-e77b87709b49"><img src="https://github.com/user-attachments/assets/e31fb35d-e091-4f8c-b76a-e77b87709b49" width="250"/></a> | <a href="https://github.com/user-attachments/assets/27c948fc-fdfe-47ca-83b7-1b14467d5fc9"><img src="https://github.com/user-attachments/assets/27c948fc-fdfe-47ca-83b7-1b14467d5fc9" width="250"/></a> | <a href="https://github.com/user-attachments/assets/58610b1e-7450-4bee-a79d-7b355afcd7d6"><img src="https://github.com/user-attachments/assets/58610b1e-7450-4bee-a79d-7b355afcd7d6" width="250"/></a> |
+|![driver menu](https://github.com/user-attachments/assets/b13bf1ad-73c8-490a-bf4e-73776b13ae0d)|![choose direction](https://github.com/user-attachments/assets/a1ef6acb-17a8-4e03-b628-72db0fe0eaae)|![ride creation](https://github.com/user-attachments/assets/4120191d-9603-4dba-b117-dd37056586f2)|
+
+| Passenger Menu | Join A Ride | Route Map |
+|-------------|--------------|------------|
+|![passenger menu](https://github.com/user-attachments/assets/2d38e966-9599-4f69-9289-5aa952af027b)|![join a ride](https://github.com/user-attachments/assets/ac21e2fc-72ec-45ca-b8c8-613dca12d198)|
+
+| Admin Menu | Active Rides | Route Map |
+|-------------|--------------|------------|
+| |
 
 | Join a Ride | Active Rides | Route Map |
 |-------------|--------------|------------|
