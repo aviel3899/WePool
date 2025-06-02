@@ -78,6 +78,9 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
        🔹 driverScreens/
        🔹 passengerScreens/
        🔹 adminScreens/
+       🔹 HrManagerScreens/
+       🔹 RideHistoryScreens/
+       🔹 MainScreens/
        🔹 components/
     📄 MainActivity.kt        # NavHost, routing, and deep link handling
     📄 RideNavigationStarter.kt  # Launches Google Maps navigation
