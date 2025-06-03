@@ -133,7 +133,7 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 
   | Home Page | Terms & Condotions | Role Selection |
 |-----------|---------------------|----------------|
-| ![intermidiate](https://github.com/user-attachments/assets/35039669-3fe0-489b-bf2c-f79aab172845) |![terms and conditions](https://github.com/user-attachments/assets/3fae24c2-992d-47bc-b5d7-e6e9ff616ce1)|![role selection](https://github.com/user-attachments/assets/4bfa47fb-2da2-405a-a179-43c1df9ddd28)|
+| ![intermediateScreen](https://github.com/user-attachments/assets/a699aaec-e18b-457e-982d-66f18231dcbd)|![terms and conditions](https://github.com/user-attachments/assets/3fae24c2-992d-47bc-b5d7-e6e9ff616ce1)|![role selection](https://github.com/user-attachments/assets/4bfa47fb-2da2-405a-a179-43c1df9ddd28)|
 
 | Driver Menu | Choose Ride Direction | Ride Creation |
 |------------|------------------|----------------|
