@@ -70,6 +70,15 @@ fun IntermediateScreen(navController: NavController, uid: String) {
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+
+                    user?.name?.let { name ->
+                        Text(
+                            text = "Hello $name!",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
                     Text("Welcome to WePool", style = MaterialTheme.typography.headlineMedium)
                     Spacer(modifier = Modifier.height(32.dp))
 

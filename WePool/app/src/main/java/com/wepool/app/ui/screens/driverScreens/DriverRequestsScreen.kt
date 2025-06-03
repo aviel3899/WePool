@@ -380,10 +380,7 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                                         try {
                                             val ride = rideRepo.getRide(selectedRequest!!.rideId)
                                             if (ride == null) {
-                                                Log.w(
-                                                    "RideApproval",
-                                                    "\u26a0 Ride not found: ${selectedRequest!!.rideId}"
-                                                )
+                                                Log.w("RideApproval", "\u26a0 Ride not found: ${selectedRequest!!.rideId}")
                                                 showDialog = false
                                                 return@launch
                                             }
@@ -400,36 +397,22 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                                             )
 
                                             if (success) {
-                                                Log.d(
-                                                    "RideApproval",
-                                                    "✅ Approved request ${selectedRequest!!.requestId}"
-                                                )
+                                                Log.d("RideApproval", "✅ Approved request ${selectedRequest!!.requestId}")
                                                 refresh()
                                             } else {
-                                                Log.w(
-                                                    "RideApproval",
-                                                    "⚠ Approval failed for ${selectedRequest!!.requestId}"
-                                                )
+                                                Log.w("RideApproval", "⚠ Approval failed for ${selectedRequest!!.requestId}")
                                             }
                                         } catch (e: Exception) {
-                                            Log.e(
-                                                "RideApproval",
-                                                "❌ Error during approval: ${e.message}",
-                                                e
-                                            )
+                                            Log.e("RideApproval", "❌ Error during approval: ${e.message}", e)
                                         } finally {
                                             showDialog = false
                                         }
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(
-                                        0xFF4CAF50
-                                    )
-                                ),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Approve")
+                                Text("Approve", style = MaterialTheme.typography.labelLarge)
                             }
 
                             Spacer(modifier = Modifier.width(16.dp))
@@ -443,37 +426,24 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                                                 requestId = selectedRequest!!.requestId
                                             )
                                             if (success) {
-                                                Log.d(
-                                                    "RideDecline",
-                                                    "✅ Declined request ${selectedRequest!!.requestId}"
-                                                )
+                                                Log.d("RideDecline", "✅ Declined request ${selectedRequest!!.requestId}")
                                                 refresh()
                                             } else {
-                                                Log.w(
-                                                    "RideDecline",
-                                                    "⚠ Decline failed for ${selectedRequest!!.requestId}"
-                                                )
+                                                Log.w("RideDecline", "⚠ Decline failed for ${selectedRequest!!.requestId}")
                                             }
                                         } catch (e: Exception) {
-                                            Log.e(
-                                                "RideDecline",
-                                                "❌ Error during decline: ${e.message}",
-                                                e
-                                            )
+                                            Log.e("RideDecline", "❌ Error during decline: ${e.message}", e)
                                         } finally {
                                             showDialog = false
                                         }
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(
-                                        0xFFF44336
-                                    )
-                                ),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336)),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Decline")
+                                Text("Decline", style = MaterialTheme.typography.labelLarge)
                             }
+
                         }
                     }
                 )
