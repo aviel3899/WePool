@@ -13,10 +13,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.wepool.app.R
 import com.wepool.app.data.model.enums.RequestStatus
 import com.wepool.app.data.model.enums.ride.RideDirection
 import com.wepool.app.data.model.ride.PickupStop
@@ -364,7 +366,7 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                                     )
                                 )
                             ) {
-                                Text("Map")
+                                Text("Show Map")
                             }
                         }
                     },
@@ -374,7 +376,7 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Button(
+                            IconButton(
                                 onClick = {
                                     coroutineScope.launch {
                                         try {
@@ -409,15 +411,23 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                                         }
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.size(80.dp)
                             ) {
-                                Text("Approve", style = MaterialTheme.typography.labelLarge)
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.approve_hand_like_svgrepo_com),
+                                        contentDescription = "Approve",
+                                        tint = Color.Unspecified,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("Approve", style = MaterialTheme.typography.labelSmall)
+                                }
                             }
 
                             Spacer(modifier = Modifier.width(16.dp))
 
-                            Button(
+                            IconButton(
                                 onClick = {
                                     coroutineScope.launch {
                                         try {
@@ -438,12 +448,19 @@ fun DriverRequestsScreen(uid: String, navController: NavController, filterRideId
                                         }
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336)),
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.size(80.dp)
                             ) {
-                                Text("Decline", style = MaterialTheme.typography.labelLarge)
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.dislike_down_hand_svgrepo_com),
+                                        contentDescription = "Decline",
+                                        tint = Color.Unspecified,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("Decline", style = MaterialTheme.typography.labelSmall)
+                                }
                             }
-
                         }
                     }
                 )

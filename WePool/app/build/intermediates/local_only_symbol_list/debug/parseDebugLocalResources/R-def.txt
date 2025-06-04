@@ -9,12 +9,14 @@ color teal_200
 color teal_700
 color white
 drawable admin_svgrepo_com
+drawable approve_hand_like_svgrepo_com
 drawable arrow_forward_long_svgrepo_com
 drawable cancel_svgrepo_com
 drawable car_svgrepo_com
 drawable company_svgrepo_com
 drawable contact_details_svgrepo_com
 drawable crying_face_svgrepo_com
+drawable dislike_down_hand_svgrepo_com
 drawable edit_svgrepo_com
 drawable employees_svgrepo_com
 drawable folder_secret_svgrepo_com

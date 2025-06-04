@@ -405,18 +405,24 @@ fun PassengerRideSearchScreen(
                                                 Text("Start: ${ride.ride.startLocation.name}")
                                                 Text("Destination: ${ride.ride.destination.name}")
                                                 Text("Date: ${ride.ride.date}")
-                                                Text("Arrival Time: ${ride.detourEvaluationResult.updatedReferenceTime}")
-                                                val timeLabel =
+                                                val driverLabelTitle =
+                                                    if (direction == RideDirection.TO_WORK) "Arrival time" else "Departure Time"
+                                                val driverLabel =
+                                                    if (direction == RideDirection.TO_WORK) {
+                                                        ride.ride.arrivalTime
+                                                    } else {
+                                                       ride.ride.departureTime
+                                                    }
+                                                Text("$driverLabelTitle: $driverLabel")
+                                                val passengerTimeLabel =
                                                     if (direction == RideDirection.TO_WORK) {
                                                         ride.detourEvaluationResult.pickupLocation?.pickupTime
-                                                            ?: "לא ידוע"
                                                     } else {
                                                         ride.detourEvaluationResult.pickupLocation?.dropoffTime
-                                                            ?: "לא ידוע"
                                                     }
-                                                val timeLabelTitle =
+                                                val passengerTimeLabelTitle =
                                                     if (direction == RideDirection.TO_WORK) "Pickup Time" else "Dropoff Time"
-                                                Text("$timeLabelTitle: $timeLabel")
+                                                Text("$passengerTimeLabelTitle: $passengerTimeLabel")
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 Button(onClick = {
                                                     coroutineScope.launch {

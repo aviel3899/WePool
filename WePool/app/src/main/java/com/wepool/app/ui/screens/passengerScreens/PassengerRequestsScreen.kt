@@ -91,6 +91,13 @@ fun PassengerRequestsScreen(
         }
     }
 
+    LaunchedEffect(filterRideId) {
+        if (filterRideId != null && !hasSearched) {
+            hasSearched = true
+            refresh()
+        }
+    }
+
     BackgroundWrapper {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Box(modifier = Modifier.fillMaxSize()) {

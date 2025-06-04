@@ -29,7 +29,6 @@ import com.wepool.app.ui.components.BackgroundWrapper
 import com.wepool.app.ui.screens.components.RoleSelectionCard
 import kotlinx.coroutines.launch
 
-
 @Composable
 fun SignUpScreen(navController: NavController) {
     val authRepository = RepositoryProvider.provideAuthRepository()
@@ -293,7 +292,8 @@ fun SignUpScreen(navController: NavController) {
                         ).show()
                     }
                 }
-            }
+            },
+            onInvalidAcceptance = { termsError = true }
         )
     }
 }
@@ -328,7 +328,8 @@ fun TermsAndConditionsDialog(
     termsAccepted: Boolean = false,
     onTermsAcceptedChange: ((Boolean) -> Unit)? = null,
     termsError: Boolean = false,
-    onAccepted: (() -> Unit)? = null
+    onAccepted: (() -> Unit)? = null,
+    onInvalidAcceptance: (() -> Unit)? = null
 ) {
     if (!showDialog) return
 
@@ -338,6 +339,7 @@ fun TermsAndConditionsDialog(
             TextButton(onClick = {
                 if (showCheckbox && !termsAccepted) {
                     onTermsAcceptedChange?.invoke(false)
+                    onInvalidAcceptance?.invoke()
                     return@TextButton
                 }
                 onAccepted?.invoke() ?: onDismissRequest()
@@ -352,8 +354,8 @@ fun TermsAndConditionsDialog(
                     """
                     • Drivers may create homebound rides with an arrival time at least 10 minutes ahead.
                     • Drivers may create workbound rides with a departure time at least 2 hours ahead.
-                    • For homebound rides, drivers may cancel a ride (with passengers) or a passenger at least 10 minutes before departure.
-                    • For workbound rides, drivers may cancel a ride (with passengers) or a passenger at least 60 minutes before departure.
+                    • For homebound rides, drivers may cancel a ride (with passengers) at least 10 minutes before departure.
+                    • For workbound rides, drivers may cancel a ride (with passengers) at least 60 minutes before departure.
                     • If there are no passengers, drivers may cancel anytime.
 
                     • For homebound rides, passengers may join or cancel a ride at least 10 minutes before departure.

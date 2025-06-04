@@ -122,27 +122,24 @@ class RideRepository(
                 .get()
                 .await()
 
-            val formatter = DateTimeFormatter.ofPattern("HH:mm")
+            val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
             val dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-            val today = LocalDate.now()
             val now = LocalTime.now()
+            val today = LocalDate.now()
 
             for (doc in activeRidesSnapshot.documents) {
                 val ride = doc.toObject(Ride::class.java) ?: continue
                 val rideDate = LocalDate.parse(ride.date, dateFormatter)
+
                 val arrivalTimeStr = ride.arrivalTime ?: continue
-                val arrivalTime = LocalTime.parse(arrivalTimeStr, formatter)
-
+                val arrivalTime = LocalTime.parse(arrivalTimeStr, timeFormatter)
                 val safeArrivalTime = arrivalTime.plusMinutes(SAFE_ARRIVAL_MARGIN_MINUTES)
-
                 val isExpired = rideDate.isBefore(today) ||
                         (rideDate.isEqual(today) && safeArrivalTime.isBefore(now))
 
                 if (isExpired) {
-                    firestore.collection("rides")
-                        .document(ride.rideId)
-                        .update("active", false)
-                        .await()
+                    firestore.collection("rides").document(ride.rideId)
+                        .update("active", false).await()
 
                     RepositoryProvider.provideDriverRepository()
                         .removeActiveRideFromDriver(ride.driverId, ride.rideId)
@@ -153,10 +150,51 @@ class RideRepository(
                     }
 
                     Log.d("RideRepo", "🛑 נסיעה ${ride.rideId} כובתה והוסרה מכל משתמש")
+                    continue // לא צריך לבדוק בקשות לנסיעה שפגה
+                }
+
+                // 🆕 טיפול בבקשות ממתינות
+                val requestSnapshot = firestore.collection("rides")
+                    .document(ride.rideId)
+                    .collection("requests")
+                    .whereEqualTo("status", RequestStatus.PENDING.name)
+                    .get()
+                    .await()
+
+                val referenceTimeStr = ride.departureTime ?: continue
+                val referenceTime = LocalTime.parse(referenceTimeStr, timeFormatter)
+
+                val minutesBefore = Duration.between(now, referenceTime).toMinutes()
+
+                val declineThreshold = when (ride.direction) {
+                    RideDirection.TO_WORK -> 60
+                    RideDirection.TO_HOME -> 10
+                    else -> continue
+                }
+
+                if (minutesBefore <= declineThreshold) {
+                    for (requestDoc in requestSnapshot.documents) {
+                        val requestId = requestDoc.id
+                        val request = requestDoc.toObject(RideRequest::class.java)
+                        val passengerId = request?.passengerId ?: continue
+
+                        val success = declineRideRequest(ride.rideId, requestId)
+                        if (success) {
+                            Log.d("RideRepo", "⏱ הבקשה $requestId של $passengerId נדחתה עקב קירבה לזמן יציאה")
+
+                            NotificationService.notifyPassengers(
+                                passengerIds = listOf(passengerId),
+                                rideId = ride.rideId,
+                                title = "⏳ הבקשה שלך בוטלה",
+                                body = "הבקשה לנסיעה בוטלה אוטומטית מאחר ונותר זמן קצר מדי ליציאה.",
+                                screen = "rideCancelled"
+                            )
+                        }
+                    }
                 }
             }
         } catch (e: Exception) {
-            Log.e("RideRepo", "❌ שגיאה בבדיקת תוקף נסיעות: ${e.message}", e)
+            Log.e("RideRepo", "❌ שגיאה בבדיקת תוקף נסיעות/בקשות: ${e.message}", e)
         }
     }
 
@@ -405,7 +443,22 @@ class RideRepository(
         requestId: String
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            //  עדכון סטטוס הבקשה ל-DECLINED
+
+            val requestSnapshot = firestore.collection("rides")
+                .document(rideId)
+                .collection("requests")
+                .document(requestId)
+                .get()
+                .await()
+
+            val request = requestSnapshot.toObject(RideRequest::class.java)
+            val passengerId = request?.passengerId
+
+            if (passengerId.isNullOrBlank()) {
+                Log.w("RideRequest", "⚠️ לא נמצא passengerId לבקשה $requestId")
+                return@withContext false
+            }
+
             val statusUpdated = rideRequestRepository.updateRequestStatus(
                 rideId = rideId,
                 requestId = requestId,
@@ -417,14 +470,19 @@ class RideRepository(
                 return@withContext false
             }
 
-            //  מחיקת הבקשה ע"י הפונקציה מ-RideRequestRepository
-            //rideRequestRepository.deleteRequest(rideId, requestId)
+            NotificationService.notifyPassengers(
+                passengerIds = listOf(passengerId),
+                rideId = rideId,
+                title = "⛔ הבקשה נדחתה",
+                body = "הבקשה שלך להצטרף לנסיעה נדחתה.",
+                screen = "rideCancelled"
+            )
 
-            Log.d("RideRequest", "🗑 בקשה נדחתה ונמחקה בהצלחה (requestId=$requestId)")
+            Log.d("RideRequest", "🗑 בקשה נדחתה והתראה נשלחה (requestId=$requestId)")
             return@withContext true
 
         } catch (e: Exception) {
-            Log.e("RideRequest", "❌ שגיאה בדחיית/מחיקת בקשה: ${e.message}", e)
+            Log.e("RideRequest", "❌ שגיאה בדחיית בקשה: ${e.message}", e)
             return@withContext false
         }
     }

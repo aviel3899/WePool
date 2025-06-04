@@ -1,5 +1,6 @@
 package com.wepool.app.ui.screens.favoriteLocations
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -27,6 +29,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreferredLocationsScreen(uid: String, navController: NavController) {
+    val context = LocalContext.current
+
     val userRepository = RepositoryProvider.provideUserRepository()
     val coroutineScope = rememberCoroutineScope()
 
@@ -169,17 +173,22 @@ fun PreferredLocationsScreen(uid: String, navController: NavController) {
                                                     IconButton(
                                                         onClick = {
                                                             coroutineScope.launch {
-                                                                val updatedList = locations.map {
-                                                                    if (it.placeId == location.placeId)
-                                                                        it.copy(note = "Home")
-                                                                    else
-                                                                        it.copy(note = "")
+                                                                if (location.note.trim().equals("Home", ignoreCase = true)) {
+                                                                    Toast.makeText(
+                                                                        context,
+                                                                        "This is already your Home",
+                                                                        Toast.LENGTH_SHORT
+                                                                    ).show()
+                                                                } else {
+                                                                    val updatedList = locations.map {
+                                                                        if (it.placeId == location.placeId)
+                                                                            it.copy(note = "Home")
+                                                                        else
+                                                                            it.copy(note = "")
+                                                                    }
+                                                                    userRepository.updateFavoriteLocations(uid, updatedList)
+                                                                    locations = updatedList
                                                                 }
-                                                                userRepository.updateFavoriteLocations(
-                                                                    uid,
-                                                                    updatedList
-                                                                )
-                                                                locations = updatedList
                                                             }
                                                         }
                                                     ) {

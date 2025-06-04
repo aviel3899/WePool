@@ -70,64 +70,72 @@ fun RoleSelectionScreen(
                         error != null -> Text(error!!, color = MaterialTheme.colorScheme.error)
 
                         user != null -> {
-                            val roles = user!!.roles
+                            val roleOrder = listOf(
+                                UserRole.DRIVER,
+                                UserRole.PASSENGER,
+                                UserRole.HR_MANAGER,
+                                UserRole.ADMIN
+                            )
+                            val roles = roleOrder.filter { it in user!!.roles }
+
                             if (roles.isEmpty()) {
                                 Text("⚠ No roles assigned to this user.")
                             } else {
-                                when (roles.size) {
-                                    1 -> {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            RoleButton(roles[0], uid, navController)
-                                        }
-                                    }
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    if (roles.isNotEmpty()) {
+                                        when (roles.size) {
+                                            1 -> {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.Center
+                                                ) {
+                                                    RoleButton(roles[0], uid, navController)
+                                                }
+                                            }
 
-                                    2 -> {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceEvenly
-                                        ) {
-                                            roles.forEach { role ->
-                                                RoleButton(role, uid, navController)
+                                            2 -> {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                                ) {
+                                                    RoleButton(roles[0], uid, navController)
+                                                    RoleButton(roles[1], uid, navController)
+                                                }
+                                            }
+
+                                            3 -> {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                                ) {
+                                                    RoleButton(roles[0], uid, navController)
+                                                    RoleButton(roles[1], uid, navController)
+                                                }
+                                                Spacer(modifier = Modifier.height(16.dp))
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.Center
+                                                ) {
+                                                    RoleButton(roles[2], uid, navController)
+                                                }
+                                            }
+                                            else -> {
+                                                roles.chunked(2).forEach { rowRoles ->
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(vertical = 8.dp),
+                                                        horizontalArrangement = Arrangement.SpaceEvenly
+                                                    ) {
+                                                        rowRoles.forEach { role ->
+                                                            RoleButton(role, uid, navController)
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
-                                    }
-
-                                    3 -> {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceEvenly
-                                            ) {
-                                                RoleButton(roles[0], uid, navController)
-                                                RoleButton(roles[1], uid, navController)
-                                            }
-                                            Spacer(modifier = Modifier.height(16.dp))
-                                            RoleButton(roles[2], uid, navController)
-                                        }
-                                    }
-
-                                    4 -> {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceEvenly
-                                            ) {
-                                                RoleButton(roles[0], uid, navController)
-                                                RoleButton(roles[1], uid, navController)
-                                            }
-                                            Spacer(modifier = Modifier.height(16.dp))
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceEvenly
-                                            ) {
-                                                RoleButton(roles[2], uid, navController)
-                                                RoleButton(roles[3], uid, navController)
-                                            }
-                                        }
-                                    }
-
-                                    else -> {
-                                        Text("⚠ Too many roles assigned.")
+                                    } else {
+                                        Text("⚠ No roles assigned to this user.")
                                     }
                                 }
                             }

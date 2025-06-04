@@ -49,21 +49,29 @@ fun RideHistoryScreen(navController: NavController, uid: String) {
     fun refreshRides() {
         coroutineScope.launch {
             try {
-                if (UserFilterFields.USER_ROLE in selectedFilters && userRoleFilter == null) {
-                    Toast.makeText(
-                        context,
-                        "\u26A0 Please select a valid role to display ride history.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return@launch
-                }
-
                 loading = true
                 error = null
-                val baseRides = when (userRoleFilter) {
-                    UserRole.DRIVER -> rideRepository.getPastRidesAsDriver(uid)
-                    UserRole.PASSENGER -> rideRepository.getPastRidesAsPassenger(uid)
-                    UserRole.All -> {
+
+                val baseRides = when {
+                    UserFilterFields.USER_ROLE in selectedFilters && userRoleFilter == null -> {
+                        Toast.makeText(
+                            context,
+                            "\u26A0 Please select a valid role to display ride history.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        loading = false
+                        return@launch
+                    }
+
+                    UserFilterFields.USER_ROLE !in selectedFilters -> {
+                        val driverRides = rideRepository.getPastRidesAsDriver(uid)
+                        val passengerRides = rideRepository.getPastRidesAsPassenger(uid)
+                        (driverRides + passengerRides).distinctBy { it.rideId }
+                    }
+
+                    userRoleFilter == UserRole.DRIVER -> rideRepository.getPastRidesAsDriver(uid)
+                    userRoleFilter == UserRole.PASSENGER -> rideRepository.getPastRidesAsPassenger(uid)
+                    userRoleFilter == UserRole.All -> {
                         val driverRides = rideRepository.getPastRidesAsDriver(uid)
                         val passengerRides = rideRepository.getPastRidesAsPassenger(uid)
                         (driverRides + passengerRides).distinctBy { it.rideId }

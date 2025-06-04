@@ -172,8 +172,9 @@ fun DriverActiveRidesScreen(uid: String, navController: NavController, rideId: S
                     val now = Calendar.getInstance()
                     val diffMillis = rideCalendar.timeInMillis - now.timeInMillis
                     val diffMinutes = diffMillis / (60 * 1000)
+                    val noPassengers = ride.pickupStops.isEmpty()
                     threshold = if (ride.direction == RideDirection.TO_WORK) 60 else 10
-                    if (diffMinutes < threshold) {
+                    if (!noPassengers && diffMinutes < threshold) {
                         showTooLateDialog = true
                         return@launch
                     }
@@ -328,7 +329,7 @@ fun DriverActiveRidesContent(
                     when {
                         loading -> CircularProgressIndicator()
                         error != null -> Text(error, color = MaterialTheme.colorScheme.error)
-                        rides.isEmpty() -> Text("Click 'Search' to see rides.")
+                        rides.isEmpty() -> Text("Click 'Apply Filter' to search for active rides.")
                         else -> {
                             val filteredRides =
                                 if (!rideId.isNullOrEmpty()) rides.filter { it.rideId == rideId } else rides
@@ -338,11 +339,94 @@ fun DriverActiveRidesContent(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 items(filteredRides) { ride ->
-                                    RideCard(
-                                        ride = ride,
-                                        selectedUserUid = uid,
-                                        onShowMapClicked = { onShowMapClicked(ride) }
-                                    )
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = MaterialTheme.shapes.medium,
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                                    ) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Text("From: ${ride.startLocation.name}")
+                                            Text("To: ${ride.destination.name}")
+                                            Text("Date: ${ride.date}")
+                                            Text("Departure Time: ${ride.departureTime}")
+                                            Text("Arrival Time: ${ride.arrivalTime}")
+                                            Text("Stops on the way: ${ride.pickupStops.size}")
+                                            Spacer(modifier = Modifier.height(8.dp))
+
+                                            Column(
+                                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                            ) {
+                                                listOf(
+                                                    Triple(
+                                                        "Start",
+                                                        Icons.Default.PlayArrow,
+                                                        Color(0xFF2E7D32)
+                                                    ) to { onStartRideClicked(ride) },
+                                                    Triple(
+                                                        "Cancel",
+                                                        Icons.Default.Cancel,
+                                                        Color(0xFFC62828)
+                                                    ) to { onCancelRideClicked(ride) },
+                                                    Triple(
+                                                        "Map",
+                                                        Icons.Default.Map,
+                                                        Color(0xFF039BE5)
+                                                    ) to { onShowMapClicked(ride) },
+                                                    Triple(
+                                                        "Passengers",
+                                                        Icons.Default.Person,
+                                                        Color(0xFFFBC02D)
+                                                    ) to { onPassengerDetailsClicked(ride) }
+                                                ).chunked(2).forEach { rowButtons ->
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.spacedBy(
+                                                            16.dp,
+                                                            Alignment.CenterHorizontally
+                                                        )
+                                                    ) {
+                                                        rowButtons.forEach { (data, action) ->
+                                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                                OutlinedButton(
+                                                                    onClick = action,
+                                                                    modifier = Modifier
+                                                                        .width(160.dp)
+                                                                        .height(100.dp),
+                                                                    shape = MaterialTheme.shapes.large,
+                                                                    border = ButtonDefaults.outlinedButtonBorder(
+                                                                        enabled = true
+                                                                    ),
+                                                                    colors = ButtonDefaults.outlinedButtonColors(
+                                                                        contentColor = data.third
+                                                                    )
+                                                                ) {
+                                                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                                        Icon(
+                                                                            imageVector = data.second,
+                                                                            contentDescription = data.first,
+                                                                            tint = data.third,
+                                                                            modifier = Modifier.size(
+                                                                                48.dp
+                                                                            )
+                                                                        )
+                                                                        Spacer(
+                                                                            modifier = Modifier.height(
+                                                                                4.dp
+                                                                            )
+                                                                        )
+                                                                        Text(
+                                                                            data.first,
+                                                                            style = MaterialTheme.typography.labelSmall
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

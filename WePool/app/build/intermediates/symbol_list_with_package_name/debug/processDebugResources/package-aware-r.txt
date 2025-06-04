@@ -2981,6 +2981,7 @@ drawable abc_vector_test
 drawable admin_svgrepo_com
 drawable amu_bubble_mask
 drawable amu_bubble_shadow
+drawable approve_hand_like_svgrepo_com
 drawable arrow_forward_long_svgrepo_com
 drawable avd_hide_password
 drawable avd_show_password
@@ -3021,6 +3022,7 @@ drawable design_ic_visibility
 drawable design_ic_visibility_off
 drawable design_password_eye
 drawable design_snackbar_background
+drawable dislike_down_hand_svgrepo_com
 drawable edit_svgrepo_com
 drawable employees_svgrepo_com
 drawable folder_secret_svgrepo_com
