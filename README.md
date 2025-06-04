@@ -141,7 +141,7 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 
 | Driver Active Rides | Passenger Menu | Join a Ride |
 |------------|------------------|----------------|
-|![driver active rides](https://github.com/user-attachments/assets/c43e81a7-d5ed-498c-b85e-25cb12ae5f9c)|![passenger menu](https://github.com/user-attachments/assets/2d38e966-9599-4f69-9289-5aa952af027b)|![join a ride](https://github.com/user-attachments/assets/ac21e2fc-72ec-45ca-b8c8-613dca12d198)|
+|![driver active rides](https://github.com/user-attachments/assets/a2b28d92-e553-4d9c-b71b-bb4ef14a553b)|![passenger menu](https://github.com/user-attachments/assets/2d38e966-9599-4f69-9289-5aa952af027b)|![join a ride](https://github.com/user-attachments/assets/ac21e2fc-72ec-45ca-b8c8-613dca12d198)|
 
 | Passenger Active Rides | Admin Menu | Admin Compamies Manage |
 |-------------|--------------|------------|
