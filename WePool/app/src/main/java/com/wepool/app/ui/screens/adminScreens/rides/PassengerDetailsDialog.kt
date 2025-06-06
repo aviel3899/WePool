@@ -99,7 +99,7 @@ fun PassengerDetailsDialog(
             val stop = ride.pickupStops.firstOrNull { it.passengerId == user.uid }
             val (locationLabel, timeLabel, timeValue) = when (ride.direction) {
                 RideDirection.TO_WORK -> Triple("Pickup Location", "Pickup Time", stop?.pickupTime ?: "Unknown")
-                RideDirection.TO_HOME -> Triple("Dropoff Location", "Departure Time", stop?.dropoffTime ?: "Unknown")
+                RideDirection.TO_HOME -> Triple("Dropoff Location", "Dropoff Time", stop?.dropoffTime ?: "Unknown")
                 else -> Triple("Location", "Time", "Unknown")
             }
             val locationName = stop?.location?.name ?: "Unknown"

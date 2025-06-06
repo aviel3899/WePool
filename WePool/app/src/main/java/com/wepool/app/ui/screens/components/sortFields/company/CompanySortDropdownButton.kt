@@ -1,5 +1,6 @@
 package com.wepool.app.ui.screens.components.sortFields.company
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -38,6 +39,10 @@ fun CompanySortDropdownButton(
 
     val current = selectedSortFields.firstOrNull()
     val selectedField = current?.field
+    val selectedOrder = current?.order
+    val isAscendingSelected = selectedOrder == SortOrder.ASCENDING
+    val isDescendingSelected = selectedOrder == SortOrder.DESCENDING
+
     val label = current?.let {
         val fieldLabel = when (it.field) {
             CompanySortFields.COMPANY_NAME -> "Company Name"
@@ -116,56 +121,80 @@ fun CompanySortDropdownButton(
                         .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    OutlinedButton(
-                        onClick = {
-                            onSortFieldsChanged(
-                                listOf(
-                                    CompanySortFieldWithOrder(
-                                        selectedField,
-                                        SortOrder.ASCENDING
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(
+                                if (isAscendingSelected) Modifier.border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = MaterialTheme.shapes.medium
+                                ) else Modifier
+                            )
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                onSortFieldsChanged(
+                                    listOf(
+                                        CompanySortFieldWithOrder(
+                                            selectedField,
+                                            SortOrder.ASCENDING
+                                        )
                                     )
                                 )
+                            },
+                            modifier = Modifier
+                                .height(32.dp)
+                                .fillMaxWidth(),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.ArrowUpward,
+                                contentDescription = "Ascending",
+                                modifier = Modifier.size(16.dp)
                             )
-                        },
-                        modifier = Modifier
-                            .height(32.dp)
-                            .weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.ArrowUpward,
-                            contentDescription = "Ascending",
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Asc", style = MaterialTheme.typography.labelSmall)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Asc", style = MaterialTheme.typography.labelSmall)
+                        }
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    OutlinedButton(
-                        onClick = {
-                            onSortFieldsChanged(
-                                listOf(
-                                    CompanySortFieldWithOrder(
-                                        selectedField,
-                                        SortOrder.DESCENDING
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(
+                                if (isDescendingSelected) Modifier.border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = MaterialTheme.shapes.medium
+                                ) else Modifier
+                            )
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                onSortFieldsChanged(
+                                    listOf(
+                                        CompanySortFieldWithOrder(
+                                            selectedField,
+                                            SortOrder.DESCENDING
+                                        )
                                     )
                                 )
+                            },
+                            modifier = Modifier
+                                .height(32.dp)
+                                .fillMaxWidth(),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.ArrowDownward,
+                                contentDescription = "Descending",
+                                modifier = Modifier.size(16.dp)
                             )
-                        },
-                        modifier = Modifier
-                            .height(32.dp)
-                            .weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.ArrowDownward,
-                            contentDescription = "Descending",
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Desc", style = MaterialTheme.typography.labelSmall)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Desc", style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 }
             }
