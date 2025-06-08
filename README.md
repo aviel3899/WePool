@@ -7,7 +7,7 @@ The app helps employees of the same company coordinate safe, efficient, and eco-
 
 **🎬 Watch the Demo**
 
-📺 YouTube Video: https://www.youtube.com/watch?v=8tibMD5ENwM
+📺 YouTube Video: [https://www.youtube.com/watch?v=8tibMD5ENwM](https://youtu.be/l92Dg4Q_f5o)
 
 
 **🚀 Features**
