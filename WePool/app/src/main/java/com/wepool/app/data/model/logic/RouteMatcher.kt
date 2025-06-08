@@ -94,7 +94,6 @@ object RouteMatcher {
             val estimated = estimateOfflineDetourMinutes(point, pickupPoint, averageSpeedMetersPerMinute)
             if (currentDetourMinutes + estimated <= maxAllowedDetourMinutes) {
 
-
                 val routeAfter = try {
                     getActualDetourData(
                         start = startLocation,

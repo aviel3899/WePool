@@ -1,7 +1,6 @@
 package com.wepool.app.data.model.ride
 
 import com.wepool.app.data.model.enums.ride.RideDirection
-import com.wepool.app.data.model.enums.ride.RideSortFields
 import com.wepool.app.data.model.enums.ride.RideSortFieldsWithOrder
 
 data class RideSearchFilters(
