@@ -54,7 +54,7 @@ fun RideCard(
             Box(modifier = Modifier.fillMaxWidth()) {
 
                 StatusLabel(
-                    active = ride.isActive,
+                    active = ride.active,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
