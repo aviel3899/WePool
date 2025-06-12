@@ -22,6 +22,6 @@ data class Ride(
     val currentDetourMinutes: Int = 0,
     val encodedPolyline: String = "",
     val originalRoute: DepartureCalculationResult = DepartureCalculationResult(),
-    val isActive: Boolean = true,
+    val active: Boolean = true,
     val notes: String?=null
 )
