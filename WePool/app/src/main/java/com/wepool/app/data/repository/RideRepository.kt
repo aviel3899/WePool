@@ -821,7 +821,7 @@ class RideRepository(
             maxDetourMinutes = maxDetourMinutes,
             currentDetourMinutes = 0,
             encodedPolyline = "",
-            isActive = true,
+            active = true,
             notes = notes
         )
 
